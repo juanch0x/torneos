@@ -1,0 +1,13 @@
+change: add-router
+artifact_store: hybrid
+status: in-progress
+engram_topic_prefix: sdd/router
+phases:
+  explore:  { status: done, engram: sdd/router/explore,  file: explore.md }
+  proposal: { status: done, engram: sdd/router/proposal, file: proposal.md }
+  spec:     { status: done, engram: sdd/router/spec,   file: specs/spec.md }
+  design:   { status: done, engram: sdd/router/design, file: design.md }
+  tasks:    { status: done, engram: sdd/router/tasks,  file: tasks.md }
+  apply:    { status: done }
+  verify:   { status: done, note: "6.1 automated PASS; 6.2-6.4 manual confirmed by user" }
+  archive:  { status: pending }

@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Agent tooling (local, no es código de la app)
+.atl/

@@ -1,0 +1,57 @@
+{
+  "category": [
+    {
+      "name": "Primera",
+      "teams": [
+        ["Alan Finelli", "Carlos Erreguerena"],
+        ["Andrés Eceiza", "Valentino Palumbo"],
+        ["Tomas Molteno", "Mauro Sidoti"],
+        ["Hernan Fontana", "Alexis Corso"],
+        ["Francisco Crespo", "Andres Frugoli"],
+        ["Bruno Romero", "Fernando Laguillo"],
+        ["Leandro Marceru", "Luis Dario"],
+        ["Juan Cuevas", "Emilio Alvarez"]
+      ]
+    },
+    {
+      "name": "Segunda",
+      "teams": [
+        ["Sergio Perelló", "Danilo Morea"],
+        ["Juan Portugal", "Luca Vives"],
+        ["Ruben Poblete", "Fernando Losilla"],
+        ["Ernesto Retamales", "Cesar Mendoza"],
+        ["Bautista Latuf", "Ariel Vives"],
+        ["Victor Vazquez", "Marcos Bustamente"],
+        ["Alvaro Zulueta", "Gonzalo Zulueta"]
+      ]
+    },
+    {
+      "name": "Tercera",
+      "teams": [
+        ["Juan Quiroga", "Gustavo Vazquez"],
+        ["Fabián Tello", "Diego Berna"],
+        ["Juan Portugal", "Martín Guerra"],
+        ["Isaias Fernandez", "Ignacio Corso"],
+        ["Eric Castro", "Osvaldo Calderon"],
+        ["Bautista Latuf", "Cristian Aranzabal"],
+        ["Mariano Lopez", "Nicolas Quesada"],
+        ["Alvaro Zulueta", "Benicio Zulueta"],
+        ["Walter Palma", "Santiago Rial"]
+      ]
+    },
+    {
+      "name": "Cuarta",
+      "teams": [
+        ["Mario Marguetti", "Pipino Cuevas"],
+        ["Agustín Flores", "Carlos Salis"],
+        ["Juan Chondro", "Carlos Castrillejo"],
+        ["Esteban Arnone", "Walter Palma"],
+        ["Isaias Fernandez", "Gabriel Fernandez"],
+        ["Tomas Aguinaga", "Diego Aguinaga"],
+        ["Franco Spertino", "Bautista Corvalán"],
+        ["Javier Ayarra", "Luis Lopez"],
+        ["Stanziola Eduardo", "Amparo Castrillejo"]
+      ]
+    }
+  ]
+}
