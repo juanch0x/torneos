@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Product context (read before any exploration or feature work)
+
+`docs/PRODUCT.md` is the **product vision** — the *why*, the user, the core pain, the scope
+boundaries, and the versioned roadmap. **Read it before running any `sdd-explore` or proposing
+a feature**, and measure every candidate feature against it: if it does not serve the documented
+problem (the fixture pain in V1) or the roadmap, it is scope drift. This file (`CLAUDE.md`) and
+`README.md` cover the *how* (architecture); `docs/PRODUCT.md` covers the *what* and *for whom*.
+
 ## Commands
 
 Use **pnpm**. `npm install` fails in this repo with an `arborist null.matches` error — always use pnpm.
