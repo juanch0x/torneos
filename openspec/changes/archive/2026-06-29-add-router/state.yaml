@@ -1,0 +1,19 @@
+change: add-router
+artifact_store: hybrid
+status: archived
+engram_topic_prefix: sdd/router
+archived_on: 2026-06-29
+phases:
+  explore:  { status: done, engram: sdd/router/explore,  file: explore.md,   engram_obs_id: 307 }
+  proposal: { status: done, engram: sdd/router/proposal, file: proposal.md,  engram_obs_id: 310 }
+  spec:     { status: done, engram: sdd/router/spec,     file: specs/spec.md, engram_obs_id: 313 }
+  design:   { status: done, engram: sdd/router/design,   file: design.md,    engram_obs_id: 314 }
+  tasks:    { status: done, engram: sdd/router/tasks,    file: tasks.md,     engram_obs_id: 315, note: "engram copy was stale (saved pre-apply); filesystem tasks.md is authoritative — all tasks checked" }
+  apply:    { status: done, engram: sdd/router/apply-progress, engram_obs_id: 316 }
+  verify:   { status: done, note: "6.1 automated PASS; 6.2-6.4 manual confirmed by user; no engram verify-report" }
+  archive:
+    status: done
+    archived_to: openspec/changes/archive/2026-06-29-add-router/
+    main_spec_promoted_to: openspec/specs/routing/spec.md
+    archive_report: openspec/changes/archive/2026-06-29-add-router/archive-report.md
+    engram_archive_report: sdd/router/archive-report
