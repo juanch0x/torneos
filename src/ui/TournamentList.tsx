@@ -6,11 +6,12 @@ import {
 } from '@tanstack/react-table'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
+import { Button, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { TournamentMeta } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { formatDate } from './format'
 
-// Hoy por defecto: la fecha de hoy en formato ISO "YYYY-MM-DD".
+// Today's date as ISO "YYYY-MM-DD" for the default date input value.
 function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -47,17 +48,21 @@ export function TournamentList() {
   const table = useReactTable({ data: list, columns, getCoreRowModel: getCoreRowModel() })
 
   return (
-    <div className="panel">
-      <h2>Torneos</h2>
+    <Stack gap="md">
+      <Title order={2}>Torneos</Title>
 
-      <div className="row">
-        <input
+      <Group gap="sm" wrap="wrap">
+        <TextInput
           placeholder="Nombre del torneo"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <button
+        <TextInput
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <Button
           disabled={!name.trim()}
           onClick={() => {
             const trimmed = name.trim()
@@ -69,43 +74,46 @@ export function TournamentList() {
           }}
         >
           Nuevo torneo
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="default"
           onClick={() => void newMockTournament()}
           title="Crea 'Torneo FMP' con los datos de mock_players.json"
         >
           Crear torneo mock
-        </button>
-      </div>
+        </Button>
+      </Group>
 
       {list.length === 0 ? (
-        <p className="muted">Todavía no hay torneos. Creá el primero.</p>
+        <Text c="dimmed" size="sm">
+          Todavía no hay torneos. Creá el primero.
+        </Text>
       ) : (
-        <table>
-          <thead>
+        <Table>
+          <Table.Thead>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>
+              <Table.Tr key={hg.id}>
                 {hg.headers.map((header) => (
-                  <th key={header.id}>
+                  <Table.Th key={header.id}>
                     {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
+                  </Table.Th>
                 ))}
-              </tr>
+              </Table.Tr>
             ))}
-          </thead>
-          <tbody>
+          </Table.Thead>
+          <Table.Tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
+              <Table.Tr key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>
+                  <Table.Td key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                  </Table.Td>
                 ))}
-              </tr>
+              </Table.Tr>
             ))}
-          </tbody>
-        </table>
+          </Table.Tbody>
+        </Table>
       )}
-    </div>
+    </Stack>
   )
 }

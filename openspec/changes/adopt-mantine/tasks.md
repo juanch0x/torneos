@@ -38,11 +38,11 @@ Chain strategy: pending
 
 ## Phase 2 — Pilot
 
-- [ ] 2.1 Migrate `src/ui/TournamentList.tsx`: native `<input>`/`<button>`/`<table>` → Mantine `TextInput`/`Button`/`Table.*`; date input → `<TextInput type="date">`. (Spec §Pilot Migration)
-- [ ] 2.2 Update `src/router/TournamentLayout.tsx`: add Mantine `Breadcrumbs` (Tournaments / [name] / Groups|Fixture) + `Tabs`/`SegmentedControl` bound to active route. Guard and load effect: unchanged. (Spec §Shell wraps every route)
-- [ ] 2.3 Migrate `src/router/NotFound.tsx` to Mantine `Alert` + `Button`.
-- [ ] 2.4 Type-check gate: `npx tsc --noEmit -p tsconfig.app.json` must exit 0.
-- [ ] 2.5 Regression: `pnpm test` — existing Vitest suite must stay green (no domain/store logic touched).
+- [x] 2.1 Migrate `src/ui/TournamentList.tsx`: native `<input>`/`<button>`/`<table>` → Mantine `TextInput`/`Button`/`Table.*`; date input → `<TextInput type="date">`. (Spec §Pilot Migration)
+- [x] 2.2 Update `src/router/TournamentLayout.tsx`: add Mantine `Breadcrumbs` (Tournaments / [name] / Groups|Fixture) + `Tabs`/`SegmentedControl` bound to active route. Guard and load effect: unchanged. (Spec §Shell wraps every route)
+- [x] 2.3 Migrate `src/router/NotFound.tsx` to Mantine `Alert` + `Button`.
+- [x] 2.4 Type-check gate: `npx tsc --noEmit -p tsconfig.app.json` must exit 0.
+- [x] 2.5 Regression: `pnpm test` — existing Vitest suite must stay green (no domain/store logic touched).
 - [ ] 2.6 Manual pilot gate: visit `/`; confirm Mantine render, no `.panel`/`.row` classes in DOM, no horizontal overflow at ≤768px. (Spec §Pilot gate passes)
 
 ## Phase 3 — Rest
