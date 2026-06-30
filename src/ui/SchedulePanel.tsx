@@ -8,15 +8,19 @@ import { useMemo, useState } from 'react'
 import { Button, Group, NumberInput, Paper, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
+import { ResultDrawer } from './ResultDrawer'
 import { formatDateTime } from './format'
 
 interface MatchInfo {
   match: Match
   label: string
-  color: string // color de la categoría del partido
+  color: string
+  categoryId: ID
+  labelA: string
+  labelB: string
 }
 
-// Junta TODOS los partidos del torneo con una etiqueta legible.
+// Collects ALL tournament matches with human-readable labels and their category id.
 function collectMatches(tournament: Tournament): Map<ID, MatchInfo> {
   const result = new Map<ID, MatchInfo>()
   for (const category of tournament.categories) {
@@ -30,6 +34,9 @@ function collectMatches(tournament: Tournament): Map<ID, MatchInfo> {
         match,
         label: `${category.name} · ${group} · ${a} vs ${b}`,
         color: category.color,
+        categoryId: category.id,
+        labelA: a,
+        labelB: b,
       })
     }
   }
@@ -57,11 +64,13 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const generateFixture = useTournamentStore((s) => s.generateFixture)
   const removeSlot = useTournamentStore((s) => s.removeSlot)
   const moveSlotMatch = useTournamentStore((s) => s.moveSlotMatch)
+  const setMatchResult = useTournamentStore((s) => s.setMatchResult)
 
   // Defaults: 09:00 del día de inicio del torneo, 45 min, corte 22hs.
   const [startInput, setStartInput] = useState(`${tournament.startDate ?? tournament.date}T09:00`)
   const [duration, setDuration] = useState(45)
   const [endHour, setEndHour] = useState(22)
+  const [openMatch, setOpenMatch] = useState<MatchInfo | null>(null)
 
   const matches = useMemo(() => collectMatches(tournament), [tournament])
 
@@ -101,6 +110,26 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         },
       }),
       columnHelper.display({
+        id: 'resultado',
+        header: 'Resultado',
+        cell: ({ row }) => {
+          const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
+          if (!info) return null
+          if (info.match.result) {
+            return (
+              <Button variant="subtle" size="xs" onClick={() => setOpenMatch(info)}>
+                {info.match.result.scoreA} – {info.match.result.scoreB}
+              </Button>
+            )
+          }
+          return (
+            <Button variant="default" size="xs" onClick={() => setOpenMatch(info)}>
+              Ingresar
+            </Button>
+          )
+        },
+      }),
+      columnHelper.display({
         id: 'orden',
         header: 'Orden',
         cell: ({ row }) => (
@@ -136,7 +165,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         ),
       }),
     ],
-    [matches, data.length, moveSlotMatch, removeSlot],
+    [matches, data.length, moveSlotMatch, removeSlot, setOpenMatch],
   )
 
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
@@ -229,6 +258,17 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           </Table>
         )}
       </Stack>
+
+      <ResultDrawer
+        match={openMatch?.match ?? null}
+        opened={openMatch !== null}
+        onClose={() => setOpenMatch(null)}
+        onSubmit={(result) => {
+          if (openMatch) setMatchResult(openMatch.categoryId, openMatch.match.id, result)
+        }}
+        labelA={openMatch?.labelA ?? ''}
+        labelB={openMatch?.labelB ?? ''}
+      />
     </Paper>
   )
 }
