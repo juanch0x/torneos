@@ -107,17 +107,15 @@ export function CategoryPanel({ category }: { category: Category }) {
       </Group>
 
       <Group gap="sm" wrap="wrap" mb="xs">
-        <Group gap="xs" align="center">
-          <Text size="sm">Cantidad de grupos:</Text>
-          <NumberInput
-            min={1}
-            style={{ width: '4rem' }}
-            value={category.groups.length}
-            onChange={(val) =>
-              setCategoryGroupCount(category.id, typeof val === 'number' ? val || 1 : 1)
-            }
-          />
-        </Group>
+        <NumberInput
+          label="Cantidad de grupos:"
+          min={1}
+          style={{ width: '4rem' }}
+          value={category.groups.length}
+          onChange={(val) =>
+            setCategoryGroupCount(category.id, typeof val === 'number' ? val || 1 : 1)
+          }
+        />
         <Button variant="default" onClick={() => shuffleGroups(category.id)}>
           🎲 Mezclar grupos
         </Button>

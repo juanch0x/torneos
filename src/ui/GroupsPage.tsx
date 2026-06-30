@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Group, NumberInput, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Group, NumberInput, Paper, Stack, TextInput, Title } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
 import { CategoryPanel } from './CategoryPanel'
 
@@ -25,17 +25,15 @@ export function GroupsPage() {
             value={catName}
             onChange={(e) => setCatName(e.target.value)}
           />
-          <Group gap="xs" align="center">
-            <Text size="sm">Grupos:</Text>
-            <NumberInput
-              min={1}
-              style={{ width: '4rem' }}
-              value={numGroups}
-              onChange={(val) =>
-                setNumGroups(Math.max(1, typeof val === 'number' ? val || 1 : 1))
-              }
-            />
-          </Group>
+          <NumberInput
+            label="Grupos:"
+            min={1}
+            style={{ width: '4rem' }}
+            value={numGroups}
+            onChange={(val) =>
+              setNumGroups(Math.max(1, typeof val === 'number' ? val || 1 : 1))
+            }
+          />
           <Button
             disabled={!catName.trim()}
             onClick={() => {

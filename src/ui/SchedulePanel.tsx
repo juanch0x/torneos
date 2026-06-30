@@ -156,38 +156,32 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       <Stack gap="sm">
         <Title order={2}>Fixture y horarios (una sola cancha, todas las categorías)</Title>
 
-        <Group gap="sm" wrap="wrap">
-          <Group gap="xs" align="center">
-            <Text size="sm">Arranca:</Text>
-            <TextInput
-              type="datetime-local"
-              value={startInput}
-              onChange={(e) => setStartInput(e.target.value)}
-            />
-          </Group>
-          <Group gap="xs" align="center">
-            <Text size="sm">Duración (min):</Text>
-            <NumberInput
-              min={1}
-              style={{ width: '4rem' }}
-              value={duration}
-              onChange={(val) =>
-                setDuration(Math.max(1, typeof val === 'number' ? val || 1 : 1))
-              }
-            />
-          </Group>
-          <Group gap="xs" align="center">
-            <Text size="sm">Corte diario (hs):</Text>
-            <NumberInput
-              min={1}
-              max={23}
-              style={{ width: '4rem' }}
-              value={endHour}
-              onChange={(val) =>
-                setEndHour(Math.min(23, Math.max(1, typeof val === 'number' ? val || 1 : 1)))
-              }
-            />
-          </Group>
+        <Group gap="sm" wrap="wrap" align="flex-end">
+          <TextInput
+            label="Arranca:"
+            type="datetime-local"
+            value={startInput}
+            onChange={(e) => setStartInput(e.target.value)}
+          />
+          <NumberInput
+            label="Duración (min):"
+            min={1}
+            style={{ width: '4rem' }}
+            value={duration}
+            onChange={(val) =>
+              setDuration(Math.max(1, typeof val === 'number' ? val || 1 : 1))
+            }
+          />
+          <NumberInput
+            label="Corte diario (hs):"
+            min={1}
+            max={23}
+            style={{ width: '4rem' }}
+            value={endHour}
+            onChange={(val) =>
+              setEndHour(Math.min(23, Math.max(1, typeof val === 'number' ? val || 1 : 1)))
+            }
+          />
           <Button disabled={!startInput} onClick={handleGenerate}>
             ⚡ Generar fixture
           </Button>
