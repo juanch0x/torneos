@@ -4,10 +4,11 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useMemo } from 'react'
-import { Group, NumberInput, Table, Text } from '@mantine/core'
-import type { Category, ID, Match, MatchResult } from '../domain/types'
+import { useMemo, useState } from 'react'
+import { Button, Table, Text } from '@mantine/core'
+import type { Category, ID, Match } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
+import { ResultDrawer } from './ResultDrawer'
 import { formatDateTime } from './format'
 
 function buildLabelLookup(category: Category): (id: ID) => string {
@@ -20,10 +21,11 @@ const columnHelper = createColumnHelper<Match>()
 
 export function MatchTable({ category }: { category: Category }) {
   const setMatchResult = useTournamentStore((s) => s.setMatchResult)
+  const [openMatch, setOpenMatch] = useState<Match | null>(null)
 
   const label = useMemo(() => buildLabelLookup(category), [category])
 
-  // Orden estable de lectura: por grupo, luego por ronda.
+  // Stable read order: by group, then by round. Never reorders after result entry.
   const data = useMemo(
     () =>
       [...category.matches].sort(
@@ -73,14 +75,11 @@ export function MatchTable({ category }: { category: Category }) {
         id: 'resultado',
         header: 'Resultado',
         cell: ({ row }) => (
-          <ResultCell
-            match={row.original}
-            onResult={(r) => setMatchResult(category.id, row.original.id, r)}
-          />
+          <ResultCell match={row.original} onOpen={() => setOpenMatch(row.original)} />
         ),
       }),
     ],
-    [label, setMatchResult, category.id],
+    [label, category.id, setOpenMatch],
   )
 
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
@@ -94,62 +93,58 @@ export function MatchTable({ category }: { category: Category }) {
   }
 
   return (
-    <Table>
-      <Table.Thead>
-        {table.getHeaderGroups().map((hg) => (
-          <Table.Tr key={hg.id}>
-            {hg.headers.map((header) => (
-              <Table.Th key={header.id}>
-                {flexRender(header.column.columnDef.header, header.getContext())}
-              </Table.Th>
-            ))}
-          </Table.Tr>
-        ))}
-      </Table.Thead>
-      <Table.Tbody>
-        {table.getRowModel().rows.map((row) => (
-          <Table.Tr key={row.id} bg={row.original.result ? 'green.0' : undefined}>
-            {row.getVisibleCells().map((cell) => (
-              <Table.Td key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </Table.Td>
-            ))}
-          </Table.Tr>
-        ))}
-      </Table.Tbody>
-    </Table>
+    <>
+      <Table>
+        <Table.Thead>
+          {table.getHeaderGroups().map((hg) => (
+            <Table.Tr key={hg.id}>
+              {hg.headers.map((header) => (
+                <Table.Th key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          ))}
+        </Table.Thead>
+        <Table.Tbody>
+          {table.getRowModel().rows.map((row) => (
+            <Table.Tr key={row.id} bg={row.original.result ? 'green.0' : undefined}>
+              {row.getVisibleCells().map((cell) => (
+                <Table.Td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </Table.Td>
+              ))}
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+      <ResultDrawer
+        match={openMatch}
+        opened={openMatch !== null}
+        onClose={() => setOpenMatch(null)}
+        onSubmit={(result) => {
+          if (openMatch) setMatchResult(category.id, openMatch.id, result)
+        }}
+        labelA={openMatch ? label(openMatch.pairAId) : ''}
+        labelB={openMatch ? label(openMatch.pairBId) : ''}
+      />
+    </>
   )
 }
 
-function ResultCell({ match, onResult }: { match: Match; onResult: (r: MatchResult) => void }) {
+// Renders a read-only score when the match has a result (clickable for editing),
+// or an entry trigger when no result exists yet.
+function ResultCell({ match, onOpen }: { match: Match; onOpen: () => void }) {
+  if (match.result) {
+    return (
+      <Button variant="subtle" size="xs" onClick={onOpen}>
+        {match.result.scoreA} – {match.result.scoreB}
+      </Button>
+    )
+  }
   return (
-    <Group gap="xs" wrap="nowrap">
-      <NumberInput
-        min={0}
-        style={{ width: '3.5rem' }}
-        defaultValue={match.result?.scoreA ?? ''}
-        onBlur={(e) => commitResult(e.target.value, match.result?.scoreB, onResult, 'A')}
-      />
-      {' - '}
-      <NumberInput
-        min={0}
-        style={{ width: '3.5rem' }}
-        defaultValue={match.result?.scoreB ?? ''}
-        onBlur={(e) => commitResult(e.target.value, match.result?.scoreA, onResult, 'B')}
-      />
-    </Group>
+    <Button variant="default" size="xs" onClick={onOpen}>
+      Ingresar
+    </Button>
   )
-}
-
-// Carga el resultado solo cuando ambos lados son números válidos.
-function commitResult(
-  value: string,
-  other: number | undefined,
-  onResult: (r: MatchResult) => void,
-  side: 'A' | 'B',
-): void {
-  const parsed = Number(value)
-  if (value === '' || Number.isNaN(parsed) || other == null) return
-  if (side === 'A') onResult({ scoreA: parsed, scoreB: other })
-  else onResult({ scoreA: other, scoreB: parsed })
 }
