@@ -19,6 +19,7 @@ import {
 import type { Category, Pair } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { MatchTable } from './MatchTable'
+import { StandingsTable } from './StandingsTable'
 
 function pairLabel(pair: Pair): string {
   return `${pair.player1} / ${pair.player2}`
@@ -189,6 +190,20 @@ export function CategoryPanel({ category }: { category: Category }) {
           Los horarios se asignan con el botón "Generar fixture" de más abajo (todas las categorías).
         </Text>
       </Group>
+
+      {/* Leaderboard — one StandingsTable per group, below pairs assignment */}
+      {category.groups.length > 0 && category.matches.length > 0 && (
+        <>
+          {category.groups.map((group) => (
+            <StandingsTable
+              key={group.id}
+              group={group}
+              matches={category.matches}
+              pairs={category.pairs}
+            />
+          ))}
+        </>
+      )}
 
       <Button variant="subtle" onClick={() => setShowMatches((v) => !v)} mt="sm">
         {showMatches ? '▾' : '▸'} Partidos ({category.matches.length})
