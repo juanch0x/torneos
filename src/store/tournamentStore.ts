@@ -52,7 +52,7 @@ export interface TournamentState {
   movePairToGroup: (categoryId: ID, pairId: ID, toGroupId: ID) => void
   regeneratePairings: (categoryId: ID) => void
   regenerateSchedule: (categoryId: ID) => void
-  setMatchResult: (categoryId: ID, matchId: ID, result: MatchResult) => void
+  setMatchResult: (categoryId: ID, matchId: ID, result: MatchResult | undefined) => void
   setMatchSchedule: (categoryId: ID, matchId: ID, scheduledAt: string) => void
 }
 
