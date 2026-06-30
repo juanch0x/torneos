@@ -1,0 +1,13 @@
+change: adopt-mantine
+artifact_store: hybrid
+status: in-progress
+engram_topic_prefix: sdd/adopt-mantine
+phases:
+  explore:  { status: done, note: "UI library exploration — decision: Mantine", engram: sdd/ui-design/explore, engram_obs_id: 328 }
+  proposal: { status: done, engram: sdd/adopt-mantine/proposal, file: proposal.md }
+  spec:     { status: done, file: spec.md, engram: sdd/adopt-mantine/spec }
+  design:   { status: done, engram: sdd/adopt-mantine/design, file: design.md }
+  tasks:    { status: done, file: tasks.md, engram: sdd/adopt-mantine/tasks }
+  apply:    { status: pending }
+  verify:   { status: pending }
+  archive:  { status: pending }
