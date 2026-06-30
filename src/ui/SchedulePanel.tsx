@@ -5,6 +5,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
+import { Button, Group, NumberInput, Paper, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { formatDateTime } from './format'
@@ -90,35 +91,49 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         // La pareja es ESTÁTICA y el horario NO se edita: solo se reordena con ↑/↓.
         cell: ({ row }) => {
           const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
-          return info ? info.label : <span className="muted">— libre —</span>
+          return info ? (
+            info.label
+          ) : (
+            <Text span c="dimmed">
+              — libre —
+            </Text>
+          )
         },
       }),
       columnHelper.display({
         id: 'orden',
         header: 'Orden',
         cell: ({ row }) => (
-          <>
-            <button
+          <Group gap="xs" wrap="nowrap">
+            <Button
+              size="xs"
+              variant="default"
               disabled={row.index === 0}
               title="Adelantar"
               onClick={() => moveSlotMatch(row.original.id, 'up')}
             >
               ↑
-            </button>{' '}
-            <button
+            </Button>
+            <Button
+              size="xs"
+              variant="default"
               disabled={row.index === data.length - 1}
               title="Atrasar"
               onClick={() => moveSlotMatch(row.original.id, 'down')}
             >
               ↓
-            </button>
-          </>
+            </Button>
+          </Group>
         ),
       }),
       columnHelper.display({
         id: 'acciones',
         header: '',
-        cell: ({ row }) => <button onClick={() => removeSlot(row.original.id)}>Quitar</button>,
+        cell: ({ row }) => (
+          <Button size="xs" variant="subtle" color="red" onClick={() => removeSlot(row.original.id)}>
+            Quitar
+          </Button>
+        ),
       }),
     ],
     [matches, data.length, moveSlotMatch, removeSlot],
@@ -137,80 +152,89 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   }
 
   return (
-    <div className="panel">
-      <h2>Fixture y horarios (una sola cancha, todas las categorías)</h2>
+    <Paper withBorder p="md">
+      <Stack gap="sm">
+        <Title order={2}>Fixture y horarios (una sola cancha, todas las categorías)</Title>
 
-      <div className="row">
-        <label>
-          Arranca:{' '}
-          <input
-            type="datetime-local"
-            value={startInput}
-            onChange={(e) => setStartInput(e.target.value)}
-          />
-        </label>
-        <label>
-          Duración (min):{' '}
-          <input
-            type="number"
-            min={1}
-            style={{ width: '4rem' }}
-            value={duration}
-            onChange={(e) => setDuration(Math.max(1, Number(e.target.value) || 1))}
-          />
-        </label>
-        <label>
-          Corte diario (hs):{' '}
-          <input
-            type="number"
-            min={1}
-            max={23}
-            style={{ width: '4rem' }}
-            value={endHour}
-            onChange={(e) => setEndHour(Math.min(23, Math.max(1, Number(e.target.value) || 1)))}
-          />
-        </label>
-        <button disabled={!startInput} onClick={handleGenerate}>
-          ⚡ Generar fixture
-        </button>
-      </div>
+        <Group gap="sm" wrap="wrap">
+          <Group gap="xs" align="center">
+            <Text size="sm">Arranca:</Text>
+            <TextInput
+              type="datetime-local"
+              value={startInput}
+              onChange={(e) => setStartInput(e.target.value)}
+            />
+          </Group>
+          <Group gap="xs" align="center">
+            <Text size="sm">Duración (min):</Text>
+            <NumberInput
+              min={1}
+              style={{ width: '4rem' }}
+              value={duration}
+              onChange={(val) =>
+                setDuration(Math.max(1, typeof val === 'number' ? val || 1 : 1))
+              }
+            />
+          </Group>
+          <Group gap="xs" align="center">
+            <Text size="sm">Corte diario (hs):</Text>
+            <NumberInput
+              min={1}
+              max={23}
+              style={{ width: '4rem' }}
+              value={endHour}
+              onChange={(val) =>
+                setEndHour(Math.min(23, Math.max(1, typeof val === 'number' ? val || 1 : 1)))
+              }
+            />
+          </Group>
+          <Button disabled={!startInput} onClick={handleGenerate}>
+            ⚡ Generar fixture
+          </Button>
+        </Group>
 
-      <p className="muted">
-        Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
-        Después podés ajustar la fecha/hora de cada partido o reordenarlos con las flechas.
-      </p>
+        <Text c="dimmed" size="sm">
+          Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
+          Después podés ajustar la fecha/hora de cada partido o reordenarlos con las flechas.
+        </Text>
 
-      {data.length === 0 ? (
-        <p className="muted">Todavía sin calendario. Definí los grupos y tocá "Generar fixture".</p>
-      ) : (
-        <table>
-          <thead>
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>
-                {hg.headers.map((header) => (
-                  <th key={header.id}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => {
-              const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
-              return (
-                <tr key={row.id} style={info ? { backgroundColor: info.color } : undefined}>
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+        {data.length === 0 ? (
+          <Text c="dimmed" size="sm">
+            Todavía sin calendario. Definí los grupos y tocá "Generar fixture".
+          </Text>
+        ) : (
+          <Table>
+            <Table.Thead>
+              {table.getHeaderGroups().map((hg) => (
+                <Table.Tr key={hg.id}>
+                  {hg.headers.map((header) => (
+                    <Table.Th key={header.id}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </Table.Th>
                   ))}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      )}
-    </div>
+                </Table.Tr>
+              ))}
+            </Table.Thead>
+            <Table.Tbody>
+              {table.getRowModel().rows.map((row) => {
+                const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
+                return (
+                  <Table.Tr
+                    key={row.id}
+                    style={info ? { backgroundColor: info.color } : undefined}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <Table.Td key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </Table.Td>
+                    ))}
+                  </Table.Tr>
+                )
+              })}
+            </Table.Tbody>
+          </Table>
+        )}
+      </Stack>
+    </Paper>
   )
 }

@@ -5,6 +5,17 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
+import {
+  Button,
+  Group,
+  NativeSelect,
+  NumberInput,
+  Paper,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import type { Category, Pair } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { MatchTable } from './MatchTable'
@@ -45,7 +56,7 @@ export function CategoryPanel({ category }: { category: Category }) {
         cell: ({ row }) => {
           const assigned = groupOf(category, row.original.id)
           return (
-            <select
+            <NativeSelect
               value={assigned ?? ''}
               onChange={(e) => {
                 const groupId = e.target.value
@@ -61,7 +72,7 @@ export function CategoryPanel({ category }: { category: Category }) {
                   {g.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           )
         },
       }),
@@ -76,8 +87,8 @@ export function CategoryPanel({ category }: { category: Category }) {
   })
 
   return (
-    <div className="panel" style={{ borderLeft: `6px solid ${category.color}` }}>
-      <h3>
+    <Paper withBorder p="md" mb="md" style={{ borderLeft: `6px solid ${category.color}` }}>
+      <Group gap="xs" align="center" mb="sm">
         <span
           aria-hidden
           style={{
@@ -86,34 +97,47 @@ export function CategoryPanel({ category }: { category: Category }) {
             height: '0.9rem',
             borderRadius: '3px',
             background: category.color,
-            marginRight: '0.4rem',
-            verticalAlign: 'middle',
+            flexShrink: 0,
           }}
         />
-        {category.name} <span className="muted">({category.groups.length} grupos)</span>
-      </h3>
+        <Title order={3}>{category.name}</Title>
+        <Text c="dimmed" size="sm">
+          ({category.groups.length} grupos)
+        </Text>
+      </Group>
 
-      <div className="row">
-        <label>
-          Cantidad de grupos:{' '}
-          <input
-            type="number"
+      <Group gap="sm" wrap="wrap" mb="xs">
+        <Group gap="xs" align="center">
+          <Text size="sm">Cantidad de grupos:</Text>
+          <NumberInput
             min={1}
             style={{ width: '4rem' }}
             value={category.groups.length}
-            onChange={(e) => setCategoryGroupCount(category.id, Number(e.target.value) || 1)}
+            onChange={(val) =>
+              setCategoryGroupCount(category.id, typeof val === 'number' ? val || 1 : 1)
+            }
           />
-        </label>
-        <button onClick={() => shuffleGroups(category.id)}>🎲 Mezclar grupos</button>
-        <span className="muted">
+        </Group>
+        <Button variant="default" onClick={() => shuffleGroups(category.id)}>
+          🎲 Mezclar grupos
+        </Button>
+        <Text c="dimmed" size="sm">
           Cambiar la cantidad de grupos o mezclar reparte las parejas al azar y limpia los cruces.
-        </span>
-      </div>
+        </Text>
+      </Group>
 
-      <div className="row">
-        <input placeholder="Jugador 1" value={p1} onChange={(e) => setP1(e.target.value)} />
-        <input placeholder="Jugador 2" value={p2} onChange={(e) => setP2(e.target.value)} />
-        <button
+      <Group gap="sm" wrap="wrap" mb="sm">
+        <TextInput
+          placeholder="Jugador 1"
+          value={p1}
+          onChange={(e) => setP1(e.target.value)}
+        />
+        <TextInput
+          placeholder="Jugador 2"
+          value={p2}
+          onChange={(e) => setP2(e.target.value)}
+        />
+        <Button
           disabled={!p1.trim() || !p2.trim()}
           onClick={() => {
             addPair(category.id, p1.trim(), p2.trim())
@@ -122,54 +146,56 @@ export function CategoryPanel({ category }: { category: Category }) {
           }}
         >
           Agregar pareja
-        </button>
-      </div>
+        </Button>
+      </Group>
 
-      <h4>Parejas y grupos</h4>
+      <Title order={4} mb="xs">
+        Parejas y grupos
+      </Title>
       {category.pairs.length === 0 ? (
-        <p className="muted">Sin parejas todavía.</p>
+        <Text c="dimmed" size="sm">
+          Sin parejas todavía.
+        </Text>
       ) : (
-        <table>
-          <thead>
+        <Table>
+          <Table.Thead>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>
+              <Table.Tr key={hg.id}>
                 {hg.headers.map((header) => (
-                  <th key={header.id}>
+                  <Table.Th key={header.id}>
                     {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
+                  </Table.Th>
                 ))}
-              </tr>
+              </Table.Tr>
             ))}
-          </thead>
-          <tbody>
+          </Table.Thead>
+          <Table.Tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
+              <Table.Tr key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>
+                  <Table.Td key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                  </Table.Td>
                 ))}
-              </tr>
+              </Table.Tr>
             ))}
-          </tbody>
-        </table>
+          </Table.Tbody>
+        </Table>
       )}
 
-      <div className="row">
-        <button onClick={() => regeneratePairings(category.id)}>
+      <Group gap="sm" wrap="wrap" mt="sm">
+        <Button variant="default" onClick={() => regeneratePairings(category.id)}>
           Regenerar cruces de esta categoría
-        </button>
-        <span className="muted">
+        </Button>
+        <Text c="dimmed" size="sm">
           Los horarios se asignan con el botón "Generar fixture" de más abajo (todas las categorías).
-        </span>
-      </div>
+        </Text>
+      </Group>
 
-      <h4>
-        <button onClick={() => setShowMatches((v) => !v)}>
-          {showMatches ? '▾' : '▸'} Partidos ({category.matches.length})
-        </button>
-      </h4>
+      <Button variant="subtle" onClick={() => setShowMatches((v) => !v)} mt="sm">
+        {showMatches ? '▾' : '▸'} Partidos ({category.matches.length})
+      </Button>
       {showMatches && <MatchTable category={category} />}
-    </div>
+    </Paper>
   )
 }

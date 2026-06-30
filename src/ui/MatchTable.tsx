@@ -5,6 +5,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useMemo } from 'react'
+import { Group, NumberInput, Table, Text } from '@mantine/core'
 import type { Category, ID, Match, MatchResult } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { formatDateTime } from './format'
@@ -46,7 +47,10 @@ export function MatchTable({ category }: { category: Category }) {
         header: 'Partido',
         cell: ({ row }) => (
           <>
-            {label(row.original.pairAId)} <span className="muted">vs</span>{' '}
+            {label(row.original.pairAId)}{' '}
+            <Text span c="dimmed">
+              vs
+            </Text>{' '}
             {label(row.original.pairBId)}
           </>
         ),
@@ -56,7 +60,13 @@ export function MatchTable({ category }: { category: Category }) {
         header: 'Horario',
         cell: (ctx) => {
           const iso = ctx.getValue()
-          return iso ? formatDateTime(iso) : <span className="muted">—</span>
+          return iso ? (
+            formatDateTime(iso)
+          ) : (
+            <Text span c="dimmed">
+              —
+            </Text>
+          )
         },
       }),
       columnHelper.display({
@@ -76,54 +86,58 @@ export function MatchTable({ category }: { category: Category }) {
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
 
   if (data.length === 0) {
-    return <p className="muted">Sin partidos. Asigná parejas a grupos y generá el fixture.</p>
+    return (
+      <Text c="dimmed" size="sm">
+        Sin partidos. Asigná parejas a grupos y generá el fixture.
+      </Text>
+    )
   }
 
   return (
-    <table>
-      <thead>
+    <Table>
+      <Table.Thead>
         {table.getHeaderGroups().map((hg) => (
-          <tr key={hg.id}>
+          <Table.Tr key={hg.id}>
             {hg.headers.map((header) => (
-              <th key={header.id}>
+              <Table.Th key={header.id}>
                 {flexRender(header.column.columnDef.header, header.getContext())}
-              </th>
+              </Table.Th>
             ))}
-          </tr>
+          </Table.Tr>
         ))}
-      </thead>
-      <tbody>
+      </Table.Thead>
+      <Table.Tbody>
         {table.getRowModel().rows.map((row) => (
-          <tr key={row.id} className={row.original.result ? 'played' : undefined}>
+          <Table.Tr key={row.id} bg={row.original.result ? 'green.0' : undefined}>
             {row.getVisibleCells().map((cell) => (
-              <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+              <Table.Td key={cell.id}>
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </Table.Td>
             ))}
-          </tr>
+          </Table.Tr>
         ))}
-      </tbody>
-    </table>
+      </Table.Tbody>
+    </Table>
   )
 }
 
 function ResultCell({ match, onResult }: { match: Match; onResult: (r: MatchResult) => void }) {
   return (
-    <>
-      <input
-        type="number"
+    <Group gap="xs" wrap="nowrap">
+      <NumberInput
         min={0}
         style={{ width: '3.5rem' }}
         defaultValue={match.result?.scoreA ?? ''}
         onBlur={(e) => commitResult(e.target.value, match.result?.scoreB, onResult, 'A')}
       />
       {' - '}
-      <input
-        type="number"
+      <NumberInput
         min={0}
         style={{ width: '3.5rem' }}
         defaultValue={match.result?.scoreB ?? ''}
         onBlur={(e) => commitResult(e.target.value, match.result?.scoreA, onResult, 'B')}
       />
-    </>
+    </Group>
   )
 }
 

@@ -1,4 +1,4 @@
-/* Base resets — Mantine owns element styling; keep only box-sizing and font anchors. */
+/* Base resets — Mantine owns all element and component styling. */
 :root {
   font-family: system-ui, sans-serif;
   line-height: 1.5;
@@ -7,31 +7,4 @@
 
 * {
   box-sizing: border-box;
-}
-
-/* Semantic classes: retained until each owning component migrates to Mantine (Phases 2–3). */
-
-.panel {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
-.row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 0.4rem 0;
-}
-
-.muted {
-  color: #777;
-  font-size: 0.85rem;
-}
-
-.played {
-  background: #e9f7ec;
 }

@@ -47,12 +47,12 @@ Chain strategy: pending
 
 ## Phase 3 — Rest
 
-- [ ] 3.1 Migrate `src/ui/CategoryPanel.tsx` to Mantine components.
-- [ ] 3.2 Migrate `src/ui/MatchTable.tsx`: `Table`/`Table.Thead`/`Table.Tr`/`Table.Th`/`Table.Tbody`/`Table.Td`; keep all `flexRender` and `useReactTable` calls 1:1; `.played` state → `<Table.Tr bg="...">` prop; `ResultCell` inputs → `NumberInput`. (Spec §TanStack Table Preserved)
-- [ ] 3.3 Migrate `src/ui/SchedulePanel.tsx`: date field → `<TextInput type="datetime-local">`; category color → `<Table.Tr style={{ backgroundColor }}>` prop; rest to Mantine.
-- [ ] 3.4 Migrate `src/ui/GroupsPage.tsx` to Mantine. (Spec §Full Component Migration)
-- [ ] 3.5 Migrate `src/ui/FixturePage.tsx` to Mantine. (Spec §Full Component Migration)
-- [ ] 3.6 `src/index.css`: strip `.panel`, `.row`, `.muted`, `.played`; file must contain only minimal resets (`box-sizing`, font, `margin: 0`). (Spec §index.css contains only resets)
-- [ ] 3.7 Architecture invariant: `rg '@mantine' src/domain src/store src/persistence` — must return zero matches. (Spec §Domain layer stays pure)
-- [ ] 3.8 Final type-check: `npx tsc --noEmit -p tsconfig.app.json` must exit 0. (Spec §Type-check passes after migration)
-- [ ] 3.9 Final regression: `pnpm test` — all suites green. (Spec §Persistence and store are untouched)
+- [x] 3.1 Migrate `src/ui/CategoryPanel.tsx` to Mantine components.
+- [x] 3.2 Migrate `src/ui/MatchTable.tsx`: `Table`/`Table.Thead`/`Table.Tr`/`Table.Th`/`Table.Tbody`/`Table.Td`; keep all `flexRender` and `useReactTable` calls 1:1; `.played` state → `<Table.Tr bg="...">` prop; `ResultCell` inputs → `NumberInput`. (Spec §TanStack Table Preserved)
+- [x] 3.3 Migrate `src/ui/SchedulePanel.tsx`: date field → `<TextInput type="datetime-local">`; category color → `<Table.Tr style={{ backgroundColor }}>` prop; rest to Mantine.
+- [x] 3.4 Migrate `src/ui/GroupsPage.tsx` to Mantine. (Spec §Full Component Migration)
+- [x] 3.5 Migrate `src/ui/FixturePage.tsx` to Mantine. (Spec §Full Component Migration)
+- [x] 3.6 `src/index.css`: strip `.panel`, `.row`, `.muted`, `.played`; file must contain only minimal resets (`box-sizing`, font, `margin: 0`). (Spec §index.css contains only resets)
+- [x] 3.7 Architecture invariant: `rg '@mantine' src/domain src/store src/persistence` — must return zero matches. (Spec §Domain layer stays pure)
+- [x] 3.8 Final type-check: `npx tsc --noEmit -p tsconfig.app.json` must exit 0. (Spec §Type-check passes after migration)
+- [x] 3.9 Final regression: `pnpm test` — all suites green. (Spec §Persistence and store are untouched)
