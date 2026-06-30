@@ -1,4 +1,4 @@
-/* CSS plano y mínimo: la UI es para validar lógica, no para verse linda todavía. */
+/* Base resets — Mantine owns element styling; keep only box-sizing and font anchors. */
 :root {
   font-family: system-ui, sans-serif;
   line-height: 1.5;
@@ -9,57 +9,7 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
-  padding: 1.5rem;
-  background: #f6f6f6;
-}
-
-h1,
-h2,
-h3 {
-  margin: 0.5rem 0;
-}
-
-button {
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;
-  border: 1px solid #999;
-  border-radius: 4px;
-  background: #fff;
-}
-
-button:hover {
-  background: #eee;
-}
-
-input,
-select,
-textarea {
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  font: inherit;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-top: 0.5rem;
-  background: #fff;
-}
-
-th,
-td {
-  border: 1px solid #ddd;
-  padding: 0.35rem 0.5rem;
-  text-align: left;
-  font-size: 0.9rem;
-}
-
-th {
-  background: #f0f0f0;
-}
+/* Semantic classes: retained until each owning component migrates to Mantine (Phases 2–3). */
 
 .panel {
   background: #fff;
