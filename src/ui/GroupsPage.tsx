@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button, Group, NumberInput, Paper, Stack, TextInput, Title } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
 import { CategoryPanel } from './CategoryPanel'
 
@@ -13,26 +14,27 @@ export function GroupsPage() {
   if (!current) return null
 
   return (
-    <>
-      <div className="panel">
-        <h2>Categorías</h2>
-        <div className="row">
-          <input
+    <Stack gap="md">
+      <Paper withBorder p="md">
+        <Title order={2} mb="xs">
+          Categorías
+        </Title>
+        <Group gap="sm" wrap="wrap">
+          <TextInput
             placeholder="Nombre de categoría (ej: Núcleo)"
             value={catName}
             onChange={(e) => setCatName(e.target.value)}
           />
-          <label>
-            Grupos:{' '}
-            <input
-              type="number"
-              min={1}
-              style={{ width: '4rem' }}
-              value={numGroups}
-              onChange={(e) => setNumGroups(Math.max(1, Number(e.target.value) || 1))}
-            />
-          </label>
-          <button
+          <NumberInput
+            label="Grupos:"
+            min={1}
+            style={{ width: '4rem' }}
+            value={numGroups}
+            onChange={(val) =>
+              setNumGroups(Math.max(1, typeof val === 'number' ? val || 1 : 1))
+            }
+          />
+          <Button
             disabled={!catName.trim()}
             onClick={() => {
               addCategory(catName.trim(), numGroups)
@@ -41,13 +43,13 @@ export function GroupsPage() {
             }}
           >
             Agregar categoría
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Group>
+      </Paper>
 
       {current.categories.map((category) => (
         <CategoryPanel key={category.id} category={category} />
       ))}
-    </>
+    </Stack>
   )
 }
