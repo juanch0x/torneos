@@ -1,0 +1,40 @@
+project: torneos
+artifact_store: hybrid
+strict_tdd: true
+tdd_scope: "domain and store layers only (src/domain/, src/store/); UI/router wiring verified manually"
+initialized: "2026-06-30"
+
+context:
+  stack: "Vite 6 + React 19 + TypeScript strict + Zustand 5 + Mantine 9 + TanStack Router"
+  package_manager: pnpm
+  architecture: "local-first SPA, strict layers: domain / persistence / store / router / ui"
+  domain_rule: "src/domain/ must stay pure — zero imports of persistence, store, or React"
+
+testing:
+  runner: vitest
+  runner_version: "^3.0.0"
+  command: "pnpm test"
+  watch_command: "pnpm test:watch"
+  type_check_command: "npx tsc --noEmit -p tsconfig.app.json"
+  type_check_note: >
+    pnpm test uses esbuild which strips types without checking them.
+    Green tests do NOT mean the code compiles. Always type-check separately
+    with tsconfig.app.json — plain tsc --noEmit uses base tsconfig which
+    EXCLUDES src/ files.
+  layers:
+    unit: true
+    unit_tool: vitest
+    integration: false
+    e2e: false
+  coverage: false
+  linter: false
+  formatter: false
+
+phases:
+  proposal: { model: opus }
+  spec:     { model: sonnet }
+  design:   { model: opus }
+  tasks:    { model: sonnet }
+  apply:    { model: sonnet }
+  verify:   { model: sonnet }
+  archive:  { model: haiku }

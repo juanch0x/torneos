@@ -87,6 +87,19 @@ export interface BracketSlot {
   nextSlotId?: ID // a qué slot avanza el ganador (opcional, manual)
 }
 
+// Per-pair standing in a round-robin group leaderboard.
+// Produced by computeGroupStandings in standings.ts (pure, no store/react deps).
+export interface Standing {
+  pairId: ID
+  played: number
+  won: number
+  lost: number         // strict losses; tied scores count as neither won nor lost
+  scoredFor: number
+  scoredAgainst: number
+  pointDiff: number    // scoredFor - scoredAgainst
+  rank: number         // standard-competition ranking (1,2,2,4 — not 1,2,2,3)
+}
+
 // Metadata liviana para la pantalla de lista (índice)
 export interface TournamentMeta {
   id: ID
