@@ -43,7 +43,7 @@ const resultsRoute = createRoute({
   path: 'results',
   component: ResultsPage,
   validateSearch: (search: Record<string, unknown>) => ({
-    groupId: typeof search.groupId === 'string' ? search.groupId : undefined,
+    categoryId: typeof search.categoryId === 'string' ? search.categoryId : undefined,
   }),
 })
 

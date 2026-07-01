@@ -32,7 +32,7 @@ export function TournamentLayout() {
     } else if (value === 'fixture') {
       void navigate({ to: '/tournaments/$id/fixture', params: { id } })
     } else if (value === 'results') {
-      void navigate({ to: '/tournaments/$id/results', params: { id }, search: { groupId: undefined } })
+      void navigate({ to: '/tournaments/$id/results', params: { id }, search: { categoryId: undefined } })
     }
   }
 

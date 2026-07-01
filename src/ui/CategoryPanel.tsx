@@ -16,8 +16,10 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { useParams } from '@tanstack/react-router'
 import type { Category, Pair } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
+import { RouterLink } from './RouterLink'
 
 function pairLabel(pair: Pair): string {
   return `${pair.player1} / ${pair.player2}`
@@ -31,6 +33,7 @@ function groupOf(category: Category, pairId: string): string | undefined {
 const columnHelper = createColumnHelper<Pair>()
 
 export function CategoryPanel({ category }: { category: Category }) {
+  const { id } = useParams({ from: '/tournaments/$id' })
   const addPair = useTournamentStore((s) => s.addPair)
   const setCategoryGroupCount = useTournamentStore((s) => s.setCategoryGroupCount)
   const shuffleGroups = useTournamentStore((s) => s.shuffleGroups)
@@ -102,6 +105,15 @@ export function CategoryPanel({ category }: { category: Category }) {
         <Text c="dimmed" size="sm">
           ({category.groups.length} grupos)
         </Text>
+        <RouterLink
+          to="/tournaments/$id/results"
+          params={{ id }}
+          search={{ categoryId: category.id }}
+          ml="auto"
+          size="sm"
+        >
+          Ver resultados →
+        </RouterLink>
       </Group>
 
       <Group gap="sm" wrap="wrap" mb="xs">

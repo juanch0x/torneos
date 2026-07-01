@@ -1,90 +1,72 @@
-import { Anchor, type AnchorProps, Group, Stack, Text, Title } from '@mantine/core'
-import { createLink, useSearch } from '@tanstack/react-router'
-import { forwardRef } from 'react'
+import { Stack, Text, Title } from '@mantine/core'
+import { useSearch } from '@tanstack/react-router'
 import type { Category } from '../domain/types'
-
-/** Mantine Anchor wired to the typed TanStack router Link (preserves route param/search typing). */
-const MantineAnchorLink = forwardRef<HTMLAnchorElement, AnchorProps>((props, ref) => (
-  <Anchor ref={ref} {...props} />
-))
-const RouterLink = createLink(MantineAnchorLink)
 import { useTournamentStore } from '../store/tournamentStore'
 import { GroupResultsBlock } from './GroupResultsBlock'
+import { RouterLink } from './RouterLink'
 
-/** Finds the category that owns the given groupId. O(n) scan — groups have tournament-wide unique UUIDs. */
-export function findCategoryByGroupId(
-  categories: Category[],
-  groupId: string,
-): Category | undefined {
-  return categories.find((c) => c.groups.some((g) => g.id === groupId))
+interface CategorySectionProps {
+  category: Category
+}
+
+/** Renders a full category: header + each group's standings and matches. */
+function CategorySection({ category }: CategorySectionProps) {
+  return (
+    <div>
+      <Title order={3} mb="xs" style={{ borderLeft: `6px solid ${category.color}`, paddingLeft: '0.5rem' }}>
+        {category.name}
+      </Title>
+      {category.groups.map((group) => (
+        <div key={group.id}>
+          <Title order={5} mt="sm" mb="xs">
+            {group.name}
+          </Title>
+          {category.matches.length === 0 ? (
+            <Text c="dimmed" size="sm">
+              Sin partidos generados todavía. Asigná parejas y generá el fixture.
+            </Text>
+          ) : (
+            <GroupResultsBlock category={category} group={group} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export function ResultsPage() {
   const current = useTournamentStore((s) => s.current)
-  const { groupId } = useSearch({ from: '/tournaments/$id/results' })
+  const { categoryId } = useSearch({ from: '/tournaments/$id/results' })
 
   // TournamentLayout already guarantees current is loaded before rendering children
   if (!current) return null
 
-  // Single-group mode: valid, known groupId
-  if (groupId) {
-    const category = findCategoryByGroupId(current.categories, groupId)
+  // Single-category mode: valid, known categoryId
+  if (categoryId) {
+    const category = current.categories.find((c) => c.id === categoryId)
     if (category) {
-      const group = category.groups.find((g) => g.id === groupId)!
       return (
         <Stack gap="md">
           <RouterLink
             to="/tournaments/$id/results"
             params={{ id: current.id }}
-            search={{ groupId: undefined }}
+            search={{ categoryId: undefined }}
             size="sm"
           >
-            ← Ver todos los grupos
+            ← Ver todas las categorías
           </RouterLink>
-          <GroupResultsBlock category={category} group={group} />
+          <CategorySection category={category} />
         </Stack>
       )
     }
-    // Unknown groupId — fall through to all-groups view
+    // Unknown categoryId — fall through to overview
   }
 
-  // All-groups mode: no groupId param, or unknown/malformed groupId
+  // Overview mode: no categoryId param, or unknown/malformed categoryId
   return (
     <Stack gap="md">
       {current.categories.map((category) => (
-        <div key={category.id}>
-          <Title order={3} mb="xs" style={{ borderLeft: `6px solid ${category.color}`, paddingLeft: '0.5rem' }}>
-            {category.name}
-          </Title>
-          {category.groups.length === 0 ? (
-            <Text c="dimmed" size="sm">
-              Sin grupos configurados todavía.
-            </Text>
-          ) : (
-            category.groups.map((group) => (
-              <div key={group.id}>
-                <Group justify="space-between" align="center" mt="sm" mb="xs">
-                  <Title order={5}>{group.name}</Title>
-                  <RouterLink
-                    to="/tournaments/$id/results"
-                    params={{ id: current.id }}
-                    search={{ groupId: group.id }}
-                    size="sm"
-                  >
-                    Ver solo este grupo →
-                  </RouterLink>
-                </Group>
-                {category.matches.length === 0 ? (
-                  <Text c="dimmed" size="sm">
-                    Sin partidos generados todavía. Asigná parejas y generá el fixture.
-                  </Text>
-                ) : (
-                  <GroupResultsBlock category={category} group={group} />
-                )}
-              </div>
-            ))
-          )}
-        </div>
+        <CategorySection key={category.id} category={category} />
       ))}
       {current.categories.length === 0 && (
         <Text c="dimmed" size="sm">
