@@ -1,6 +1,13 @@
-import { Stack, Text, Title } from '@mantine/core'
-import { useSearch } from '@tanstack/react-router'
+import { Anchor, type AnchorProps, Group, Stack, Text, Title } from '@mantine/core'
+import { createLink, useSearch } from '@tanstack/react-router'
+import { forwardRef } from 'react'
 import type { Category } from '../domain/types'
+
+/** Mantine Anchor wired to the typed TanStack router Link (preserves route param/search typing). */
+const MantineAnchorLink = forwardRef<HTMLAnchorElement, AnchorProps>((props, ref) => (
+  <Anchor ref={ref} {...props} />
+))
+const RouterLink = createLink(MantineAnchorLink)
 import { useTournamentStore } from '../store/tournamentStore'
 import { GroupResultsBlock } from './GroupResultsBlock'
 
@@ -26,6 +33,14 @@ export function ResultsPage() {
       const group = category.groups.find((g) => g.id === groupId)!
       return (
         <Stack gap="md">
+          <RouterLink
+            to="/tournaments/$id/results"
+            params={{ id: current.id }}
+            search={{ groupId: undefined }}
+            size="sm"
+          >
+            ← Ver todos los grupos
+          </RouterLink>
           <GroupResultsBlock category={category} group={group} />
         </Stack>
       )
@@ -46,20 +61,28 @@ export function ResultsPage() {
               Sin grupos configurados todavía.
             </Text>
           ) : (
-            category.groups.map((group) =>
-              category.matches.length === 0 ? (
-                <div key={group.id}>
-                  <Title order={5} mt="sm" mb="xs">
-                    {group.name}
-                  </Title>
+            category.groups.map((group) => (
+              <div key={group.id}>
+                <Group justify="space-between" align="center" mt="sm" mb="xs">
+                  <Title order={5}>{group.name}</Title>
+                  <RouterLink
+                    to="/tournaments/$id/results"
+                    params={{ id: current.id }}
+                    search={{ groupId: group.id }}
+                    size="sm"
+                  >
+                    Ver solo este grupo →
+                  </RouterLink>
+                </Group>
+                {category.matches.length === 0 ? (
                   <Text c="dimmed" size="sm">
                     Sin partidos generados todavía. Asigná parejas y generá el fixture.
                   </Text>
-                </div>
-              ) : (
-                <GroupResultsBlock key={group.id} category={category} group={group} />
-              ),
-            )
+                ) : (
+                  <GroupResultsBlock category={category} group={group} />
+                )}
+              </div>
+            ))
           )}
         </div>
       ))}
