@@ -1,0 +1,19 @@
+change: adopt-mantine
+artifact_store: hybrid
+status: archived
+engram_topic_prefix: sdd/adopt-mantine
+archived_on: 2026-07-01
+phases:
+  explore:  { status: done, note: "UI library exploration — decision: Mantine", engram: sdd/ui-design/explore, engram_obs_id: 328 }
+  proposal: { status: done, engram: sdd/adopt-mantine/proposal, file: proposal.md, engram_obs_id: 332 }
+  spec:     { status: done, file: spec.md, engram: sdd/adopt-mantine/spec, engram_obs_id: 333 }
+  design:   { status: done, engram: sdd/adopt-mantine/design, file: design.md, engram_obs_id: 334 }
+  tasks:    { status: done, file: tasks.md, engram: sdd/adopt-mantine/tasks, engram_obs_id: 337 }
+  apply:    { status: done, engram: sdd/adopt-mantine/apply-progress, engram_obs_id: 338 }
+  verify:   { status: done, file: verify-report.md, engram: sdd/adopt-mantine/verify-report, engram_obs_id: 342 }
+  archive:
+    status: done
+    archived_to: openspec/changes/archive/2026-07-01-adopt-mantine/
+    main_spec_promoted_to: openspec/specs/ui-library/spec.md
+    archive_report: openspec/changes/archive/2026-07-01-adopt-mantine/archive-report.md
+    engram_archive_report: sdd/adopt-mantine/archive-report

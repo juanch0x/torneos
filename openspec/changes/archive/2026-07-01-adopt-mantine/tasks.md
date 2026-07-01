@@ -43,7 +43,7 @@ Chain strategy: pending
 - [x] 2.3 Migrate `src/router/NotFound.tsx` to Mantine `Alert` + `Button`.
 - [x] 2.4 Type-check gate: `npx tsc --noEmit -p tsconfig.app.json` must exit 0.
 - [x] 2.5 Regression: `pnpm test` — existing Vitest suite must stay green (no domain/store logic touched).
-- [ ] 2.6 Manual pilot gate: visit `/`; confirm Mantine render, no `.panel`/`.row` classes in DOM, no horizontal overflow at ≤768px. (Spec §Pilot gate passes)
+- [x] 2.6 Manual pilot gate: visit `/`; confirm Mantine render, no `.panel`/`.row` classes in DOM, no horizontal overflow at ≤768px. (Spec §Pilot gate passes)
 
 ## Phase 3 — Rest
 

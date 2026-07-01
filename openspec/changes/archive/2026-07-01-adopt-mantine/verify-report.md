@@ -70,7 +70,7 @@ Result: **PASS** — neither banned package is present.
 | Phase | Tasks Complete | Notes |
 |-------|---------------|-------|
 | Phase 1 — Foundation | 7/7 [x] | All automated |
-| Phase 2 — Pilot | 5/5 automated [x], 1 manual [ ] | Task 2.6 is a manual browser gate |
+| Phase 2 — Pilot | 5/5 automated [x], 1 manual [x] | Task 2.6 manual browser gate confirmed |
 | Phase 3 — Rest | 9/9 [x] | All automated |
 
 **Task 2.6 (manual pilot gate)**: User confirmed the running app renders correctly on all pages (list → groups → fixture). Manual gate satisfied by user confirmation.

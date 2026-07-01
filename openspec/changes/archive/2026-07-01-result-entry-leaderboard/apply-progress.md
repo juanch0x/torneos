@@ -94,7 +94,7 @@
 
 ### Slice B
 - `StandingsTable` receives a `pairs` prop (in addition to `group` and `matches`) so it can resolve pair names without accessing the store. The design showed only `group` and `matches` in the usage, but the component needs pair names for display — this minimal addition is consistent with the no-store-reads constraint.
-- Sort algorithm deviates from design note "zero-played fall to bottom naturally". Added `played > 0` as a primary boolean sort key before `won DESC` to enforce the spec's coverage rule ("pairs with zero played matches sort below pairs with at least one played match") in the case where a played pair has negative pointDiff (-X) which would otherwise rank below a zero-played pair (pointDiff=0). The spec is authoritative over the design note.
+- Sort algorithm deviates from design note "zero-played fall to bottom naturally". Added `played > 0` as a primary boolean sort key before `won DESC` — spec-required, design note was inaccurate.
 
 ---
 

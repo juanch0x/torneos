@@ -1,11 +1,11 @@
-# Specification — adopt-mantine
+# Specification — UI Library (Mantine)
 
-> SDD phase: **spec**. Artifact store: **hybrid** (this file + Engram topic `sdd/adopt-mantine/spec`).
-> Status: spec complete. Next: `sdd-design` and/or `sdd-tasks`.
+> Promoted from change `adopt-mantine` on 2026-07-01.
+> This is the living spec for the Mantine UI component library adoption in the torneos app.
 
 ## Purpose
 
-Define what MUST be true after `adopt-mantine` is applied: Mantine is the single UI component library for the torneos cockpit, every page is restyled under it, a consistent responsive shell wraps all routes, and all architecture invariants continue to hold.
+Define what MUST be true after Mantine is adopted: Mantine is the single UI component library for the torneos cockpit, every page is restyled under it, a consistent responsive shell wraps all routes, and all architecture invariants continue to hold.
 
 ---
 

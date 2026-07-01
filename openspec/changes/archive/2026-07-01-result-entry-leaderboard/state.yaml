@@ -1,0 +1,21 @@
+change: result-entry-leaderboard
+artifact_store: hybrid
+status: archived
+engram_topic_prefix: sdd/result-entry-leaderboard
+archived_on: 2026-07-01
+phases:
+  explore:  { status: done, note: "Exploration: Mobile-first Result Entry + Automatic Leaderboard", engram: sdd/result-entry-leaderboard/explore, engram_obs_id: 354 }
+  proposal: { status: done, engram: sdd/result-entry-leaderboard/proposal, file: proposal.md, engram_obs_id: 357 }
+  spec:     { status: done, file: spec.md, engram: sdd/result-entry-leaderboard/spec, engram_obs_id: 359 }
+  design:   { status: done, engram: sdd/result-entry-leaderboard/design, file: design.md, engram_obs_id: 358 }
+  tasks:    { status: done, file: tasks.md, engram: sdd/result-entry-leaderboard/tasks, engram_obs_id: 360 }
+  apply:    { status: done, file: apply-progress.md, engram: sdd/result-entry-leaderboard/apply-progress, engram_obs_id: 362 }
+  verify:   { status: done, note: "Automated gates green (58 tests, tsc 0); manual gates pending per apply-progress. Orchestrator confirmed ready for archive." }
+  archive:
+    status: done
+    archived_to: openspec/changes/archive/2026-07-01-result-entry-leaderboard/
+    main_specs_promoted_to:
+      - openspec/specs/result-entry/spec.md
+      - openspec/specs/standings/spec.md
+    archive_report: openspec/changes/archive/2026-07-01-result-entry-leaderboard/archive-report.md
+    engram_archive_report: sdd/result-entry-leaderboard/archive-report
