@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Reusable bottom-sheet for entering, editing, and clearing a single match score. Centralizes result-entry UX across MatchTable (groups view) and SchedulePanel (fixture/court view).
+Reusable bottom-sheet for entering, editing, and clearing a single match score. Centralizes result-entry UX across MatchTable (results view) and SchedulePanel (fixture/court view).
 
 ---
 
@@ -16,7 +16,7 @@ Reusable bottom-sheet for entering, editing, and clearing a single match score. 
 
 `ResultDrawer` MUST hold both scores in local component state, initialized from `match.result` on open, and commit them atomically via `setMatchResult` on Save.
 
-**Entry points:** the drawer MUST be reachable from the results view (MatchTable) AND the fixture/court view (SchedulePanel).
+**Entry points:** the drawer MUST be reachable from the results view (MatchTable) AND the fixture/court view (SchedulePanel). It MUST NOT be present in the groups setup view.
 
 **Validation:** Save MUST be disabled unless both fields contain integers ≥ 0 and both are filled.
 
@@ -52,9 +52,10 @@ Reusable bottom-sheet for entering, editing, and clearing a single match score. 
 - WHEN Save is attempted
 - THEN Save remains disabled and no result is committed
 
-#### Scenario: Reachable from both views
+#### Scenario: Reachable from results and fixture, not groups
 
-- GIVEN an organizer is on the results view (MatchTable)
+- GIVEN an organizer is on the results view
 - WHEN they trigger result entry for a match
 - THEN ResultDrawer opens for that match
 - AND the same behavior applies when triggered from the fixture view (SchedulePanel)
+- AND no result-entry trigger exists on the groups setup view

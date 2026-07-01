@@ -15,10 +15,11 @@ The prior ternary (`current ? <TournamentView /> : <TournamentList />`) is repla
 
 ### Requirement: Route Tree
 
-The application MUST expose three URL-addressable routes:
+The application MUST expose four URL-addressable routes:
 - `/` → tournament list (`TournamentList`)
-- `/tournaments/:id/groups` → groups panel
+- `/tournaments/:id/groups` → groups panel (ARMADO — setup only)
 - `/tournaments/:id/fixture` → fixture panel
+- `/tournaments/:id/results` → results panel (SEGUIMIENTO — standings + matches)
 
 `/tournaments/:id` MUST be a layout route owning tournament load, the not-found guard, and the common header. Child routes MUST inherit the loaded tournament without re-fetching.
 
@@ -27,6 +28,12 @@ The application MUST expose three URL-addressable routes:
 - GIVEN the user is on `/`
 - WHEN the user opens a tournament
 - THEN the URL changes to `/tournaments/:id/groups` and the groups panel renders
+
+#### Scenario: Switch to results tab
+
+- GIVEN the user is on `/tournaments/:id/groups`
+- WHEN the user selects the "Resultados" tab
+- THEN the URL changes to `/tournaments/:id/results` and the results panel renders
 
 #### Scenario: Switch to fixture tab
 
@@ -63,6 +70,24 @@ The application MUST load and render any valid deep URL without requiring prior 
 - GIVEN `public/_redirects` contains `/* /index.html 200`
 - WHEN Netlify receives a request for `/tournaments/:id/groups`
 - THEN the server returns `index.html` and the router resolves the correct route client-side
+
+---
+
+### Requirement: Results Tab in TournamentLayout
+
+`TournamentLayout` MUST expose a third `Tabs.Tab` labelled "Resultados" with route slug `results`. The tab MUST always be accessible (never hidden or disabled). The active tab MUST reflect the current URL segment.
+
+#### Scenario: Third tab always visible
+
+- GIVEN the user is on any `/tournaments/:id/*` sub-route
+- WHEN `TournamentLayout` renders
+- THEN three tabs are visible: groups, fixture, and "Resultados"
+
+#### Scenario: Active tab reflects URL
+
+- GIVEN the URL is `/tournaments/:id/results`
+- WHEN `TournamentLayout` renders
+- THEN the "Resultados" tab appears active
 
 ---
 

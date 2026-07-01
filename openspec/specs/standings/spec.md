@@ -69,21 +69,27 @@ The function MUST NOT import from the store, persistence layer, or React.
 
 ### Requirement: StandingsTable Display
 
-A `StandingsTable` component MUST render the computed standings as a read-only table in the groups view, displaying pair names (via lookup), match statistics (played, won, lost, point differential), and rank.
+A `StandingsTable` component MUST render the computed standings as a read-only table on the Results page (`/tournaments/:id/results`), displaying pair names (via lookup), match statistics (played, won, lost, point differential), and rank.
 
-**Placement:** `StandingsTable` MUST appear below the pairs assignment block in `CategoryPanel` for each group.
+**Placement:** `StandingsTable` MUST appear on the Results page for each group, NOT in `CategoryPanel`. `CategoryPanel` MUST NOT render `StandingsTable` after this change.
 
 **Computation:** the component MUST call `computeGroupStandings(group, matches)` directly as a pure selector; it MUST NOT access the store or cache the result.
 
-#### Scenario: Leaderboard visible per group
+#### Scenario: Leaderboard visible on results route
 
-- GIVEN the user navigates to the groups view
+- GIVEN the user navigates to `/tournaments/:id/results`
+- WHEN `ResultsPage` renders
+- THEN `StandingsTable` appears for each group under its category header
+- AND standings reflect the current match results
+
+#### Scenario: Leaderboard NOT in groups setup
+
+- GIVEN the user navigates to `/tournaments/:id/groups`
 - WHEN `CategoryPanel` renders
-- THEN `StandingsTable` appears below each group's pair assignment block
-- AND the standings reflect the current match results
+- THEN no `StandingsTable` and no `MatchTable` appear in the output
 
 #### Scenario: Live updates on result entry
 
-- GIVEN the user enters a match result via `ResultDrawer`
+- GIVEN the user enters a match result via `ResultDrawer` on `/results`
 - WHEN the result is persisted to the store
-- THEN `StandingsTable` re-computes standings and the ranks update immediately
+- THEN `StandingsTable` re-computes and ranks update immediately
