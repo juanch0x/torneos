@@ -20,17 +20,23 @@ export function TournamentLayout() {
   if (status === 'idle' || status === 'loading') return <Loader size="sm" m="md" />
   if (status === 'not-found' || !current) return <NotFound />
 
-  const activeTab = location.pathname.endsWith('/fixture') ? 'fixture' : 'groups'
+  const activeTab = location.pathname.endsWith('/results')
+    ? 'results'
+    : location.pathname.endsWith('/fixture')
+      ? 'fixture'
+      : 'groups'
 
   const handleTabChange = (value: string | null) => {
     if (value === 'groups') {
       void navigate({ to: '/tournaments/$id/groups', params: { id } })
     } else if (value === 'fixture') {
       void navigate({ to: '/tournaments/$id/fixture', params: { id } })
+    } else if (value === 'results') {
+      void navigate({ to: '/tournaments/$id/results', params: { id }, search: { categoryId: undefined } })
     }
   }
 
-  const sectionLabel = activeTab === 'groups' ? 'Groups' : 'Fixture'
+  const sectionLabel = activeTab === 'results' ? 'Results' : activeTab === 'fixture' ? 'Fixture' : 'Groups'
 
   return (
     <Stack gap="xs">
@@ -51,6 +57,7 @@ export function TournamentLayout() {
         <Tabs.List>
           <Tabs.Tab value="groups">Groups</Tabs.Tab>
           <Tabs.Tab value="fixture">Fixture</Tabs.Tab>
+          <Tabs.Tab value="results">Resultados</Tabs.Tab>
         </Tabs.List>
       </Tabs>
 

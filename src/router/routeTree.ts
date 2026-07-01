@@ -2,6 +2,7 @@ import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { TournamentList } from '../ui/TournamentList'
 import { GroupsPage } from '../ui/GroupsPage'
 import { FixturePage } from '../ui/FixturePage'
+import { ResultsPage } from '../ui/ResultsPage'
 import { RootLayout } from './RootLayout'
 import { TournamentLayout } from './TournamentLayout'
 import { NotFound } from './NotFound'
@@ -37,7 +38,16 @@ const fixtureRoute = createRoute({
   component: FixturePage,
 })
 
+const resultsRoute = createRoute({
+  getParentRoute: () => tournamentRoute,
+  path: 'results',
+  component: ResultsPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    categoryId: typeof search.categoryId === 'string' ? search.categoryId : undefined,
+  }),
+})
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
-  tournamentRoute.addChildren([groupsRoute, fixtureRoute]),
+  tournamentRoute.addChildren([groupsRoute, fixtureRoute, resultsRoute]),
 ])

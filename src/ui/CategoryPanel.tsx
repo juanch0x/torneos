@@ -16,10 +16,10 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { useParams } from '@tanstack/react-router'
 import type { Category, Pair } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
-import { MatchTable } from './MatchTable'
-import { StandingsTable } from './StandingsTable'
+import { RouterLink } from './RouterLink'
 
 function pairLabel(pair: Pair): string {
   return `${pair.player1} / ${pair.player2}`
@@ -33,6 +33,7 @@ function groupOf(category: Category, pairId: string): string | undefined {
 const columnHelper = createColumnHelper<Pair>()
 
 export function CategoryPanel({ category }: { category: Category }) {
+  const { id } = useParams({ from: '/tournaments/$id' })
   const addPair = useTournamentStore((s) => s.addPair)
   const setCategoryGroupCount = useTournamentStore((s) => s.setCategoryGroupCount)
   const shuffleGroups = useTournamentStore((s) => s.shuffleGroups)
@@ -42,7 +43,6 @@ export function CategoryPanel({ category }: { category: Category }) {
 
   const [p1, setP1] = useState('')
   const [p2, setP2] = useState('')
-  const [showMatches, setShowMatches] = useState(false)
 
   const columns = useMemo(
     () => [
@@ -105,6 +105,15 @@ export function CategoryPanel({ category }: { category: Category }) {
         <Text c="dimmed" size="sm">
           ({category.groups.length} grupos)
         </Text>
+        <RouterLink
+          to="/tournaments/$id/results"
+          params={{ id }}
+          search={{ categoryId: category.id }}
+          ml="auto"
+          size="sm"
+        >
+          Ver resultados →
+        </RouterLink>
       </Group>
 
       <Group gap="sm" wrap="wrap" mb="xs">
@@ -191,24 +200,6 @@ export function CategoryPanel({ category }: { category: Category }) {
         </Text>
       </Group>
 
-      {/* Leaderboard — one StandingsTable per group, below pairs assignment */}
-      {category.groups.length > 0 && category.matches.length > 0 && (
-        <>
-          {category.groups.map((group) => (
-            <StandingsTable
-              key={group.id}
-              group={group}
-              matches={category.matches}
-              pairs={category.pairs}
-            />
-          ))}
-        </>
-      )}
-
-      <Button variant="subtle" onClick={() => setShowMatches((v) => !v)} mt="sm">
-        {showMatches ? '▾' : '▸'} Partidos ({category.matches.length})
-      </Button>
-      {showMatches && <MatchTable category={category} />}
     </Paper>
   )
 }
