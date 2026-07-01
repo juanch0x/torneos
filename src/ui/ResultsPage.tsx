@@ -16,20 +16,19 @@ function CategorySection({ category }: CategorySectionProps) {
       <Title order={3} mb="xs" style={{ borderLeft: `6px solid ${category.color}`, paddingLeft: '0.5rem' }}>
         {category.name}
       </Title>
-      {category.groups.map((group) => (
-        <div key={group.id}>
-          <Title order={5} mt="sm" mb="xs">
-            {group.name}
-          </Title>
-          {category.matches.length === 0 ? (
-            <Text c="dimmed" size="sm">
-              Sin partidos generados todavía. Asigná parejas y generá el fixture.
-            </Text>
-          ) : (
-            <GroupResultsBlock category={category} group={group} />
-          )}
-        </div>
-      ))}
+      {category.groups.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          Sin grupos configurados todavía.
+        </Text>
+      ) : category.matches.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          Sin partidos generados todavía. Asigná parejas y generá el fixture.
+        </Text>
+      ) : (
+        category.groups.map((group) => (
+          <GroupResultsBlock key={group.id} category={category} group={group} />
+        ))
+      )}
     </div>
   )
 }
