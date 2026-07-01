@@ -19,19 +19,25 @@ function buildLabelLookup(category: Category): (id: ID) => string {
 
 const columnHelper = createColumnHelper<Match>()
 
-export function MatchTable({ category }: { category: Category }) {
+/** Pure helper: filters matches to a given group, or returns all when groupId is absent. */
+export function filterMatchesByGroup(matches: Match[], groupId?: ID): Match[] {
+  return groupId ? matches.filter((m) => m.groupId === groupId) : matches
+}
+
+export function MatchTable({ category, groupId }: { category: Category; groupId?: ID }) {
   const setMatchResult = useTournamentStore((s) => s.setMatchResult)
   const [openMatch, setOpenMatch] = useState<Match | null>(null)
 
   const label = useMemo(() => buildLabelLookup(category), [category])
 
   // Stable read order: by group, then by round. Never reorders after result entry.
+  // When groupId is provided, only matches for that group are shown.
   const data = useMemo(
     () =>
-      [...category.matches].sort(
+      filterMatchesByGroup(category.matches, groupId).slice().sort(
         (a, b) => a.groupId.localeCompare(b.groupId) || a.round - b.round,
       ),
-    [category.matches],
+    [category.matches, groupId],
   )
 
   const columns = useMemo(
