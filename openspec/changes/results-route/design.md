@@ -39,44 +39,50 @@ removed, and `/fixture` uses `SchedulePanel`, not `MatchTable`. No shared consum
 **Rationale**: Zod is not a dependency; one optional string does not justify it. Establishes
 the codebase's inline typed-search pattern.
 
-### Decision: `categoryId` resolution via local O(n) scan
+### Decision: Filter by `categoryId`, not `groupId` (pivot)
 
-**Choice**: Local helper `findCategoryByGroupId(categories, groupId)` in `ResultsPage.tsx`.
-**Alternatives considered**: Compound `categoryId+groupId` URL param; a domain selector.
-**Rationale**: `Group.id` is `crypto.randomUUID()` — tournament-wide unique — so one param
-suffices. It is a UI concern, not domain (domain stays pure); a one-liner scan does not
-warrant a shared module.
+**Choice**: `?categoryId=<uuid>` in the URL; the category is looked up with a trivial
+`current.categories.find(c => c.id === categoryId)`. No local helper needed — it's a one-liner at the call site.
+**Alternatives considered**: Original design used `?groupId=<uuid>` with a `findCategoryByGroupId` scan. That was dropped to simplify the UX — the group is always a sub-section, never a navigation target by itself.
+**Rationale**: `Category.id` is `crypto.randomUUID()` (`factories.ts:24`) — tournament-wide unique. One param suffices. Filtering by category (not group) means the back-link from a category's /groups header lands on a full category view, which is the natural granularity for a user switching between ARMADO and SEGUIMIENTO.
 
 ## Data Flow
 
 ```
-URL (?groupId?) ──validateSearch──> ResultsPage
-                                        │ reads store.current (like GroupsPage)
-              ┌─── groupId absent/unknown ──> loop categories → GroupResultsBlock
-              └─── groupId valid ──> findCategoryByGroupId → one GroupResultsBlock
+URL (?categoryId?) ──validateSearch──> ResultsPage
+                                           │ reads store.current (like GroupsPage)
+              ┌─── categoryId absent/unknown ──> loop categories → CategorySection → GroupResultsBlock(s)
+              └─── categoryId valid ──> categories.find(c => c.id === categoryId) → CategorySection
 
+CategorySection → for each group → GroupResultsBlock
 GroupResultsBlock → StandingsTable (read-only)
                  → MatchTable(groupId) → ResultDrawer → setMatchResult(categoryId,…)
+
+CategoryPanel (on /groups) → "Ver resultados →" RouterLink → /results?categoryId=<uuid>
 ```
 
 ## File Changes
 
 | File | Action | Description |
 |------|--------|-------------|
-| `src/ui/ResultsPage.tsx` | Create | Reads `current`; renders all-groups (category-grouped) or single-group; empty state; `findCategoryByGroupId` helper. |
+| `src/ui/RouterLink.tsx` | Create | Shared `RouterLink = createLink(MantineAnchorLink)` using `AnchorProps` — typed TanStack router link backed by Mantine Anchor. |
+| `src/ui/ResultsPage.tsx` | Create | Reads `current`; overview (all categories, each with all groups) or single-category mode; local `CategorySection` component; empty state; no `findCategoryByGroupId` helper. |
 | `src/ui/GroupResultsBlock.tsx` | Create | `StandingsTable` + filtered `MatchTable` for one group. |
 | `src/ui/MatchTable.tsx` | Modify | Add `groupId?: ID`; filter `data` memo; add to dep array. |
-| `src/router/routeTree.ts` | Modify | Add `resultsRoute` with `validateSearch`; add to `addChildren`. |
-| `src/router/TournamentLayout.tsx` | Modify | Third "Resultados" tab; `activeTab`/`handleTabChange`/`sectionLabel` branch for `/results`. |
-| `src/ui/CategoryPanel.tsx` | Modify | Remove `StandingsTable`/`MatchTable`/`showMatches` + their imports (lines 21–22, 45, 195–211). Pure setup. No prop-signature change. |
+| `src/router/routeTree.ts` | Modify | Add `resultsRoute` with `validateSearch` (`categoryId`); add to `addChildren`. |
+| `src/router/TournamentLayout.tsx` | Modify | Third "Resultados" tab; `activeTab`/`handleTabChange`/`sectionLabel` branch for `/results`; navigate with `search: { categoryId: undefined }`. |
+| `src/ui/CategoryPanel.tsx` | Modify | Remove `StandingsTable`/`MatchTable`/`showMatches`. Add "Ver resultados →" `RouterLink` in category header. |
 
 ## Interfaces / Contracts
 
 ```ts
+// RouterLink.tsx — shared typed link
+const RouterLink = createLink(forwardRef<HTMLAnchorElement, AnchorProps>((props, ref) => <Anchor ref={ref} {...props} />))
+
 // MatchTable — before / after
 function MatchTable({ category }: { category: Category })
 function MatchTable({ category, groupId }: { category: Category; groupId?: ID })
-//   data memo: (groupId ? category.matches.filter(m => m.groupId === groupId) : category.matches).sort(...)
+//   data memo: filterMatchesByGroup(category.matches, groupId).sort(...)
 
 // routeTree.ts — new route
 const resultsRoute = createRoute({
@@ -84,14 +90,18 @@ const resultsRoute = createRoute({
   path: 'results',
   component: ResultsPage,
   validateSearch: (search: Record<string, unknown>) => ({
-    groupId: typeof search.groupId === 'string' ? search.groupId : undefined,
+    categoryId: typeof search.categoryId === 'string' ? search.categoryId : undefined,
   }),
 })
 // addChildren([groupsRoute, fixtureRoute, resultsRoute])
 
-// ResultsPage — category resolution
-function findCategoryByGroupId(categories: Category[], groupId: string): Category | undefined
-//   categories.find(c => c.groups.some(g => g.id === groupId))
+// ResultsPage — category lookup (inline, no helper)
+const category = current.categories.find((c) => c.id === categoryId)
+
+// CategoryPanel — results entry link (in category header Group)
+<RouterLink to="/tournaments/$id/results" params={{ id }} search={{ categoryId: category.id }} ml="auto" size="sm">
+  Ver resultados →
+</RouterLink>
 ```
 
 ## TournamentLayout tab (line ~23)
@@ -122,9 +132,9 @@ Domain, `computeGroupStandings`, persistence, `/fixture` result entry (`Schedule
 
 ## Edge Cases
 
-- Unknown/malformed `groupId` → `findCategoryByGroupId` returns `undefined` → fall back to
-  all-groups view (treat as no param).
-- No matches yet → friendly empty state; tab always accessible.
+- Unknown/malformed `categoryId` → `current.categories.find(...)` returns `undefined` → fall back to
+  overview (treat as no param).
+- No matches yet → friendly empty state per group; tab always accessible.
 - Tournament not found → already guarded by `TournamentLayout` (status gate).
 
 ## Open Questions

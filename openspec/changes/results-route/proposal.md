@@ -78,17 +78,19 @@ A third peer route under the `tournaments/$id` layout, alongside `groups` and `f
 It inherits the load effect and existence guard from `TournamentLayout` — no new guard
 logic. A new `ResultsPage` reads `current` from the store exactly like `GroupsPage` does.
 
-Search param: optional `?groupId=<uuid>` via TanStack Router's **inline plain
-`validateSearch`** (~3 lines, full type inference). Graceful fallback when `groupId` is
+Search param: optional `?categoryId=<uuid>` via TanStack Router's **inline plain
+`validateSearch`** (~3 lines, full type inference). Graceful fallback when `categoryId` is
 missing or unknown.
 
 ### 3. Two view modes
 
-- **No param → all groups.** Grouped by category header (e.g. "Núcleo Damas — Grupo A,
-  Grupo B"). Each group renders its `StandingsTable` with that group's matches below.
-- **With `?groupId=<uuid>` → single group.** Only the referenced group's standings +
-  matches. Entry to this focused view is a link next to each group's name in the
-  all-groups view. Unknown `groupId` falls back gracefully (treat as no param).
+- **No param → overview (all categories).** All categories rendered in order; each
+  category shows all its groups with standings + matches below. Entry links from the
+  `/groups` `CategoryPanel` header ("Ver resultados →") land here with `?categoryId=<uuid>`.
+- **With `?categoryId=<uuid>` → single category.** All groups of that category rendered
+  in full. A "← Ver todas las categorías" back link removes the param. Unknown `categoryId`
+  falls back gracefully to the overview (treat as no param). The group is always a
+  sub-section inside a category — it is NOT a URL filter.
 
 ### 4. Result entry relocates here — nothing new
 
@@ -98,11 +100,6 @@ unchanged:
   reads)
 - The store action `setMatchResult(categoryId, matchId, result)`
   (`tournamentStore.ts:260–265`)
-
-The owning `categoryId` is resolved by looking up the group:
-iterate `current.categories` → find the one where
-`category.groups.some(g => g.id === groupId)` (O(n) scan; `groupId` is tournament-wide
-unique, so this is unambiguous).
 
 This is a **relocation, not a third result-entry surface**. `/fixture` keeps its own
 independent `ResultDrawer` (`SchedulePanel.tsx:262–271`) untouched.
@@ -119,7 +116,8 @@ independent `ResultDrawer` (`SchedulePanel.tsx:262–271`) untouched.
 - Third `Tabs.Tab` ("Resultados") + `activeTab`/`handleTabChange` branch for `/results`
   in `TournamentLayout.tsx` (currently `TournamentLayout.tsx:23`).
 - Relocate `MatchTable` + `ResultDrawer`-based result entry into `/results`.
-- **Per-group match filtering** for the single-group view (see Key Technical Decisions).
+- **Per-group match filtering** for each group sub-section inside a category (see Key Technical Decisions).
+- Entry link from `CategoryPanel` header to `/results?categoryId=<uuid>` (one link per category).
 - Friendly empty state when no matches exist yet; tab always accessible.
 
 ### Out of scope (non-goals)
@@ -135,18 +133,19 @@ independent `ResultDrawer` (`SchedulePanel.tsx:262–271`) untouched.
 
 ## Key Technical Decisions
 
-### One UUID param is sufficient — no `categoryId` in the URL
-`Group.id` is generated with `crypto.randomUUID()` (`factories.ts:43–48`), making it
-**globally unique across the whole tournament document**, not just within its category.
-A single `?groupId=<uuid>` therefore uniquely identifies a group; the owning category is
-recovered by lookup. No compound `categoryId+groupId` param needed.
+### One UUID param: `categoryId` in the URL
+`Category.id` is generated with `crypto.randomUUID()` (`factories.ts:24`), making it
+**globally unique across the whole tournament document**. A single `?categoryId=<uuid>`
+uniquely identifies a category and covers all its groups. The group is always a
+sub-section, never a URL filter. This pivot replaces the original `?groupId` design;
+single-group deep links may be added later if needed.
 
 ### Inline `validateSearch`, no Zod
 Zod is **not** a dependency. For a single optional string param, TanStack Router's
 built-in inline validator is ~3 lines with full type inference:
 ```ts
 validateSearch: (search: Record<string, unknown>) => ({
-  groupId: typeof search.groupId === 'string' ? search.groupId : undefined,
+  categoryId: typeof search.categoryId === 'string' ? search.categoryId : undefined,
 })
 ```
 Adding Zod (`@tanstack/zod-adapter`) for one optional string would be unjustified weight.

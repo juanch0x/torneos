@@ -167,27 +167,27 @@ A `StandingsTable` component MUST render computed standings as a read-only table
 
 ### Requirements
 
-#### Requirement: ResultsPage — All-Groups View
+#### Requirement: ResultsPage — Overview (All Categories)
 
-When `/results` is accessed with no `groupId` param (or an unknown/malformed value), `ResultsPage` MUST render ALL groups organized by category header. Each group section MUST display its `StandingsTable` followed by its filtered match list.
+When `/results` is accessed with no `categoryId` param (or an unknown/malformed value), `ResultsPage` MUST render ALL categories. Each category section MUST display all its groups, each group showing its `StandingsTable` followed by its filtered match list.
 
-##### Scenario: All groups rendered when no param
+##### Scenario: All categories rendered when no param
 
-- GIVEN the user navigates to `/tournaments/$id/results` with no `?groupId`
+- GIVEN the user navigates to `/tournaments/$id/results` with no `?categoryId`
 - WHEN `ResultsPage` renders
 - THEN all categories appear as section headers, each group's StandingsTable and MatchTable below
 
-##### Scenario: Unknown groupId falls back to all-groups
+##### Scenario: Unknown categoryId falls back to overview
 
-- GIVEN `?groupId=<uuid-not-in-this-tournament>`
+- GIVEN `?categoryId=<uuid-not-in-this-tournament>`
 - WHEN `ResultsPage` renders
-- THEN the page falls back to the all-groups view with no error
+- THEN the page falls back to the overview with no error
 
-##### Scenario: Malformed groupId treated as absent
+##### Scenario: Malformed categoryId treated as absent
 
-- GIVEN `?groupId=not-a-uuid`
+- GIVEN `?categoryId=not-a-uuid`
 - WHEN `ResultsPage` renders
-- THEN the page falls back to the all-groups view with no error
+- THEN the page falls back to the overview with no error
 
 ##### Scenario: Tournament not found guarded by layout
 
@@ -197,39 +197,40 @@ When `/results` is accessed with no `groupId` param (or an unknown/malformed val
 
 ---
 
-#### Requirement: ResultsPage — Single-Group View
+#### Requirement: ResultsPage — Single-Category View
 
-When `/results?groupId=<uuid>` is accessed with a valid, known `groupId`, `ResultsPage` MUST render ONLY that group's `StandingsTable` and filtered match list. The owning `categoryId` MUST be resolved by scanning `current.categories` for the category whose `groups` contains the matching `groupId`.
+When `/results?categoryId=<uuid>` is accessed with a valid, known `categoryId`, `ResultsPage` MUST render ALL groups of that category (standings + filtered match list per group), plus a "← Ver todas las categorías" back link that removes the param.
 
-##### Scenario: Valid groupId shows single group
+##### Scenario: Valid categoryId shows single category
 
-- GIVEN `?groupId=<valid-uuid-in-tournament>`
+- GIVEN `?categoryId=<valid-uuid-in-tournament>`
 - WHEN `ResultsPage` renders
-- THEN only the referenced group's standings and matches are shown
+- THEN all groups of the referenced category are shown (standings + matches per group)
+- AND a back link to the overview is rendered
 
-##### Scenario: Category lookup resolves owner
+##### Scenario: Entry from CategoryPanel
 
-- GIVEN a groupId belonging to category C2 (not C1)
-- WHEN `ResultsPage` resolves the owning category
-- THEN `categoryId` resolves to C2 and `setMatchResult` is called with C2's id
+- GIVEN the user is on `/groups` and clicks "Ver resultados →" in a category header
+- WHEN the link is followed
+- THEN the URL changes to `/results?categoryId=<that-category-id>` and the single-category view renders
 
 ---
 
-#### Requirement: GroupId Search Param Validation
+#### Requirement: CategoryId Search Param Validation
 
-The `/results` route MUST declare an inline `validateSearch` that returns `{ groupId: string | undefined }`. If `search.groupId` is not a string, it MUST return `undefined`. No external schema library (e.g. Zod) MUST be added for this param.
+The `/results` route MUST declare an inline `validateSearch` that returns `{ categoryId: string | undefined }`. If `search.categoryId` is not a string, it MUST return `undefined`. No external schema library (e.g. Zod) MUST be added for this param.
 
-##### Scenario: Valid string groupId passes through
+##### Scenario: Valid string categoryId passes through
 
-- GIVEN `?groupId=some-string`
+- GIVEN `?categoryId=some-string`
 - WHEN `validateSearch` runs
-- THEN `search.groupId === 'some-string'`
+- THEN `search.categoryId === 'some-string'`
 
 ##### Scenario: Non-string value returns undefined
 
-- GIVEN `groupId` key is absent or is a non-string value
+- GIVEN `categoryId` key is absent or is a non-string value
 - WHEN `validateSearch` runs
-- THEN `search.groupId === undefined`
+- THEN `search.categoryId === undefined`
 
 ---
 
