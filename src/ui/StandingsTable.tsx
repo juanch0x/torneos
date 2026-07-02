@@ -34,43 +34,45 @@ export function StandingsTable({ group, matches, pairs }: StandingsTableProps) {
       <Title order={5} mt="sm" mb="xs">
         Posiciones — {group.name}
       </Title>
-      <Table striped withTableBorder withColumnBorders fz="sm">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th style={{ width: '2.5rem', textAlign: 'center' }}>#</Table.Th>
-            <Table.Th>Pareja</Table.Th>
-            <Table.Th style={{ textAlign: 'center' }}>PJ</Table.Th>
-            <Table.Th style={{ textAlign: 'center' }}>PG</Table.Th>
-            <Table.Th style={{ textAlign: 'center' }}>PP</Table.Th>
-            <Table.Th style={{ textAlign: 'center' }}>Dif</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {standings.map((row) => (
-            <Table.Tr key={row.pairId}>
-              <Table.Td style={{ textAlign: 'center' }}>
-                {row.rank === 1 ? (
-                  <Badge color="yellow" variant="filled" size="sm">
-                    {row.rank}
-                  </Badge>
-                ) : (
-                  <Text fw={500}>{row.rank}</Text>
-                )}
-              </Table.Td>
-              <Table.Td>{label(row.pairId)}</Table.Td>
-              <Table.Td style={{ textAlign: 'center' }}>{row.played}</Table.Td>
-              <Table.Td style={{ textAlign: 'center' }}>{row.won}</Table.Td>
-              <Table.Td style={{ textAlign: 'center' }}>{row.lost}</Table.Td>
-              <Table.Td
-                style={{ textAlign: 'center' }}
-                c={row.pointDiff > 0 ? 'green' : row.pointDiff < 0 ? 'red' : undefined}
-              >
-                {row.pointDiff > 0 ? `+${row.pointDiff}` : row.pointDiff}
-              </Table.Td>
+      <Table.ScrollContainer minWidth={480}>
+        <Table striped withTableBorder withColumnBorders fz="sm">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th style={{ width: '2.5rem', textAlign: 'center' }}>#</Table.Th>
+              <Table.Th>Pareja</Table.Th>
+              <Table.Th style={{ textAlign: 'center' }}>PJ</Table.Th>
+              <Table.Th style={{ textAlign: 'center' }}>PG</Table.Th>
+              <Table.Th style={{ textAlign: 'center' }}>PP</Table.Th>
+              <Table.Th style={{ textAlign: 'center' }}>Dif</Table.Th>
             </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+          </Table.Thead>
+          <Table.Tbody>
+            {standings.map((row) => (
+              <Table.Tr key={row.pairId}>
+                <Table.Td style={{ textAlign: 'center' }}>
+                  {row.rank === 1 ? (
+                    <Badge color="yellow" variant="filled" size="sm">
+                      {row.rank}
+                    </Badge>
+                  ) : (
+                    <Text fw={500}>{row.rank}</Text>
+                  )}
+                </Table.Td>
+                <Table.Td>{label(row.pairId)}</Table.Td>
+                <Table.Td style={{ textAlign: 'center' }}>{row.played}</Table.Td>
+                <Table.Td style={{ textAlign: 'center' }}>{row.won}</Table.Td>
+                <Table.Td style={{ textAlign: 'center' }}>{row.lost}</Table.Td>
+                <Table.Td
+                  style={{ textAlign: 'center' }}
+                  c={row.pointDiff > 0 ? 'green' : row.pointDiff < 0 ? 'red' : undefined}
+                >
+                  {row.pointDiff > 0 ? `+${row.pointDiff}` : row.pointDiff}
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
     </div>
   )
 }
