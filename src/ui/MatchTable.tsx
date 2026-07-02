@@ -100,30 +100,38 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
 
   return (
     <>
-      <Table>
-        <Table.Thead>
-          {table.getHeaderGroups().map((hg) => (
-            <Table.Tr key={hg.id}>
-              {hg.headers.map((header) => (
-                <Table.Th key={header.id}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </Table.Th>
-              ))}
-            </Table.Tr>
-          ))}
-        </Table.Thead>
-        <Table.Tbody>
-          {table.getRowModel().rows.map((row) => (
-            <Table.Tr key={row.id} bg={row.original.result ? 'green.0' : undefined}>
-              {row.getVisibleCells().map((cell) => (
-                <Table.Td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </Table.Td>
-              ))}
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+      <Table.ScrollContainer minWidth={640}>
+        <Table>
+          <Table.Thead>
+            {table.getHeaderGroups().map((hg) => (
+              <Table.Tr key={hg.id}>
+                {hg.headers.map((header) => (
+                  <Table.Th
+                    key={header.id}
+                    visibleFrom={header.column.id === 'round' ? 'sm' : undefined}
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </Table.Th>
+                ))}
+              </Table.Tr>
+            ))}
+          </Table.Thead>
+          <Table.Tbody>
+            {table.getRowModel().rows.map((row) => (
+              <Table.Tr key={row.id} bg={row.original.result ? 'green.0' : undefined}>
+                {row.getVisibleCells().map((cell) => (
+                  <Table.Td
+                    key={cell.id}
+                    visibleFrom={cell.column.id === 'round' ? 'sm' : undefined}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </Table.Td>
+                ))}
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
       <ResultDrawer
         match={openMatch}
         opened={openMatch !== null}
