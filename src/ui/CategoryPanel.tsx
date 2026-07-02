@@ -165,30 +165,32 @@ export function CategoryPanel({ category }: { category: Category }) {
           Sin parejas todavía.
         </Text>
       ) : (
-        <Table>
-          <Table.Thead>
-            {table.getHeaderGroups().map((hg) => (
-              <Table.Tr key={hg.id}>
-                {hg.headers.map((header) => (
-                  <Table.Th key={header.id}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </Table.Th>
-                ))}
-              </Table.Tr>
-            ))}
-          </Table.Thead>
-          <Table.Tbody>
-            {table.getRowModel().rows.map((row) => (
-              <Table.Tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <Table.Td key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Table.Td>
-                ))}
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+        <Table.ScrollContainer minWidth={420}>
+          <Table>
+            <Table.Thead>
+              {table.getHeaderGroups().map((hg) => (
+                <Table.Tr key={hg.id}>
+                  {hg.headers.map((header) => (
+                    <Table.Th key={header.id}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </Table.Th>
+                  ))}
+                </Table.Tr>
+              ))}
+            </Table.Thead>
+            <Table.Tbody>
+              {table.getRowModel().rows.map((row) => (
+                <Table.Tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <Table.Td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
       )}
 
       <Group gap="sm" wrap="wrap" mt="sm">

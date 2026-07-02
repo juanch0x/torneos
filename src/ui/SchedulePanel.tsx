@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import { Button, Group, NumberInput, Paper, Stack, Table, Text, TextInput, Title } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { ResultDrawer } from './ResultDrawer'
@@ -58,6 +59,23 @@ function matchesPerDay(startsAtIso: string, durationMin: number, endHour: number
   return Math.max(1, Math.floor(span / durationMin))
 }
 
+// Renders a read-only score (editable) or an entry trigger for a scheduled match.
+// Shared between the desktop table cell and the mobile card so both open the same ResultDrawer.
+function ResultTrigger({ info, onOpen }: { info: MatchInfo; onOpen: () => void }) {
+  if (info.match.result) {
+    return (
+      <Button variant="subtle" size="xs" onClick={onOpen}>
+        {info.match.result.scoreA} – {info.match.result.scoreB}
+      </Button>
+    )
+  }
+  return (
+    <Button variant="default" size="xs" onClick={onOpen}>
+      Ingresar
+    </Button>
+  )
+}
+
 const columnHelper = createColumnHelper<Slot>()
 
 export function SchedulePanel({ tournament }: { tournament: Tournament }) {
@@ -71,6 +89,9 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const [duration, setDuration] = useState(45)
   const [endHour, setEndHour] = useState(22)
   const [openMatch, setOpenMatch] = useState<MatchInfo | null>(null)
+
+  // Below sm (48em) → card list; at/above sm → TanStack table.
+  const isMobile = useMediaQuery('(max-width: 48em)')
 
   const matches = useMemo(() => collectMatches(tournament), [tournament])
 
@@ -115,18 +136,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         cell: ({ row }) => {
           const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
           if (!info) return null
-          if (info.match.result) {
-            return (
-              <Button variant="subtle" size="xs" onClick={() => setOpenMatch(info)}>
-                {info.match.result.scoreA} – {info.match.result.scoreB}
-              </Button>
-            )
-          }
-          return (
-            <Button variant="default" size="xs" onClick={() => setOpenMatch(info)}>
-              Ingresar
-            </Button>
-          )
+          return <ResultTrigger info={info} onOpen={() => setOpenMatch(info)} />
         },
       }),
       columnHelper.display({
@@ -180,6 +190,32 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
     })
   }
 
+  // Renders a single slot as a mobile card. Reorder and delete controls are omitted (desktop-only).
+  function renderCard(slot: Slot) {
+    const info = slot.matchId ? matches.get(slot.matchId) : undefined
+    return (
+      <Paper key={slot.id} withBorder p="sm" style={{ backgroundColor: info?.color }}>
+        <Stack gap={4}>
+          {info ? (
+            <>
+              <Group justify="space-between">
+                <Text fw={600}>{info.match.number != null ? `#${info.match.number}` : ''}</Text>
+                <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
+              </Group>
+              <Text style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{info.label}</Text>
+              <ResultTrigger info={info} onOpen={() => setOpenMatch(info)} />
+            </>
+          ) : (
+            <>
+              <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
+              <Text c="dimmed" size="sm">— libre —</Text>
+            </>
+          )}
+        </Stack>
+      </Paper>
+    )
+  }
+
   return (
     <Paper withBorder p="md">
       <Stack gap="sm">
@@ -225,37 +261,41 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           <Text c="dimmed" size="sm">
             Todavía sin calendario. Definí los grupos y tocá "Generar fixture".
           </Text>
+        ) : isMobile ? (
+          <Stack gap="sm">{data.map(renderCard)}</Stack>
         ) : (
-          <Table>
-            <Table.Thead>
-              {table.getHeaderGroups().map((hg) => (
-                <Table.Tr key={hg.id}>
-                  {hg.headers.map((header) => (
-                    <Table.Th key={header.id}>
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </Table.Th>
-                  ))}
-                </Table.Tr>
-              ))}
-            </Table.Thead>
-            <Table.Tbody>
-              {table.getRowModel().rows.map((row) => {
-                const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
-                return (
-                  <Table.Tr
-                    key={row.id}
-                    style={info ? { backgroundColor: info.color } : undefined}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <Table.Td key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </Table.Td>
+          <Table.ScrollContainer minWidth={720}>
+            <Table>
+              <Table.Thead>
+                {table.getHeaderGroups().map((hg) => (
+                  <Table.Tr key={hg.id}>
+                    {hg.headers.map((header) => (
+                      <Table.Th key={header.id}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </Table.Th>
                     ))}
                   </Table.Tr>
-                )
-              })}
-            </Table.Tbody>
-          </Table>
+                ))}
+              </Table.Thead>
+              <Table.Tbody>
+                {table.getRowModel().rows.map((row) => {
+                  const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
+                  return (
+                    <Table.Tr
+                      key={row.id}
+                      style={info ? { backgroundColor: info.color } : undefined}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <Table.Td key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </Table.Td>
+                      ))}
+                    </Table.Tr>
+                  )
+                })}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
         )}
       </Stack>
 
