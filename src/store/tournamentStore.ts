@@ -13,11 +13,13 @@ import { reconcilePairings, regenerateSchedule } from '../domain/reconcile'
 import {
   fillSchedule,
   generateFixture as buildFixture,
+  moveMatchToSlot as moveMatchToSlotInFixture,
+  reflowUnavailableMatches,
   syncScheduleTimes,
 } from '../domain/schedule'
 import type { FixtureOptions } from '../domain/schedule'
 import { buildMockTournament } from '../mock/fmpTournament'
-import type { Category, ID, MatchResult, Tournament } from '../domain/types'
+import type { Category, ID, MatchResult, PairUnavailableWindow, Tournament } from '../domain/types'
 import { repo } from '../persistence/repo'
 import type { TournamentMeta } from '../domain/types'
 
@@ -42,6 +44,9 @@ export interface TournamentState {
   assignMatchToSlot: (slotId: ID, matchId: ID | null) => void
   moveSlotMatch: (slotId: ID, direction: 'up' | 'down') => void // reordenar con flechas
   fillSchedule: () => void
+  addPairUnavailableWindow: (window: Omit<PairUnavailableWindow, 'id'>) => void
+  removePairUnavailableWindow: (windowId: ID) => void
+  moveMatchToSlot: (matchId: ID, slotId: ID) => void
 
   // edición (mutaciones puras en memoria — NO persisten; eso lo hace el autosave)
   addCategory: (name: string, numGroups: number) => void
@@ -126,7 +131,12 @@ export const useTournamentStore = create<TournamentState>()(
           const next = buildFixture(t, options)
           const startDate = options.startsAt.slice(0, 10)
           const last = next.slots[next.slots.length - 1]
-          return { ...next, startDate, endDate: last ? last.startsAt.slice(0, 10) : startDate }
+          return {
+            ...next,
+            fixtureSettings: { matchDurationMinutes: options.matchDurationMinutes },
+            startDate,
+            endDate: last ? last.startsAt.slice(0, 10) : startDate,
+          }
         })
       },
 
@@ -182,6 +192,26 @@ export const useTournamentStore = create<TournamentState>()(
 
       fillSchedule() {
         mutate(fillSchedule)
+      },
+
+      addPairUnavailableWindow(window) {
+        mutate((t) => reflowUnavailableMatches({
+          ...t,
+          pairUnavailableWindows: [...(t.pairUnavailableWindows ?? []), { ...window, id: crypto.randomUUID() }],
+          fixtureSettings: t.fixtureSettings ?? { matchDurationMinutes: 45 },
+        }))
+      },
+
+      removePairUnavailableWindow(windowId) {
+        mutate((t) => reflowUnavailableMatches({
+          ...t,
+          pairUnavailableWindows: (t.pairUnavailableWindows ?? []).filter((window) => window.id !== windowId),
+          fixtureSettings: t.fixtureSettings ?? { matchDurationMinutes: 45 },
+        }))
+      },
+
+      moveMatchToSlot(matchId, slotId) {
+        mutate((t) => moveMatchToSlotInFixture(t, matchId, slotId))
       },
 
       addCategory(name, numGroups) {
@@ -283,8 +313,9 @@ function normalize(t: Tournament): Tournament {
     slots: t.slots ?? [],
     startDate: t.startDate ?? t.date,
     endDate: t.endDate ?? t.date,
+    pairUnavailableWindows: t.pairUnavailableWindows ?? [],
+    fixtureSettings: t.fixtureSettings ?? { matchDurationMinutes: 45 },
     // Backfill de color para categorías de documentos viejos sin color.
     categories: t.categories.map((c) => ({ ...c, color: c.color ?? randomLightColor() })),
   }
 }
-

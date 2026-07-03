@@ -8,8 +8,22 @@ export interface Tournament {
   endDate?: string // ISO date — fin de la ventana del torneo
   slots: Slot[] // calendario GLOBAL cross-categoría (una sola cancha)
   categories: Category[]
+  pairUnavailableWindows?: PairUnavailableWindow[]
+  fixtureSettings?: FixtureSettings
   createdAt: string // ISO datetime
   updatedAt: string // ISO datetime
+}
+
+export interface PairUnavailableWindow {
+  id: ID
+  pairId: ID
+  startsAt: string
+  endsAt: string
+  reason?: string
+}
+
+export interface FixtureSettings {
+  matchDurationMinutes: number
 }
 
 // Franja horaria del calendario. Como hay UNA sola cancha, las franjas son
