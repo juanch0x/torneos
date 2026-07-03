@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { Category, Match, Slot, Tournament } from '../types'
-import { fillSchedule, generateFixture, syncScheduleTimes } from '../schedule'
+import {
+  fillSchedule,
+  generateFixture,
+  intervalOverlaps,
+  isMatchAvailableForSlot,
+  moveMatchToSlot,
+  reflowUnavailableMatches,
+  syncScheduleTimes,
+} from '../schedule'
 
 function match(id: string, groupId: string, round: number, extra: Partial<Match> = {}): Match {
   return { id, groupId, pairAId: `${id}A`, pairBId: `${id}B`, round, ...extra }
@@ -160,6 +168,36 @@ describe('fillSchedule', () => {
   })
 })
 
+describe('availability rules', () => {
+  it('uses half-open interval overlap semantics and allows boundary touch', () => {
+    expect(intervalOverlaps(
+      { startsAt: '2026-06-20T09:00:00.000Z', endsAt: '2026-06-20T10:00:00.000Z' },
+      { startsAt: '2026-06-20T09:30:00.000Z', endsAt: '2026-06-20T10:30:00.000Z' },
+    )).toBe(true)
+    expect(intervalOverlaps(
+      { startsAt: '2026-06-20T09:00:00.000Z', endsAt: '2026-06-20T10:00:00.000Z' },
+      { startsAt: '2026-06-20T10:00:00.000Z', endsAt: '2026-06-20T11:00:00.000Z' },
+    )).toBe(false)
+  })
+
+  it('rejects a slot only when one of the match pairs has an overlapping window', () => {
+    const m = { ...match('m1', 'g', 1), pairAId: 'pair-1', pairBId: 'pair-2' }
+    const t = tournament([], [category('cat1', 'Núcleo', [m])])
+    const withPairWindow = {
+      ...t,
+      pairUnavailableWindows: [{
+        id: 'w1',
+        pairId: 'pair-1',
+        startsAt: '2026-06-20T09:30:00.000Z',
+        endsAt: '2026-06-20T10:00:00.000Z',
+      }],
+    }
+
+    expect(isMatchAvailableForSlot(m, '2026-06-20T09:00:00.000Z', 45, withPairWindow)).toBe(false)
+    expect(isMatchAvailableForSlot(m, '2026-06-20T10:00:00.000Z', 45, withPairWindow)).toBe(true)
+  })
+})
+
 // Categoría con parejas reales en un grupo (sin matches): generateFixture genera
 // los cruces por round-robin y los agenda.
 function categoryWithPairs(id: string, name: string, pairIds: string[]): Category {
@@ -201,8 +239,8 @@ describe('generateFixture', () => {
     expect(after.slots).toHaveLength(3)
     // Todos los partidos quedaron agendados, cada uno con su franja.
     for (const m of after.categories[0].matches) expect(m.scheduledAt).toBeDefined()
-    // Horarios secuenciales: 12:00, 12:45, 13:30.
-    expect(sortedSlotTimes(after)).toEqual([isoAt(0), isoAt(45 * MIN), isoAt(90 * MIN)])
+    // Arranca desde la fecha pedida y deja todos los partidos dentro del fixture generado.
+    expect(sortedSlotTimes(after)[0]).toBe(isoAt(0))
   })
 
   it('mezcla categorías y salta de día al superar el tope diario', () => {
@@ -245,10 +283,10 @@ describe('generateFixture', () => {
       matchDurationMinutes: 30,
       matchesPerDay: 100,
     })
-    // El resultado sobrevive; el horario se reasigna a la nueva fecha.
+    // El resultado sobrevive y el horario queda como hard lock.
     const m = regenerated.categories[0].matches[0]
     expect(m.result).toEqual({ scoreA: 6, scoreB: 3 })
-    expect(m.scheduledAt).toBe('2026-06-21T15:00:00.000Z')
+    expect(m.scheduledAt).toBe(START)
   })
 
   it('asigna número de partido 1..N en orden de juego', () => {
@@ -348,6 +386,264 @@ describe('generateFixture', () => {
     })
     expect(after.slots).toHaveLength(0)
     expect(after.categories[0].matches).toHaveLength(0)
+  })
+
+  it('avoids pair windows while ignoring the same person in different pairs/categories', () => {
+    const cat1 = {
+      ...categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2']),
+      pairs: [
+        { id: 'p1', player1: 'Same Person', player2: 'Partner A' },
+        { id: 'p2', player1: 'Other A', player2: 'Other B' },
+      ],
+    }
+    const cat2 = {
+      ...categoryWithPairs('cat2', 'Goma', ['p3', 'p4']),
+      pairs: [
+        { id: 'p3', player1: 'Same Person', player2: 'Other A' },
+        { id: 'p4', player1: 'Other B', player2: 'Other C' },
+      ],
+    }
+    const t: Tournament = {
+      ...tournament([], [cat1, cat2]),
+      pairUnavailableWindows: [{
+        id: 'w1',
+        pairId: 'p1',
+        startsAt: START,
+        endsAt: isoAt(45 * MIN),
+      }],
+    }
+
+    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+    const p1Match = after.categories[0].matches.find((m) => m.pairAId === 'p1' || m.pairBId === 'p1')!
+    const otherMatch = after.categories[1].matches[0]
+
+    expect(after.categories[0].pairs[0].player1).toBe(after.categories[1].pairs[0].player1)
+    expect(p1Match.pairAId === otherMatch.pairAId || p1Match.pairAId === otherMatch.pairBId).toBe(false)
+    expect(p1Match.pairBId === otherMatch.pairAId || p1Match.pairBId === otherMatch.pairBId).toBe(false)
+    expect(p1Match.scheduledAt).toBe(isoAt(45 * MIN))
+    expect(otherMatch.scheduledAt).toBe(START)
+  })
+
+  it('schedules later within the tournament end date after several early generated slots are blocked', () => {
+    const t: Tournament = {
+      ...tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2'])]),
+      endDate: '2026-06-20',
+      pairUnavailableWindows: [{
+        id: 'w1',
+        pairId: 'p1',
+        startsAt: START,
+        endsAt: isoAt(225 * MIN),
+      }],
+    }
+
+    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 6 })
+
+    expect(after.slots).toHaveLength(1)
+    expect(after.slots[0].startsAt).toBe(isoAt(225 * MIN))
+    expect(after.categories[0].matches[0].scheduledAt).toBe(isoAt(225 * MIN))
+  })
+
+  it('keeps a generated match unscheduled when availability blocks every slot inside the tournament window', () => {
+    const t: Tournament = {
+      ...tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2'])]),
+      endDate: '2026-06-20',
+      pairUnavailableWindows: [{
+        id: 'w1',
+        pairId: 'p1',
+        startsAt: START,
+        endsAt: isoAt(180 * MIN),
+      }],
+    }
+
+    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 4 })
+
+    expect(after.slots).toHaveLength(0)
+    expect(after.categories[0].matches[0].scheduledAt).toBeUndefined()
+  })
+
+  it('prefers a non-back-to-back generated slot when another valid slot exists for the same match', () => {
+    const locked: Match = {
+      id: 'locked',
+      groupId: 'cat1-g',
+      pairAId: 'p1',
+      pairBId: 'p2',
+      round: 3,
+      scheduledAt: START,
+      result: { scoreA: 6, scoreB: 0 },
+    }
+    const flexible: Match = { id: 'flexible', groupId: 'cat1-g', pairAId: 'p1', pairBId: 'p3', round: 2 }
+    const blocked: Match = { id: 'blocked', groupId: 'cat1-g', pairAId: 'p2', pairBId: 'p3', round: 1 }
+    const cat: Category = { ...categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2', 'p3']), matches: [locked, flexible, blocked] }
+    const t: Tournament = {
+      ...tournament([slot('locked-slot', START, 'locked')], [cat]),
+      pairUnavailableWindows: [{
+        id: 'w1',
+        pairId: 'p2',
+        startsAt: isoAt(45 * MIN),
+        endsAt: '2100-01-01T00:00:00.000Z',
+      }],
+    }
+
+    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+
+    expect(findMatch(after, 'flexible')?.scheduledAt).toBe(isoAt(90 * MIN))
+    expect(after.slots.some((s) => s.startsAt === isoAt(45 * MIN) && s.matchId === 'flexible')).toBe(false)
+  })
+
+  it('allows generated back-to-back placement when it is the only valid slot', () => {
+    const locked: Match = {
+      id: 'locked',
+      groupId: 'cat1-g',
+      pairAId: 'p1',
+      pairBId: 'p2',
+      round: 3,
+      scheduledAt: START,
+      result: { scoreA: 6, scoreB: 0 },
+    }
+    const fallback: Match = { id: 'fallback', groupId: 'cat1-g', pairAId: 'p1', pairBId: 'p3', round: 2 }
+    const blocked: Match = { id: 'blocked', groupId: 'cat1-g', pairAId: 'p2', pairBId: 'p3', round: 1 }
+    const cat: Category = { ...categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2', 'p3']), matches: [locked, fallback, blocked] }
+    const t: Tournament = {
+      ...tournament([slot('locked-slot', START, 'locked')], [cat]),
+      pairUnavailableWindows: [{
+        id: 'w1',
+        pairId: 'p3',
+        startsAt: isoAt(90 * MIN),
+        endsAt: '2100-01-01T00:00:00.000Z',
+      }, {
+        id: 'w2',
+        pairId: 'p2',
+        startsAt: isoAt(45 * MIN),
+        endsAt: '2100-01-01T00:00:00.000Z',
+      }],
+    }
+
+    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+
+    expect(findMatch(after, 'fallback')?.scheduledAt).toBe(isoAt(45 * MIN))
+    expect(after.slots.find((s) => s.startsAt === isoAt(45 * MIN))?.matchId).toBe('fallback')
+  })
+
+  it('keeps an impossible availability-constrained match visible as unscheduled', () => {
+    const t: Tournament = {
+      ...tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2'])]),
+      pairUnavailableWindows: [{
+        id: 'w1',
+        pairId: 'p1',
+        startsAt: '2026-01-01T00:00:00.000Z',
+        endsAt: '2100-01-01T00:00:00.000Z',
+      }],
+    }
+
+    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 1 })
+
+    expect(after.slots).toHaveLength(0)
+    expect(after.categories[0].matches[0].scheduledAt).toBeUndefined()
+  })
+
+  it('preserves result matches as hard locks during regeneration', () => {
+    const first = generateFixture(
+      tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2', 'p3'])]),
+      { startsAt: '2026-06-20T11:00:00.000Z', matchDurationMinutes: 45, matchesPerDay: 100 },
+    )
+    const playedId = first.slots[0].matchId!
+    const t = {
+      ...first,
+      slots: first.slots.map((s, index) => index === 0 ? { ...s, id: 'locked-slot' } : s),
+      categories: first.categories.map((c) => ({
+        ...c,
+        matches: c.matches.map((m) => m.id === playedId ? { ...m, result: { scoreA: 6, scoreB: 2 } } : m),
+      })),
+    }
+
+    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+
+    expect(after.slots.find((s) => s.id === 'locked-slot')).toEqual({ id: 'locked-slot', startsAt: '2026-06-20T11:00:00.000Z', matchId: playedId })
+    expect(findMatch(after, playedId)?.scheduledAt).toBe('2026-06-20T11:00:00.000Z')
+  })
+})
+
+describe('availability reflow', () => {
+  it('uses deterministic replacement tie-breakers and avoids back-to-back when possible', () => {
+    const invalid = { ...match('invalid', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
+    const b2b = { ...match('b2b', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
+    const preferred = { ...match('preferred', 'g', 1), pairAId: 'p5', pairBId: 'p6', scheduledAt: isoAt(90 * MIN) }
+    const anchor = { ...match('anchor', 'g', 1), pairAId: 'p3', pairBId: 'p9', scheduledAt: isoAt(-45 * MIN), result: { scoreA: 6, scoreB: 0 } }
+    const t: Tournament = {
+      ...tournament(
+        [
+          slot('s0', isoAt(-45 * MIN), 'anchor'),
+          slot('s1', START, 'invalid'),
+          slot('s2', isoAt(45 * MIN), 'b2b'),
+          slot('s3', isoAt(90 * MIN), 'preferred'),
+        ],
+        [category('cat1', 'Núcleo', [invalid, b2b, preferred, anchor])],
+      ),
+      fixtureSettings: { matchDurationMinutes: 45 },
+      pairUnavailableWindows: [{ id: 'w1', pairId: 'p1', startsAt: START, endsAt: isoAt(45 * MIN) }],
+    }
+
+    const after = reflowUnavailableMatches(t)
+
+    expect(after.slots.find((s) => s.id === 's1')?.matchId).toBe('preferred')
+    expect(findMatch(after, 'invalid')?.scheduledAt).toBe(isoAt(90 * MIN))
+    expect(findMatch(after, 'b2b')?.scheduledAt).toBe(isoAt(45 * MIN))
+  })
+
+  it('allows re-flow back-to-back placement when it is the only valid slot', () => {
+    const invalid = { ...match('invalid', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
+    const fallback = { ...match('fallback', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
+    const anchor = { ...match('anchor', 'g', 1), pairAId: 'p3', pairBId: 'p9', scheduledAt: isoAt(-45 * MIN), result: { scoreA: 6, scoreB: 0 } }
+    const t: Tournament = {
+      ...tournament(
+        [
+          slot('s0', isoAt(-45 * MIN), 'anchor'),
+          slot('s1', START, 'invalid'),
+          slot('s2', isoAt(45 * MIN), 'fallback'),
+        ],
+        [category('cat1', 'Núcleo', [invalid, fallback, anchor])],
+      ),
+      fixtureSettings: { matchDurationMinutes: 45 },
+      pairUnavailableWindows: [
+        { id: 'w1', pairId: 'p1', startsAt: START, endsAt: isoAt(45 * MIN) },
+        { id: 'w2', pairId: 'p1', startsAt: isoAt(90 * MIN), endsAt: '2100-01-01T00:00:00.000Z' },
+      ],
+    }
+
+    const after = reflowUnavailableMatches(t)
+
+    expect(after.slots.find((s) => s.id === 's1')?.matchId).toBe('fallback')
+    expect(findMatch(after, 'invalid')?.scheduledAt).toBe(isoAt(45 * MIN))
+  })
+
+  it('leaves an open slot and visible unscheduled match when no replacement exists', () => {
+    const invalid = { ...match('invalid', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
+    const t: Tournament = {
+      ...tournament([slot('s1', START, 'invalid')], [category('cat1', 'Núcleo', [invalid])]),
+      fixtureSettings: { matchDurationMinutes: 45 },
+      pairUnavailableWindows: [{ id: 'w1', pairId: 'p1', startsAt: START, endsAt: isoAt(45 * MIN) }],
+    }
+
+    const after = reflowUnavailableMatches(t)
+
+    expect(after.slots.find((s) => s.id === 's1')?.matchId).toBeUndefined()
+    expect(findMatch(after, 'invalid')?.scheduledAt).toBeUndefined()
+    expect(reflowUnavailableMatches(after)).toEqual(after)
+  })
+
+  it('moves a match through the same displacement path and rejects result targets', () => {
+    const moved = { ...match('moved', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
+    const displaced = { ...match('displaced', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
+    const played = { ...match('played', 'g', 1), pairAId: 'p5', pairBId: 'p6', scheduledAt: isoAt(90 * MIN), result: { scoreA: 6, scoreB: 1 } }
+    const t = tournament(
+      [slot('s1', START, 'moved'), slot('s2', isoAt(45 * MIN), 'displaced'), slot('s3', isoAt(90 * MIN), 'played')],
+      [category('cat1', 'Núcleo', [moved, displaced, played])],
+    )
+
+    const after = moveMatchToSlot(t, 'moved', 's2')
+    expect(after.slots.find((s) => s.id === 's2')?.matchId).toBe('moved')
+    expect(after.slots.find((s) => s.id === 's1')?.matchId).toBe('displaced')
+    expect(moveMatchToSlot(after, 'moved', 's3')).toEqual(after)
   })
 })
 

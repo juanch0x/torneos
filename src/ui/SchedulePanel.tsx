@@ -5,7 +5,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
-import { Button, Group, NumberInput, Paper, Stack, Table, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Group, NumberInput, Paper, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
@@ -81,7 +81,9 @@ const columnHelper = createColumnHelper<Slot>()
 export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const generateFixture = useTournamentStore((s) => s.generateFixture)
   const removeSlot = useTournamentStore((s) => s.removeSlot)
-  const moveSlotMatch = useTournamentStore((s) => s.moveSlotMatch)
+  const moveMatchToSlot = useTournamentStore((s) => s.moveMatchToSlot)
+  const addPairUnavailableWindow = useTournamentStore((s) => s.addPairUnavailableWindow)
+  const removePairUnavailableWindow = useTournamentStore((s) => s.removePairUnavailableWindow)
   const setMatchResult = useTournamentStore((s) => s.setMatchResult)
 
   // Defaults: 09:00 del día de inicio del torneo, 45 min, corte 22hs.
@@ -89,6 +91,10 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const [duration, setDuration] = useState(45)
   const [endHour, setEndHour] = useState(22)
   const [openMatch, setOpenMatch] = useState<MatchInfo | null>(null)
+  const [unavailablePairId, setUnavailablePairId] = useState<string | null>(null)
+  const [unavailableStartsAt, setUnavailableStartsAt] = useState('')
+  const [unavailableEndsAt, setUnavailableEndsAt] = useState('')
+  const [unavailableReason, setUnavailableReason] = useState('')
 
   // Below sm (48em) → card list; at/above sm → TanStack table.
   const isMobile = useMediaQuery('(max-width: 48em)')
@@ -100,6 +106,25 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
     () => [...tournament.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
     [tournament.slots],
   )
+
+  const pairOptions = useMemo(
+    () => tournament.categories.flatMap((category) =>
+      category.pairs.map((pair) => ({
+        value: pair.id,
+        label: `${category.name} · ${pair.player1}/${pair.player2}`,
+      })),
+    ),
+    [tournament.categories],
+  )
+
+  const unscheduledMatches = useMemo(
+    () => [...matches.values()]
+      .filter((info) => info.match.result == null && info.match.scheduledAt == null)
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    [matches],
+  )
+
+  const openSlots = data.filter((slot) => !slot.matchId)
 
   const columns = useMemo(
     () => [
@@ -142,28 +167,33 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       columnHelper.display({
         id: 'orden',
         header: 'Orden',
-        cell: ({ row }) => (
-          <Group gap="xs" wrap="nowrap">
-            <Button
-              size="xs"
-              variant="default"
-              disabled={row.index === 0}
-              title="Adelantar"
-              onClick={() => moveSlotMatch(row.original.id, 'up')}
-            >
-              ↑
-            </Button>
-            <Button
-              size="xs"
-              variant="default"
-              disabled={row.index === data.length - 1}
-              title="Atrasar"
-              onClick={() => moveSlotMatch(row.original.id, 'down')}
-            >
-              ↓
-            </Button>
-          </Group>
-        ),
+        cell: ({ row }) => {
+          const matchId = row.original.matchId
+          const previous = data[row.index - 1]
+          const next = data[row.index + 1]
+          return (
+            <Group gap="xs" wrap="nowrap">
+              <Button
+                size="xs"
+                variant="default"
+                disabled={!matchId || !previous}
+                title="Adelantar"
+                onClick={() => matchId && previous && moveMatchToSlot(matchId, previous.id)}
+              >
+                ↑
+              </Button>
+              <Button
+                size="xs"
+                variant="default"
+                disabled={!matchId || !next}
+                title="Atrasar"
+                onClick={() => matchId && next && moveMatchToSlot(matchId, next.id)}
+              >
+                ↓
+              </Button>
+            </Group>
+          )
+        },
       }),
       columnHelper.display({
         id: 'acciones',
@@ -175,7 +205,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         ),
       }),
     ],
-    [matches, data.length, moveSlotMatch, removeSlot, setOpenMatch],
+    [matches, data, moveMatchToSlot, removeSlot, setOpenMatch],
   )
 
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
@@ -188,6 +218,21 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       matchDurationMinutes: duration,
       matchesPerDay: matchesPerDay(startsAt, duration, endHour),
     })
+  }
+
+  function handleAddUnavailableWindow() {
+    const startsAt = fromLocalInput(unavailableStartsAt)
+    const endsAt = fromLocalInput(unavailableEndsAt)
+    if (!unavailablePairId || !startsAt || !endsAt || startsAt >= endsAt) return
+    addPairUnavailableWindow({
+      pairId: unavailablePairId,
+      startsAt,
+      endsAt,
+      reason: unavailableReason.trim() || undefined,
+    })
+    setUnavailableStartsAt('')
+    setUnavailableEndsAt('')
+    setUnavailableReason('')
   }
 
   // Renders a single slot as a mobile card. Reorder and delete controls are omitted (desktop-only).
@@ -254,8 +299,68 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
 
         <Text c="dimmed" size="sm">
           Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
-          Después podés ajustar la fecha/hora de cada partido o reordenarlos con las flechas.
+          Después podés reordenarlos con las flechas usando el mismo re-flow que las disponibilidades.
         </Text>
+
+        <Paper withBorder p="sm">
+          <Stack gap="xs">
+            <Title order={3}>Disponibilidad de parejas</Title>
+            <Group gap="sm" wrap="wrap" align="flex-end">
+              <Select
+                label="Pareja"
+                placeholder="Elegí una pareja"
+                data={pairOptions}
+                value={unavailablePairId}
+                onChange={setUnavailablePairId}
+                searchable
+                style={{ minWidth: '18rem' }}
+              />
+              <TextInput
+                label="No puede desde"
+                type="datetime-local"
+                value={unavailableStartsAt}
+                onChange={(event) => setUnavailableStartsAt(event.currentTarget.value)}
+              />
+              <TextInput
+                label="Hasta"
+                type="datetime-local"
+                value={unavailableEndsAt}
+                onChange={(event) => setUnavailableEndsAt(event.currentTarget.value)}
+              />
+              <TextInput
+                label="Motivo"
+                value={unavailableReason}
+                onChange={(event) => setUnavailableReason(event.currentTarget.value)}
+              />
+              <Button onClick={handleAddUnavailableWindow}>Agregar y re-flow</Button>
+            </Group>
+
+            {(tournament.pairUnavailableWindows ?? []).map((window) => {
+              const pair = pairOptions.find((option) => option.value === window.pairId)
+              return (
+                <Group key={window.id} justify="space-between" gap="xs">
+                  <Text size="sm">
+                    {pair?.label ?? window.pairId}: {formatDateTime(window.startsAt)} → {formatDateTime(window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
+                  </Text>
+                  <Button size="xs" variant="subtle" color="red" onClick={() => removePairUnavailableWindow(window.id)}>
+                    Quitar
+                  </Button>
+                </Group>
+              )
+            })}
+          </Stack>
+        </Paper>
+
+        {(openSlots.length > 0 || unscheduledMatches.length > 0) && (
+          <Alert color="yellow" title="Fixture con espacios por revisar">
+            {openSlots.length > 0 && <Text size="sm">Franjas libres: {openSlots.length}</Text>}
+            {unscheduledMatches.length > 0 && (
+              <Text size="sm">
+                Partidos sin horario: {unscheduledMatches.map((info) => info.label).join(' · ')}
+              </Text>
+            )}
+          </Alert>
+        )}
 
         {data.length === 0 ? (
           <Text c="dimmed" size="sm">

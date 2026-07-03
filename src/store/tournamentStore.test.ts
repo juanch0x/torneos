@@ -91,6 +91,78 @@ describe('tournamentStore — loadTournament status transitions', () => {
     expect((useTournamentStore.getState() as any).status).toBe('loaded')
     expect(useTournamentStore.getState().current?.id).toBe('t1')
   })
+
+  it('normalizes availability and fixture settings defaults for old tournaments', async () => {
+    vi.mocked(repo.load).mockResolvedValue({
+      ...makeTournament('old'),
+      pairUnavailableWindows: undefined,
+      fixtureSettings: undefined,
+    })
+
+    await useTournamentStore.getState().loadTournament('old')
+
+    expect(useTournamentStore.getState().current?.pairUnavailableWindows).toEqual([])
+    expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 45 })
+  })
+})
+
+describe('tournamentStore — availability reflow actions', () => {
+  it('persists fixture duration when generating a fixture', () => {
+    useTournamentStore.setState({ current: makeTournament('t1'), status: 'loaded' } as any)
+
+    useTournamentStore.getState().generateFixture({
+      startsAt: '2024-01-01T09:00:00.000Z',
+      matchDurationMinutes: 30,
+      matchesPerDay: 8,
+    })
+
+    expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 30 })
+  })
+
+  it('adds and removes pair unavailable windows immutably', () => {
+    useTournamentStore.setState({ current: makeTournament('t1'), status: 'loaded' } as any)
+
+    useTournamentStore.getState().addPairUnavailableWindow({
+      pairId: 'p1',
+      startsAt: '2024-01-01T09:00:00.000Z',
+      endsAt: '2024-01-01T10:00:00.000Z',
+      reason: 'Appointment',
+    })
+    const added = useTournamentStore.getState().current?.pairUnavailableWindows?.[0]
+
+    expect(added).toMatchObject({ pairId: 'p1', startsAt: '2024-01-01T09:00:00.000Z', endsAt: '2024-01-01T10:00:00.000Z', reason: 'Appointment' })
+
+    useTournamentStore.getState().removePairUnavailableWindow(added!.id)
+
+    expect(useTournamentStore.getState().current?.pairUnavailableWindows).toEqual([])
+  })
+
+  it('manual move is a no-op when the target slot contains a result match', () => {
+    const t: Tournament = {
+      ...makeTournament('t1'),
+      slots: [
+        { id: 's1', startsAt: '2024-01-01T09:00:00.000Z', matchId: 'm1' },
+        { id: 's2', startsAt: '2024-01-01T10:00:00.000Z', matchId: 'm2' },
+      ],
+      categories: [{
+        id: 'cat1',
+        name: 'Cat',
+        color: 'hsl(0, 70%, 90%)',
+        config: { numGroups: 1, format: 'round-robin' },
+        pairs: [],
+        groups: [{ id: 'g1', name: 'Grupo A', pairIds: [] }],
+        matches: [
+          { id: 'm1', groupId: 'g1', pairAId: 'p1', pairBId: 'p2', round: 1, scheduledAt: '2024-01-01T09:00:00.000Z' },
+          { id: 'm2', groupId: 'g1', pairAId: 'p3', pairBId: 'p4', round: 1, scheduledAt: '2024-01-01T10:00:00.000Z', result: { scoreA: 6, scoreB: 2 } },
+        ],
+      }],
+    }
+    useTournamentStore.setState({ current: t, status: 'loaded' } as any)
+
+    useTournamentStore.getState().moveMatchToSlot('m1', 's2')
+
+    expect(useTournamentStore.getState().current?.slots).toEqual(t.slots)
+  })
 })
 
 describe('tournamentStore — newTournament', () => {
