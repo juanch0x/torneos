@@ -4,11 +4,13 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Alert, Button, Group, NumberInput, Paper, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
+import { exportTournamentXlsx } from '../export'
 import { useTournamentStore } from '../store/tournamentStore'
+import { createExportXlsxController, initialExportXlsxState } from './exportXlsxController'
 import { ResultDrawer } from './ResultDrawer'
 import { formatDateTime } from './format'
 
@@ -95,6 +97,8 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const [unavailableStartsAt, setUnavailableStartsAt] = useState('')
   const [unavailableEndsAt, setUnavailableEndsAt] = useState('')
   const [unavailableReason, setUnavailableReason] = useState('')
+  const [exportState, setExportState] = useState(initialExportXlsxState)
+  const exportControllerRef = useRef(createExportXlsxController(setExportState))
 
   // Below sm (48em) → card list; at/above sm → TanStack table.
   const isMobile = useMediaQuery('(max-width: 48em)')
@@ -235,6 +239,10 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
     setUnavailableReason('')
   }
 
+  async function handleExportXlsx() {
+    await exportControllerRef.current.run(() => exportTournamentXlsx(tournament))
+  }
+
   // Renders a single slot as a mobile card. Reorder and delete controls are omitted (desktop-only).
   function renderCard(slot: Slot) {
     const info = slot.matchId ? matches.get(slot.matchId) : undefined
@@ -295,7 +303,16 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           <Button disabled={!startInput} onClick={handleGenerate}>
             ⚡ Generar fixture
           </Button>
+          <Button variant="default" onClick={() => void handleExportXlsx()} disabled={exportState.isExporting} loading={exportState.isExporting}>
+            Export XLSX
+          </Button>
         </Group>
+
+        {exportState.errorMessage && (
+          <Alert color="red" title="Error al exportar">
+            <Text size="sm">{exportState.errorMessage}</Text>
+          </Alert>
+        )}
 
         <Text c="dimmed" size="sm">
           Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
