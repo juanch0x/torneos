@@ -5,7 +5,21 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useMemo, useRef, useState } from 'react'
-import { Alert, Button, Group, NumberInput, Paper, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core'
+import {
+  Alert,
+  Badge,
+  Button,
+  Collapse,
+  Group,
+  NumberInput,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
 import { exportTournamentXlsx } from '../export'
@@ -78,6 +92,90 @@ function ResultTrigger({ info, onOpen }: { info: MatchInfo; onOpen: () => void }
   )
 }
 
+interface FixtureOutcomeSummaryProps {
+  scheduledCount: number
+  openSlotCount: number
+  unscheduledLabels: string[]
+}
+
+function FixtureOutcomeSummary({
+  scheduledCount,
+  openSlotCount,
+  unscheduledLabels,
+}: FixtureOutcomeSummaryProps) {
+  const [detailsOpened, setDetailsOpened] = useState(false)
+  const unscheduledCount = unscheduledLabels.length
+  const hasExceptions = unscheduledCount > 0
+
+  return (
+    <Paper withBorder p="sm">
+      <Stack gap="sm">
+        <Group justify="space-between" align="flex-start" gap="sm">
+          <Stack gap={4}>
+            <Group gap="xs">
+              <Title order={3}>
+                {hasExceptions ? 'Fixture generado' : 'Fixture listo'}
+              </Title>
+              <Badge color={hasExceptions ? 'blue' : 'green'} variant="light">
+                {hasExceptions ? 'Revisión puntual' : 'Listo para exportar'}
+              </Badge>
+            </Group>
+            <Text c="dimmed" size="sm">
+              {hasExceptions
+                ? 'La mayor parte del fixture ya está lista. Revisá solo los pendientes si hace falta.'
+                : 'Los partidos agendados ya están listos para revisar, mover y exportar.'}
+            </Text>
+          </Stack>
+        </Group>
+
+        <Group gap="sm" align="stretch" wrap="wrap">
+          <Paper withBorder p="xs" radius="md" style={{ minWidth: '10rem', flex: '1 1 10rem' }}>
+            <Text size="xs" c="dimmed">Partidos con horario</Text>
+            <Text fw={700} size="lg">{scheduledCount}</Text>
+          </Paper>
+          <Paper withBorder p="xs" radius="md" style={{ minWidth: '10rem', flex: '1 1 10rem' }}>
+            <Text size="xs" c="dimmed">Franjas libres</Text>
+            <Text fw={700} size="lg">{openSlotCount}</Text>
+          </Paper>
+          <Paper withBorder p="xs" radius="md" style={{ minWidth: '10rem', flex: '1 1 10rem' }}>
+            <Text size="xs" c="dimmed">Pendientes sin horario</Text>
+            <Text fw={700} size="lg">{unscheduledCount}</Text>
+          </Paper>
+        </Group>
+
+        <Text c="dimmed" size="sm">
+          La exportación XLSX sigue disponible y también incluye filas sin horario cuando existen.
+        </Text>
+
+        {hasExceptions && (
+          <Stack gap="xs">
+            <Button
+              variant="subtle"
+              size="xs"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={() => setDetailsOpened((opened) => !opened)}
+            >
+              {detailsOpened ? 'Ocultar detalle de pendientes' : `Ver detalle de pendientes (${unscheduledCount})`}
+            </Button>
+
+            <Collapse expanded={detailsOpened}>
+              <Paper withBorder p="sm" radius="md">
+                <Stack gap={4}>
+                  {unscheduledLabels.map((label) => (
+                    <Text key={label} size="sm">
+                      {label}
+                    </Text>
+                  ))}
+                </Stack>
+              </Paper>
+            </Collapse>
+          </Stack>
+        )}
+      </Stack>
+    </Paper>
+  )
+}
+
 const columnHelper = createColumnHelper<Slot>()
 
 export function SchedulePanel({ tournament }: { tournament: Tournament }) {
@@ -129,6 +227,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   )
 
   const openSlots = data.filter((slot) => !slot.matchId)
+  const scheduledMatchesCount = data.length - openSlots.length
 
   const columns = useMemo(
     () => [
@@ -319,6 +418,14 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           Después podés reordenarlos con las flechas usando el mismo re-flow que las disponibilidades.
         </Text>
 
+        {data.length > 0 && (
+          <FixtureOutcomeSummary
+            scheduledCount={scheduledMatchesCount}
+            openSlotCount={openSlots.length}
+            unscheduledLabels={unscheduledMatches.map((info) => info.label)}
+          />
+        )}
+
         <Paper withBorder p="sm">
           <Stack gap="xs">
             <Title order={3}>Disponibilidad de parejas</Title>
@@ -367,17 +474,6 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
             })}
           </Stack>
         </Paper>
-
-        {(openSlots.length > 0 || unscheduledMatches.length > 0) && (
-          <Alert color="yellow" title="Fixture con espacios por revisar">
-            {openSlots.length > 0 && <Text size="sm">Franjas libres: {openSlots.length}</Text>}
-            {unscheduledMatches.length > 0 && (
-              <Text size="sm">
-                Partidos sin horario: {unscheduledMatches.map((info) => info.label).join(' · ')}
-              </Text>
-            )}
-          </Alert>
-        )}
 
         {data.length === 0 ? (
           <Text c="dimmed" size="sm">
