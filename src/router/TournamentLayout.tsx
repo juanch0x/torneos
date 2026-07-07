@@ -2,6 +2,8 @@ import { Link, Outlet, useNavigate, useParams, useLocation } from '@tanstack/rea
 import { useEffect } from 'react'
 import { Breadcrumbs, Loader, Stack, Tabs, Text } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
+import { deriveCockpitGuidance } from '../ui/cockpitGuidance'
+import { CockpitGuidanceCard } from '../ui/CockpitGuidanceCard'
 import { formatDate } from '../ui/format'
 import { NotFound } from './NotFound'
 
@@ -37,6 +39,7 @@ export function TournamentLayout() {
   }
 
   const sectionLabel = activeTab === 'results' ? 'Results' : activeTab === 'fixture' ? 'Fixture' : 'Groups'
+  const guidance = deriveCockpitGuidance(current)
 
   return (
     <Stack gap="xs">
@@ -52,6 +55,8 @@ export function TournamentLayout() {
       <Text size="xs" c="dimmed">
         {formatDate(current.startDate ?? current.date)}
       </Text>
+
+      <CockpitGuidanceCard guidance={guidance} />
 
       <Tabs value={activeTab} onChange={handleTabChange}>
         <Tabs.List>
