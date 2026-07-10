@@ -25,6 +25,8 @@ import type { ID, Match, Slot, Tournament } from '../domain/types'
 import { exportTournamentXlsx } from '../export'
 import { useTournamentStore } from '../store/tournamentStore'
 import { createExportXlsxController, initialExportXlsxState } from './exportXlsxController'
+import { MobileMatchCard } from './MobileMatchCard'
+import { ResultTriggerButton } from './ResultTriggerButton'
 import { ResultDrawer } from './ResultDrawer'
 import { formatDateTime } from './format'
 
@@ -73,23 +75,6 @@ function matchesPerDay(startsAtIso: string, durationMin: number, endHour: number
   const startMinutes = start.getHours() * 60 + start.getMinutes()
   const span = endHour * 60 - startMinutes
   return Math.max(1, Math.floor(span / durationMin))
-}
-
-// Renders a read-only score (editable) or an entry trigger for a scheduled match.
-// Shared between the desktop table cell and the mobile card so both open the same ResultDrawer.
-function ResultTrigger({ info, onOpen }: { info: MatchInfo; onOpen: () => void }) {
-  if (info.match.result) {
-    return (
-      <Button variant="subtle" size="xs" onClick={onOpen}>
-        {info.match.result.scoreA} – {info.match.result.scoreB}
-      </Button>
-    )
-  }
-  return (
-    <Button variant="default" size="xs" onClick={onOpen}>
-      Ingresar
-    </Button>
-  )
 }
 
 interface FixtureOutcomeSummaryProps {
@@ -264,7 +249,12 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         cell: ({ row }) => {
           const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
           if (!info) return null
-          return <ResultTrigger info={info} onOpen={() => setOpenMatch(info)} />
+          return (
+            <ResultTriggerButton
+              result={info.match.result}
+              onOpen={() => setOpenMatch(info)}
+            />
+          )
         },
       }),
       columnHelper.display({
@@ -345,24 +335,30 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   // Renders a single slot as a mobile card. Reorder and delete controls are omitted (desktop-only).
   function renderCard(slot: Slot) {
     const info = slot.matchId ? matches.get(slot.matchId) : undefined
+    if (info) {
+      return (
+        <MobileMatchCard
+          key={slot.id}
+          matchNumber={info.match.number}
+          contextLabel={formatDateTime(slot.startsAt)}
+          metaLabel={info.label}
+          teamA={info.labelA}
+          teamB={info.labelB}
+          score={info.match.result}
+          statusLabel={info.match.result ? 'Jugado' : 'Pendiente'}
+          actionLabel={info.match.result ? 'Editar resultado' : 'Cargar resultado'}
+          actionVariant={info.match.result ? 'light' : 'filled'}
+          accentColor={info.color}
+          onOpenResult={() => setOpenMatch(info)}
+        />
+      )
+    }
+
     return (
-      <Paper key={slot.id} withBorder p="sm" style={{ backgroundColor: info?.color }}>
+      <Paper key={slot.id} withBorder p="sm">
         <Stack gap={4}>
-          {info ? (
-            <>
-              <Group justify="space-between">
-                <Text fw={600}>{info.match.number != null ? `#${info.match.number}` : ''}</Text>
-                <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
-              </Group>
-              <Text style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{info.label}</Text>
-              <ResultTrigger info={info} onOpen={() => setOpenMatch(info)} />
-            </>
-          ) : (
-            <>
-              <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
-              <Text c="dimmed" size="sm">— libre —</Text>
-            </>
-          )}
+          <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
+          <Text c="dimmed" size="sm">— libre —</Text>
         </Stack>
       </Paper>
     )

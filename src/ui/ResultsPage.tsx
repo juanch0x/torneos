@@ -1,4 +1,4 @@
-import { Stack, Text, Title } from '@mantine/core'
+import { Paper, Stack, Text, Title } from '@mantine/core'
 import { useSearch } from '@tanstack/react-router'
 import type { Category } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
@@ -12,10 +12,12 @@ interface CategorySectionProps {
 /** Renders a full category: header + each group's standings and matches. */
 function CategorySection({ category }: CategorySectionProps) {
   return (
-    <div>
-      <Title order={3} mb="xs" style={{ borderLeft: `6px solid ${category.color}`, paddingLeft: '0.5rem' }}>
-        {category.name}
-      </Title>
+    <Stack gap="md">
+      <Paper withBorder radius="md" p="md">
+        <Title order={3} style={{ borderLeft: `6px solid ${category.color}`, paddingLeft: '0.5rem' }}>
+          {category.name}
+        </Title>
+      </Paper>
       {category.groups.length === 0 ? (
         <Text c="dimmed" size="sm">
           Sin grupos configurados todavía.
@@ -29,7 +31,7 @@ function CategorySection({ category }: CategorySectionProps) {
           <GroupResultsBlock key={group.id} category={category} group={group} />
         ))
       )}
-    </div>
+    </Stack>
   )
 }
 

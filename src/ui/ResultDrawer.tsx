@@ -62,25 +62,26 @@ export function ResultDrawer({
       opened={opened}
       onClose={onClose}
       title="Resultado del partido"
+      size="md"
     >
       <Stack gap="md" p="md">
-        <Group gap="sm" align="flex-end">
+        <Group gap="sm" align="flex-end" grow>
           <NumberInput
             label={labelA}
             value={scoreA}
             min={0}
-            style={{ width: '5rem' }}
+            style={{ flex: 1, minWidth: 0 }}
             onChange={(val) => setScoreA(val)}
           />
           <NumberInput
             label={labelB}
             value={scoreB}
             min={0}
-            style={{ width: '5rem' }}
+            style={{ flex: 1, minWidth: 0 }}
             onChange={(val) => setScoreB(val)}
           />
         </Group>
-        <Group gap="sm">
+        <Group gap="sm" grow>
           <Button disabled={!canSave} onClick={handleSave}>
             Guardar
           </Button>

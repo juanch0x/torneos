@@ -1,22 +1,12 @@
-# Specification — Result Entry Capability
+# Delta for Result Entry
 
-> Promoted from change `result-entry-leaderboard` on 2026-07-01.
-> This is the living spec for mobile-first result entry in the torneos app.
-> Fixes bugs F1 (first-save deadlock) and F3 (stale uncontrolled inputs).
-
-## Purpose
-
-Reusable bottom-sheet for entering, editing, and clearing a single match score. Centralizes result-entry UX across MatchTable (results view) and SchedulePanel (fixture/court view).
-
----
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: ResultDrawer Behavior
 
 `ResultDrawer` MUST hold both scores in local component state, initialized from `match.result` on open, and commit them atomically via `setMatchResult` on Save.
 
-**Entry points:** the drawer MUST be reachable from the results view (MatchTable), the fixture/court view (SchedulePanel), and their mobile card equivalents. Fixture cards MUST be treated as the primary mobile court-side entry point; results/category cards MUST remain secondary valid entry/review points. It MUST NOT be present in the groups setup view.
+**Entry points:** the drawer MUST be reachable from the results view (MatchTable), fixture/court view (SchedulePanel), and their mobile card equivalents. Fixture cards MUST be treated as the primary mobile court-side entry point; results/category cards MUST remain secondary valid entry/review points. It MUST NOT be present in the groups setup view.
 
 **Validation:** Save MUST be disabled unless both fields contain integers ≥ 0 and both are filled.
 
@@ -26,11 +16,14 @@ Reusable bottom-sheet for entering, editing, and clearing a single match score. 
 
 **Order invariant:** MatchTable MUST NOT reorder match rows after a result is entered.
 
+**Mobile interaction:** drawer actions and labels SHOULD remain readable and touch-friendly on small screens, but the drawer MUST remain the only score commit surface.
+(Previously: entry points and read-only display were specified for rows in results/fixture views, without naming mobile card equivalents or the fixture-first mobile priority.)
+
 #### Scenario: First save on a never-played match (F1 regression)
 
 - GIVEN a match with no `match.result`
 - WHEN the drawer is opened, both scores are entered as integers ≥ 0, and Save is triggered
-- THEN the result is persisted with both scores; the row shows the score as read-only text
+- THEN the result is persisted with both scores; the row or card shows the score as read-only text
 
 #### Scenario: Edit an existing result
 
@@ -44,7 +37,7 @@ Reusable bottom-sheet for entering, editing, and clearing a single match score. 
 - GIVEN a match with an existing result
 - WHEN Clear is triggered
 - THEN `match.result` becomes `undefined`
-- AND the match row no longer shows a score
+- AND the match row or card no longer shows a score
 
 #### Scenario: Validation blocks partial save
 

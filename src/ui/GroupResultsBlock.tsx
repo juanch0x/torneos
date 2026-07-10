@@ -1,3 +1,4 @@
+import { Paper, Stack, Text, Title } from '@mantine/core'
 import type { Category, Group } from '../domain/types'
 import { StandingsTable } from './StandingsTable'
 import { MatchTable } from './MatchTable'
@@ -13,9 +14,17 @@ interface GroupResultsBlockProps {
  */
 export function GroupResultsBlock({ category, group }: GroupResultsBlockProps) {
   return (
-    <>
-      <StandingsTable group={group} matches={category.matches} pairs={category.pairs} />
-      <MatchTable category={category} groupId={group.id} />
-    </>
+    <Paper withBorder radius="md" p="md">
+      <Stack gap="md">
+        <div>
+          <Title order={4}>{group.name}</Title>
+          <Text size="sm" c="dimmed">
+            Posiciones y partidos del grupo.
+          </Text>
+        </div>
+        <StandingsTable group={group} matches={category.matches} pairs={category.pairs} />
+        <MatchTable category={category} groupId={group.id} />
+      </Stack>
+    </Paper>
   )
 }
