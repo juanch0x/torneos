@@ -1,4 +1,4 @@
-import { Badge, Button, Group, Paper, Progress, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Paper, Progress, Stack, Text, useMantineTheme } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import type { CockpitAction, CockpitGuidance } from './cockpitGuidance'
 
@@ -53,6 +53,7 @@ function getGuidanceCopy(guidance: CockpitGuidance): GuidanceCopy {
 
 export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
   const navigate = useNavigate()
+  const theme = useMantineTheme()
   const copy = getGuidanceCopy(guidance)
   const secondaryAction = guidance.secondaryAction
   const completion = guidance.scheduledMatchCount > 0
@@ -76,14 +77,21 @@ export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
   }
 
   return (
-    <Paper withBorder p="sm">
-      <Stack gap="sm">
+    <Paper
+      p={{ base: 'md', sm: 'lg' }}
+      radius="xl"
+      style={{
+        background: `linear-gradient(135deg, ${theme.colors.clay[0]} 0%, ${theme.white} 52%, ${theme.colors.courtTeal[0]} 100%)`,
+        borderColor: theme.other.borderSubtle,
+      }}
+    >
+      <Stack gap="md">
         <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
           <Stack gap={4} style={{ flex: '1 1 18rem' }}>
             <Group gap="xs" wrap="wrap">
-              <Text fw={700}>{copy.title}</Text>
               <Badge variant="light">{copy.badge}</Badge>
             </Group>
+            <Text fw={700}>{copy.title}</Text>
             <Text size="sm" c="dimmed">
               {copy.description}
             </Text>
@@ -96,32 +104,62 @@ export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
 
         <Group gap="sm" align="stretch" wrap="wrap">
           {summaryItems.map((item) => (
-            <Paper key={item.label} withBorder p="xs" radius="md" style={{ minWidth: '9rem', flex: '1 1 9rem' }}>
-              <Text size="xs" c="dimmed">{item.label}</Text>
+            <Paper
+              key={item.label}
+              withBorder
+              p="sm"
+              radius="lg"
+              shadow="xs"
+              style={{
+                minWidth: '9rem',
+                flex: '1 1 9rem',
+                backgroundColor: theme.other.surfaceOverlayStrong,
+                borderColor: theme.other.borderSubtle,
+              }}
+            >
+              <Text size="xs" c="dimmed">
+                {item.label}
+              </Text>
               <Text fw={700}>{item.value}</Text>
             </Paper>
           ))}
         </Group>
 
         {guidance.scheduledMatchCount > 0 && (
-          <Stack gap={6}>
-            <Group justify="space-between" gap="sm">
-              <Text size="xs" c="dimmed">Progreso de resultados</Text>
-              <Text size="xs" c="dimmed">{completion}%</Text>
-            </Group>
-            <Progress value={completion} size="sm" radius="xl" />
-          </Stack>
+          <Paper
+            withBorder
+            p="sm"
+            radius="lg"
+            shadow="xs"
+            style={{ backgroundColor: theme.other.surfaceOverlaySoft, borderColor: theme.other.borderSubtle }}
+          >
+            <Stack gap={6}>
+              <Group justify="space-between" gap="sm">
+                <Text size="xs" c="dimmed">Progreso de resultados</Text>
+                <Text size="xs" c="dimmed">{completion}%</Text>
+              </Group>
+              <Progress value={completion} size="sm" radius="xl" />
+            </Stack>
+          </Paper>
         )}
 
         {secondaryAction && (
-          <Group gap="xs" wrap="wrap">
-            <Text size="sm" c="dimmed">
-              La exportación XLSX sigue disponible desde Fixture como apoyo para compartir o respaldar.
-            </Text>
-            <Button variant="subtle" size="xs" onClick={() => goToAction(secondaryAction)}>
-              {secondaryAction.label}
-            </Button>
-          </Group>
+          <Paper
+            withBorder
+            p="sm"
+            radius="lg"
+            shadow="xs"
+            style={{ backgroundColor: theme.other.surfaceOverlaySoft, borderColor: theme.other.borderSubtle }}
+          >
+            <Group justify="space-between" gap="xs" wrap="wrap">
+              <Text size="sm" c="dimmed" style={{ flex: '1 1 18rem' }}>
+                La exportación XLSX sigue disponible desde Fixture como apoyo para compartir o respaldar.
+              </Text>
+              <Button variant="subtle" size="sm" onClick={() => goToAction(secondaryAction)}>
+                {secondaryAction.label}
+              </Button>
+            </Group>
+          </Paper>
         )}
       </Stack>
     </Paper>

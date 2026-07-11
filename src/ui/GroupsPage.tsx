@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Group, NumberInput, Paper, Stack, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Group, NumberInput, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
 import { CategoryPanel } from './CategoryPanel'
 
@@ -15,20 +15,27 @@ export function GroupsPage() {
 
   return (
     <Stack gap="md">
-      <Paper withBorder p="md">
-        <Title order={2} mb="xs">
-          Categorías
-        </Title>
-        <Group gap="sm" wrap="wrap">
+      <Paper p={{ base: 'md', sm: 'lg' }}>
+        <Stack gap="md">
+          <Stack gap={4}>
+            <Title order={2}>Categorías</Title>
+            <Text c="dimmed" size="sm">
+              Creá cada categoría y definí cuántos grupos necesitás antes de cargar las parejas.
+            </Text>
+          </Stack>
+
+          <Group gap="sm" align="flex-end" wrap="wrap">
           <TextInput
+            label="Nombre"
             placeholder="Nombre de categoría (ej: Núcleo)"
             value={catName}
             onChange={(e) => setCatName(e.target.value)}
+            style={{ flex: '1 1 18rem' }}
           />
           <NumberInput
-            label="Grupos:"
+            label="Grupos"
             min={1}
-            style={{ width: '4rem' }}
+            style={{ width: '7rem' }}
             value={numGroups}
             onChange={(val) =>
               setNumGroups(Math.max(1, typeof val === 'number' ? val || 1 : 1))
@@ -44,12 +51,17 @@ export function GroupsPage() {
           >
             Agregar categoría
           </Button>
-        </Group>
+          </Group>
+        </Stack>
       </Paper>
 
-      {current.categories.map((category) => (
-        <CategoryPanel key={category.id} category={category} />
-      ))}
+      {current.categories.length === 0 ? (
+        <Alert title="Todavía no hay categorías">
+          Empezá creando la primera categoría para poder repartir grupos y cargar parejas.
+        </Alert>
+      ) : (
+        current.categories.map((category) => <CategoryPanel key={category.id} category={category} />)
+      )}
     </Stack>
   )
 }
