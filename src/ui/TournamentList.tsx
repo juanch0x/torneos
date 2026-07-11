@@ -17,6 +17,7 @@ function today(): string {
 }
 
 const columnHelper = createColumnHelper<TournamentMeta>()
+const showMockTournamentButton = import.meta.env.DEV
 
 export function TournamentList() {
   const list = useTournamentStore((s) => s.list)
@@ -75,13 +76,15 @@ export function TournamentList() {
         >
           Nuevo torneo
         </Button>
-        <Button
-          variant="default"
-          onClick={() => void newMockTournament()}
-          title="Crea 'Torneo FMP' con los datos de mock_players.json"
-        >
-          Crear torneo mock
-        </Button>
+        {showMockTournamentButton ? (
+          <Button
+            variant="default"
+            onClick={() => void newMockTournament()}
+            title="Crea 'Torneo FMP' con los datos de mock_players.json"
+          >
+            Crear torneo mock
+          </Button>
+        ) : null}
       </Group>
 
       {list.length === 0 ? (
