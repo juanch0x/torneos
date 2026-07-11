@@ -20,8 +20,8 @@
 | File | Action | What Was Done |
 |------|--------|---------------|
 | `src/ui/SchedulePanel.tsx` | Modified | Added a local Mantine outcome summary with success-first messaging, observable counts, neutral export copy, and collapsed pending-match details |
-| `openspec/changes/fixture-exception-ux/tasks.md` | Modified | Synced all apply tasks to complete after verification closed the rendered/manual checks |
-| `openspec/changes/fixture-exception-ux/apply-progress.md` | Created | Synced OpenSpec apply progress with the completed implementation and verification evidence |
+| `openspec/changes/archive/2026-07-11-fixture-exception-ux/tasks.md` | Modified | Synced all apply tasks to complete after verification closed the rendered/manual checks |
+| `openspec/changes/archive/2026-07-11-fixture-exception-ux/apply-progress.md` | Created | Synced OpenSpec apply progress with the completed implementation and verification evidence |
 
 ## Deviations from Design
 None — implementation stayed UI-only, kept derivation in `SchedulePanel.tsx`, and preserved existing handlers/behavior.

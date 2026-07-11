@@ -32,8 +32,8 @@ None.
 | `src/ui/__tests__/cockpitGuidance.test.ts` | Created | RED→GREEN coverage for setup, fixture, results progress, standings-ready, and scheduledAt fallback. |
 | `src/ui/CockpitGuidanceCard.tsx` | Created | Compact Mantine advisory card with one primary CTA and optional export-support action. |
 | `src/router/TournamentLayout.tsx` | Modified | Renders the shared guidance card between the date and tabs without changing tab navigation ownership. |
-| `openspec/changes/guided-cockpit-next-action/tasks.md` | Modified | Marked implementation and automated verification tasks complete. |
-| `openspec/changes/guided-cockpit-next-action/verify-report.md` | Created | Records automated and rendered verification evidence. |
+| `openspec/changes/archive/2026-07-11-guided-cockpit-next-action/tasks.md` | Modified | Marked implementation and automated verification tasks complete. |
+| `openspec/changes/archive/2026-07-11-guided-cockpit-next-action/verify-report.md` | Created | Records automated and rendered verification evidence. |
 
 ## TDD Cycle Evidence
 

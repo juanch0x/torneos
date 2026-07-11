@@ -35,7 +35,7 @@ No TypeScript errors.
 ### TDD Compliance
 | Check | Result | Details |
 |-------|--------|---------|
-| TDD Evidence reported | ✅ | `openspec/changes/guided-cockpit-next-action/apply-progress.md` includes a TDD Cycle Evidence table. |
+| TDD Evidence reported | ✅ | `openspec/changes/archive/2026-07-11-guided-cockpit-next-action/apply-progress.md` includes a TDD Cycle Evidence table. |
 | All tasks have tests | ✅ | 3/3 strict-TDD helper tasks point to `src/ui/__tests__/cockpitGuidance.test.ts`. |
 | RED confirmed (tests exist) | ✅ | Test file exists and covers all reported helper tasks. |
 | GREEN confirmed (tests pass) | ✅ | Fresh `pnpm test` run passed, including the helper file. |

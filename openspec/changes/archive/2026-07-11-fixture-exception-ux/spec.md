@@ -22,4 +22,4 @@
 
 ## Delta Files
 
-- `openspec/changes/fixture-exception-ux/specs/fixture-exception-ux/spec.md`
+- `openspec/changes/archive/2026-07-11-fixture-exception-ux/specs/fixture-exception-ux/spec.md`
