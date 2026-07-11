@@ -1,5 +1,16 @@
 # Exploration: mvp-cockpit-ux-polish
 
+## Completion Note
+
+This umbrella exploration is historical planning context. The recommended focused slices were implemented and committed separately:
+
+- `fixture-exception-ux` — fixture outcome summary and rare exception presentation.
+- `guided-cockpit-next-action` — tournament next-action guidance.
+- `mobile-results-ux` — mobile result-entry surfaces.
+- `visual-polish-foundation` — Mantine theme, shell, cockpit, setup, fixture, and results polish.
+
+Do not treat this umbrella change as an active implementation change; it documents why the work was split into focused slices.
+
 ## Current State
 
 Torneos is close to V1 feature-complete for the local-first organizer cockpit, but the rendered audit shows the UI still behaves like a raw internal tool: weak next-step guidance, warning-heavy fixture states, dense result tables on mobile, and a sparse visual system.
