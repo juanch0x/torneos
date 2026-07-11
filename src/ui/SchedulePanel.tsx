@@ -8,6 +8,7 @@ import { useMemo, useRef, useState } from 'react'
 import {
   Alert,
   Badge,
+  Box,
   Button,
   Collapse,
   Group,
@@ -19,6 +20,7 @@ import {
   Text,
   TextInput,
   Title,
+  useMantineTheme,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
@@ -29,6 +31,7 @@ import { MobileMatchCard } from './MobileMatchCard'
 import { ResultTriggerButton } from './ResultTriggerButton'
 import { ResultDrawer } from './ResultDrawer'
 import { formatDateTime } from './format'
+import { getMutedSurfaceStyle } from './surfaceStyles'
 
 interface MatchInfo {
   match: Match
@@ -83,27 +86,59 @@ interface FixtureOutcomeSummaryProps {
   unscheduledLabels: string[]
 }
 
+interface SummaryMetricCardProps {
+  label: string
+  value: number
+}
+
+function SummaryMetricCard({ label, value }: SummaryMetricCardProps) {
+  const theme = useMantineTheme()
+
+  return (
+    <Paper
+      p="sm"
+      radius="lg"
+      style={{
+        minWidth: '10rem',
+        flex: '1 1 10rem',
+        ...getMutedSurfaceStyle(theme),
+      }}
+    >
+      <Text size="xs" c="dimmed">{label}</Text>
+      <Text fw={700} size="lg">{value}</Text>
+    </Paper>
+  )
+}
+
 function FixtureOutcomeSummary({
   scheduledCount,
   openSlotCount,
   unscheduledLabels,
 }: FixtureOutcomeSummaryProps) {
+  const theme = useMantineTheme()
   const [detailsOpened, setDetailsOpened] = useState(false)
   const unscheduledCount = unscheduledLabels.length
   const hasExceptions = unscheduledCount > 0
 
   return (
-    <Paper withBorder p="sm">
+    <Paper
+      p={{ base: 'md', sm: 'lg' }}
+      radius="xl"
+      style={{
+        background: `linear-gradient(135deg, ${theme.colors.clay[0]} 0%, ${theme.white} 55%, ${theme.colors.courtTeal[0]} 100%)`,
+        borderColor: theme.other.borderSubtle,
+      }}
+    >
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" gap="sm">
           <Stack gap={4}>
             <Group gap="xs">
+              <Badge color={hasExceptions ? 'blue' : 'green'}>
+                {hasExceptions ? 'Revisión puntual' : 'Listo para revisar'}
+              </Badge>
               <Title order={3}>
                 {hasExceptions ? 'Fixture generado' : 'Fixture listo'}
               </Title>
-              <Badge color={hasExceptions ? 'blue' : 'green'} variant="light">
-                {hasExceptions ? 'Revisión puntual' : 'Listo para exportar'}
-              </Badge>
             </Group>
             <Text c="dimmed" size="sm">
               {hasExceptions
@@ -114,18 +149,9 @@ function FixtureOutcomeSummary({
         </Group>
 
         <Group gap="sm" align="stretch" wrap="wrap">
-          <Paper withBorder p="xs" radius="md" style={{ minWidth: '10rem', flex: '1 1 10rem' }}>
-            <Text size="xs" c="dimmed">Partidos con horario</Text>
-            <Text fw={700} size="lg">{scheduledCount}</Text>
-          </Paper>
-          <Paper withBorder p="xs" radius="md" style={{ minWidth: '10rem', flex: '1 1 10rem' }}>
-            <Text size="xs" c="dimmed">Franjas libres</Text>
-            <Text fw={700} size="lg">{openSlotCount}</Text>
-          </Paper>
-          <Paper withBorder p="xs" radius="md" style={{ minWidth: '10rem', flex: '1 1 10rem' }}>
-            <Text size="xs" c="dimmed">Pendientes sin horario</Text>
-            <Text fw={700} size="lg">{unscheduledCount}</Text>
-          </Paper>
+          <SummaryMetricCard label="Partidos con horario" value={scheduledCount} />
+          <SummaryMetricCard label="Franjas libres" value={openSlotCount} />
+          <SummaryMetricCard label="Pendientes sin horario" value={unscheduledCount} />
         </Group>
 
         <Text c="dimmed" size="sm">
@@ -144,7 +170,14 @@ function FixtureOutcomeSummary({
             </Button>
 
             <Collapse expanded={detailsOpened}>
-              <Paper withBorder p="sm" radius="md">
+              <Paper
+                p="sm"
+                radius="lg"
+                style={{
+                  backgroundColor: theme.other.surfaceOverlaySoft,
+                  borderColor: theme.other.borderSubtle,
+                }}
+              >
                 <Stack gap={4}>
                   {unscheduledLabels.map((label) => (
                     <Text key={label} size="sm">
@@ -164,6 +197,7 @@ function FixtureOutcomeSummary({
 const columnHelper = createColumnHelper<Slot>()
 
 export function SchedulePanel({ tournament }: { tournament: Tournament }) {
+  const theme = useMantineTheme()
   const generateFixture = useTournamentStore((s) => s.generateFixture)
   const removeSlot = useTournamentStore((s) => s.removeSlot)
   const moveMatchToSlot = useTournamentStore((s) => s.moveMatchToSlot)
@@ -355,64 +389,91 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
     }
 
     return (
-      <Paper key={slot.id} withBorder p="sm">
-        <Stack gap={4}>
-          <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
-          <Text c="dimmed" size="sm">— libre —</Text>
+      <Paper
+        key={slot.id}
+        p="md"
+        radius="lg"
+        style={getMutedSurfaceStyle(theme)}
+      >
+        <Stack gap="xs">
+          <Group justify="space-between" gap="xs" wrap="wrap">
+            <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
+            <Badge color="gray">Franja libre</Badge>
+          </Group>
+          <Text c="dimmed" size="sm">
+            Este hueco queda disponible para mover un partido o absorber un reacomodo.
+          </Text>
         </Stack>
       </Paper>
     )
   }
 
   return (
-    <Paper withBorder p="md">
-      <Stack gap="sm">
-        <Title order={2}>Fixture y horarios (una sola cancha, todas las categorías)</Title>
+    <Paper p={{ base: 'md', sm: 'lg' }}>
+      <Stack gap="md">
+        <Stack gap={4}>
+          <Group gap="xs" wrap="wrap">
+            <Badge color="courtTeal">Una sola cancha</Badge>
+            <Badge color="gray">Todas las categorías</Badge>
+          </Group>
+          <Title order={2}>Fixture y horarios</Title>
+          <Text c="dimmed" size="sm">
+            Generá la grilla base, reordená partidos con las flechas y usá disponibilidades para reacomodar sin tocar la lógica del torneo.
+          </Text>
+        </Stack>
 
-        <Group gap="sm" wrap="wrap" align="flex-end">
-          <TextInput
-            label="Arranca:"
-            type="datetime-local"
-            value={startInput}
-            onChange={(e) => setStartInput(e.target.value)}
-          />
-          <NumberInput
-            label="Duración (min):"
-            min={1}
-            style={{ width: '4rem' }}
-            value={duration}
-            onChange={(val) =>
-              setDuration(Math.max(1, typeof val === 'number' ? val || 1 : 1))
-            }
-          />
-          <NumberInput
-            label="Corte diario (hs):"
-            min={1}
-            max={23}
-            style={{ width: '4rem' }}
-            value={endHour}
-            onChange={(val) =>
-              setEndHour(Math.min(23, Math.max(1, typeof val === 'number' ? val || 1 : 1)))
-            }
-          />
-          <Button disabled={!startInput} onClick={handleGenerate}>
-            ⚡ Generar fixture
-          </Button>
-          <Button variant="default" onClick={() => void handleExportXlsx()} disabled={exportState.isExporting} loading={exportState.isExporting}>
-            Export XLSX
-          </Button>
-        </Group>
+        <Paper
+          p="md"
+          radius="xl"
+          style={getMutedSurfaceStyle(theme)}
+        >
+          <Stack gap="sm">
+            <Group gap="sm" wrap="wrap" align="flex-end">
+              <TextInput
+                label="Arranca:"
+                type="datetime-local"
+                value={startInput}
+                onChange={(e) => setStartInput(e.target.value)}
+              />
+              <NumberInput
+                label="Duración (min):"
+                min={1}
+                style={{ width: '6.5rem' }}
+                value={duration}
+                onChange={(val) =>
+                  setDuration(Math.max(1, typeof val === 'number' ? val || 1 : 1))
+                }
+              />
+              <NumberInput
+                label="Corte diario (hs):"
+                min={1}
+                max={23}
+                style={{ width: '7rem' }}
+                value={endHour}
+                onChange={(val) =>
+                  setEndHour(Math.min(23, Math.max(1, typeof val === 'number' ? val || 1 : 1)))
+                }
+              />
+              <Button disabled={!startInput} onClick={handleGenerate}>
+                ⚡ Generar fixture
+              </Button>
+              <Button variant="default" onClick={() => void handleExportXlsx()} disabled={exportState.isExporting} loading={exportState.isExporting}>
+                Export XLSX
+              </Button>
+            </Group>
+
+            <Text c="dimmed" size="sm">
+              Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
+              Después podés reordenarlos con las flechas usando el mismo reacomodo que las disponibilidades.
+            </Text>
+          </Stack>
+        </Paper>
 
         {exportState.errorMessage && (
           <Alert color="red" title="Error al exportar">
             <Text size="sm">{exportState.errorMessage}</Text>
           </Alert>
         )}
-
-        <Text c="dimmed" size="sm">
-          Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
-          Después podés reordenarlos con las flechas usando el mismo re-flow que las disponibilidades.
-        </Text>
 
         {data.length > 0 && (
           <FixtureOutcomeSummary
@@ -422,9 +483,28 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           />
         )}
 
-        <Paper withBorder p="sm">
+        <Paper
+          p={{ base: 'md', sm: 'lg' }}
+          radius="xl"
+          style={getMutedSurfaceStyle(theme)}
+        >
           <Stack gap="xs">
-            <Title order={3}>Disponibilidad de parejas</Title>
+            <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
+              <Stack gap={4}>
+                <Group gap="xs" wrap="wrap">
+                  <Title order={3}>Disponibilidad de parejas</Title>
+                  <Badge color="blue">Reacomodo guiado</Badge>
+                </Group>
+                <Text c="dimmed" size="sm">
+                  Registrá excepciones puntuales para una pareja y el fixture reubica lo necesario sin cambiar las reglas de agenda.
+                </Text>
+              </Stack>
+
+              <Badge color="gray">
+                {(tournament.pairUnavailableWindows ?? []).length} ventana(s)
+              </Badge>
+            </Group>
+
             <Group gap="sm" wrap="wrap" align="flex-end">
               <Select
                 label="Pareja"
@@ -452,29 +532,59 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                 value={unavailableReason}
                 onChange={(event) => setUnavailableReason(event.currentTarget.value)}
               />
-              <Button onClick={handleAddUnavailableWindow}>Agregar y re-flow</Button>
+              <Button onClick={handleAddUnavailableWindow}>Agregar y reacomodar</Button>
             </Group>
 
-            {(tournament.pairUnavailableWindows ?? []).map((window) => {
-              const pair = pairOptions.find((option) => option.value === window.pairId)
-              return (
-                <Group key={window.id} justify="space-between" gap="xs">
-                  <Text size="sm">
-                    {pair?.label ?? window.pairId}: {formatDateTime(window.startsAt)} → {formatDateTime(window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
-                  </Text>
-                  <Button size="xs" variant="subtle" color="red" onClick={() => removePairUnavailableWindow(window.id)}>
-                    Quitar
-                  </Button>
-                </Group>
-              )
-            })}
+            {(tournament.pairUnavailableWindows ?? []).length === 0 ? (
+              <Paper p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+                <Text size="sm" c="dimmed">
+                  Todavía no hay excepciones cargadas. Si aparece un conflicto puntual, agregalo acá y el fixture se reacomoda.
+                </Text>
+              </Paper>
+            ) : (
+              <Stack gap="xs">
+                {(tournament.pairUnavailableWindows ?? []).map((window) => {
+                  const pair = pairOptions.find((option) => option.value === window.pairId)
+                  return (
+                    <Paper key={window.id} p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+                      <Group justify="space-between" gap="xs" wrap="wrap">
+                        <Box style={{ flex: '1 1 18rem' }}>
+                          <Text size="sm" fw={600}>
+                            {pair?.label ?? window.pairId}
+                          </Text>
+                          <Text size="sm" c="dimmed">
+                            {formatDateTime(window.startsAt)} → {formatDateTime(window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
+                          </Text>
+                        </Box>
+                        <Button size="xs" variant="subtle" color="red" onClick={() => removePairUnavailableWindow(window.id)}>
+                          Quitar
+                        </Button>
+                      </Group>
+                    </Paper>
+                  )
+                })}
+              </Stack>
+            )}
           </Stack>
         </Paper>
 
         {data.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            Todavía sin calendario. Definí los grupos y tocá "Generar fixture".
-          </Text>
+          <Paper
+            p={{ base: 'md', sm: 'lg' }}
+            radius="xl"
+            style={getMutedSurfaceStyle(theme)}
+          >
+            <Stack gap="xs">
+              <Group gap="xs" wrap="wrap">
+                <Badge color="gray">Sin calendario todavía</Badge>
+                <Badge color="courtTeal">Paso siguiente</Badge>
+              </Group>
+              <Text fw={700}>Todavía no hay horarios generados</Text>
+              <Text c="dimmed" size="sm">
+                Definí categorías, grupos y parejas; después tocá "Generar fixture" para crear cruces, franjas y el primer orden de juego.
+              </Text>
+            </Stack>
+          </Paper>
         ) : isMobile ? (
           <Stack gap="sm">{data.map(renderCard)}</Stack>
         ) : (
@@ -497,7 +607,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                   return (
                     <Table.Tr
                       key={row.id}
-                      style={info ? { backgroundColor: info.color } : undefined}
+                      style={info ? { boxShadow: `inset 4px 0 0 ${info.color}` } : undefined}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <Table.Td key={cell.id}>

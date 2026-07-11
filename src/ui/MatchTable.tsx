@@ -6,7 +6,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
-import { Stack, Table, Text } from '@mantine/core'
+import { Badge, Paper, Stack, Table, Text, useMantineTheme } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { Category, ID, Match } from '../domain/types'
 import { MobileMatchCard } from './MobileMatchCard'
@@ -14,6 +14,7 @@ import { ResultTriggerButton } from './ResultTriggerButton'
 import { useTournamentStore } from '../store/tournamentStore'
 import { ResultDrawer } from './ResultDrawer'
 import { formatDateTime } from './format'
+import { getMutedSurfaceStyle } from './surfaceStyles'
 
 function buildLabelLookup(category: Category): (id: ID) => string {
   const pairs = new Map(category.pairs.map((p) => [p.id, `${p.player1} / ${p.player2}`]))
@@ -32,6 +33,7 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
   const setMatchResult = useTournamentStore((s) => s.setMatchResult)
   const [openMatch, setOpenMatch] = useState<Match | null>(null)
   const isMobile = useMediaQuery('(max-width: 48em)')
+  const theme = useMantineTheme()
 
   const label = useMemo(() => buildLabelLookup(category), [category])
 
@@ -53,7 +55,11 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
       }),
       columnHelper.accessor('groupId', {
         header: 'Grupo',
-        cell: (ctx) => label(ctx.getValue()),
+        cell: (ctx) => (
+          <Badge color="courtTeal" variant="light">
+            {label(ctx.getValue())}
+          </Badge>
+        ),
       }),
       columnHelper.display({
         id: 'partido',
@@ -98,9 +104,15 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
 
   if (data.length === 0) {
     return (
-      <Text c="dimmed" size="sm">
-        Sin partidos. Asigná parejas a grupos y generá el fixture.
-      </Text>
+      <Paper
+        p="md"
+        radius="lg"
+        style={getMutedSurfaceStyle(theme)}
+      >
+        <Text c="dimmed" size="sm">
+          Sin partidos. Asigná parejas a grupos y generá el fixture.
+        </Text>
+      </Paper>
     )
   }
 
@@ -119,8 +131,13 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
           ))}
         </Stack>
       ) : (
-        <Table.ScrollContainer minWidth={640}>
-          <Table>
+        <Paper
+          p={0}
+          radius="lg"
+          style={{ overflow: 'hidden', borderColor: theme.other.borderSubtle }}
+        >
+          <Table.ScrollContainer minWidth={640}>
+            <Table>
             <Table.Thead>
               {table.getHeaderGroups().map((hg) => (
                 <Table.Tr key={hg.id}>
@@ -137,7 +154,10 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
             </Table.Thead>
             <Table.Tbody>
               {rows.map((row) => (
-                <Table.Tr key={row.id} bg={row.original.result ? 'green.0' : undefined}>
+                <Table.Tr
+                  key={row.id}
+                  bg={row.original.result ? theme.other.playedRowBackground : undefined}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <Table.Td
                       key={cell.id}
@@ -149,8 +169,9 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
                 </Table.Tr>
               ))}
             </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
+            </Table>
+          </Table.ScrollContainer>
+        </Paper>
       )}
       <ResultDrawer
         match={openMatch}
