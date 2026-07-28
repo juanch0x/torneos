@@ -23,6 +23,7 @@ import { useParams } from '@tanstack/react-router'
 import type { Category, Pair } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { RouterLink } from './RouterLink'
+import { EditPairDrawer } from './EditPairDrawer'
 import { getMutedSurfaceStyle } from './surfaceStyles'
 
 function pairLabel(pair: Pair): string {
@@ -40,6 +41,7 @@ export function CategoryPanel({ category }: { category: Category }) {
   const { id } = useParams({ from: '/tournaments/$id' })
   const theme = useMantineTheme()
   const addPair = useTournamentStore((s) => s.addPair)
+  const updatePair = useTournamentStore((s) => s.updatePair)
   const setCategoryGroupCount = useTournamentStore((s) => s.setCategoryGroupCount)
   const shuffleGroups = useTournamentStore((s) => s.shuffleGroups)
   const assignPairToGroup = useTournamentStore((s) => s.assignPairToGroup)
@@ -48,6 +50,7 @@ export function CategoryPanel({ category }: { category: Category }) {
 
   const [p1, setP1] = useState('')
   const [p2, setP2] = useState('')
+  const [pairBeingEdited, setPairBeingEdited] = useState<Pair | null>(null)
 
   const columns = useMemo(
     () => [
@@ -81,6 +84,15 @@ export function CategoryPanel({ category }: { category: Category }) {
             </NativeSelect>
           )
         },
+      }),
+      columnHelper.display({
+        id: 'acciones',
+        header: 'Acciones',
+        cell: ({ row }) => (
+          <Button variant="subtle" size="compact-sm" onClick={() => setPairBeingEdited(row.original)}>
+            Editar
+          </Button>
+        ),
       }),
     ],
     [category, assignPairToGroup, movePairToGroup],
@@ -261,6 +273,16 @@ export function CategoryPanel({ category }: { category: Category }) {
             </Text>
           </Group>
         </Paper>
+
+        <EditPairDrawer
+          pair={pairBeingEdited}
+          opened={pairBeingEdited != null}
+          onClose={() => setPairBeingEdited(null)}
+          onSubmit={(player1, player2) => {
+            if (!pairBeingEdited) return
+            updatePair(category.id, pairBeingEdited.id, player1, player2)
+          }}
+        />
       </Stack>
     </Paper>
   )

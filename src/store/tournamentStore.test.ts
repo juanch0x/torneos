@@ -165,6 +165,65 @@ describe('tournamentStore — availability reflow actions', () => {
   })
 })
 
+describe('tournamentStore — pair editing', () => {
+  it('updates only the pair names while preserving every existing reference', () => {
+    const pair = { id: 'pair-1', player1: 'Ana', player2: 'Beto', seed: 3 }
+    const match = {
+      id: 'match-1',
+      groupId: 'group-1',
+      pairAId: pair.id,
+      pairBId: 'pair-2',
+      round: 1,
+      scheduledAt: '2024-01-01T09:00:00.000Z',
+      result: { scoreA: 6, scoreB: 3 },
+    }
+    const tournament: Tournament = {
+      ...makeTournament('t1'),
+      slots: [{ id: 'slot-1', startsAt: match.scheduledAt, matchId: match.id }],
+      pairUnavailableWindows: [{
+        id: 'unavailable-1',
+        pairId: pair.id,
+        startsAt: '2024-01-02T09:00:00.000Z',
+        endsAt: '2024-01-02T10:00:00.000Z',
+      }],
+      categories: [{
+        id: 'category-1',
+        name: 'Primera',
+        color: '#eee',
+        config: { numGroups: 1, format: 'round-robin' },
+        pairs: [pair, { id: 'pair-2', player1: 'Caro', player2: 'Dani' }],
+        groups: [{ id: 'group-1', name: 'Grupo A', pairIds: [pair.id, 'pair-2'] }],
+        matches: [match],
+        playoffs: {
+          rounds: [{
+            id: 'round-1',
+            name: 'Final',
+            slots: [{ id: 'playoff-1', pairAId: pair.id, pairBId: 'pair-2' }],
+          }],
+        },
+      }],
+    }
+    useTournamentStore.setState({ current: tournament, status: 'loaded' } as any)
+
+    useTournamentStore.getState().updatePair('category-1', pair.id, 'Ana María', 'Bruno')
+
+    const updated = useTournamentStore.getState().current!
+    const updatedCategory = updated.categories[0]
+
+    expect(updatedCategory.pairs[0]).toEqual({
+      id: pair.id,
+      player1: 'Ana María',
+      player2: 'Bruno',
+      seed: 3,
+    })
+    expect(updatedCategory.groups).toBe(tournament.categories[0].groups)
+    expect(updatedCategory.matches).toBe(tournament.categories[0].matches)
+    expect(updatedCategory.playoffs).toBe(tournament.categories[0].playoffs)
+    expect(updated.slots).toBe(tournament.slots)
+    expect(updated.pairUnavailableWindows).toBe(tournament.pairUnavailableWindows)
+  })
+})
+
 describe('tournamentStore — newTournament', () => {
   it('sets status to loaded after creation', async () => {
     await useTournamentStore.getState().newTournament('Liga 2024', '2024-01-01')
