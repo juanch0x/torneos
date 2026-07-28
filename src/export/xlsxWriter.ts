@@ -1,7 +1,8 @@
 import writeXlsxFile, { type Cell, type Sheet, type SheetData } from 'write-excel-file/browser'
 import type { FixtureSheetRow, GroupsSheetSection, GroupsSheetRow } from './viewModel'
 
-const DATE_TIME_FORMAT = 'mm/dd/yyyy hh:mm'
+const DATE_FORMAT = 'dd/mm/yyyy'
+const TIME_FORMAT = 'hh:mm'
 const GROUPS_STANDINGS_COLUMN_COUNT = 8
 const GROUP_TITLE_FONT_SIZE = 14
 const CATEGORY_TITLE_FONT_SIZE = 16
@@ -64,6 +65,7 @@ export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blo
       [
         headerCell('Partido #'),
         headerCell('Fecha'),
+        headerCell('Hora'),
         headerCell('Categoría'),
         headerCell('Grupo'),
         headerCell('Pareja A'),
@@ -72,7 +74,8 @@ export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blo
       ],
       ...fixture.map((row) => [
         row.matchNumber,
-        row.scheduledAt ? { value: row.scheduledAt, type: Date, format: DATE_TIME_FORMAT } : undefined,
+        row.scheduledAt ? { value: row.scheduledAt, type: Date, format: DATE_FORMAT } : undefined,
+        row.scheduledAt ? { value: row.scheduledAt, type: Date, format: TIME_FORMAT } : undefined,
         safeSpreadsheetText(row.category),
         safeSpreadsheetText(row.group),
         safeSpreadsheetText(row.pairA),
@@ -82,7 +85,8 @@ export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blo
     ],
     columns: [
       { width: 10 },
-      { width: 22 },
+      { width: 14 },
+      { width: 10 },
       { width: 18 },
       { width: 16 },
       { width: 18 },
@@ -90,7 +94,7 @@ export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blo
       { width: 12 },
     ],
     stickyRowsCount: 1,
-    dateFormat: DATE_TIME_FORMAT,
+    dateFormat: DATE_FORMAT,
   }
 }
 

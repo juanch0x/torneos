@@ -86,7 +86,7 @@ describe('buildGroupsWorkbookSheet', () => {
 })
 
 describe('buildFixtureWorkbookSheet', () => {
-  it('keeps Spanish fixture labels while removing the Estado column', () => {
+  it('exports scheduled dates and times into separate typed Excel columns', () => {
     const sheet = buildFixtureWorkbookSheet([
       {
         matchNumber: 4,
@@ -102,6 +102,7 @@ describe('buildFixtureWorkbookSheet', () => {
     expect(sheet.data[0]).toEqual([
       { value: 'Partido #', fontWeight: 'bold' },
       { value: 'Fecha', fontWeight: 'bold' },
+      { value: 'Hora', fontWeight: 'bold' },
       { value: 'Categoría', fontWeight: 'bold' },
       { value: 'Grupo', fontWeight: 'bold' },
       { value: 'Pareja A', fontWeight: 'bold' },
@@ -110,7 +111,8 @@ describe('buildFixtureWorkbookSheet', () => {
     ])
     expect(sheet.data[1]).toEqual([
       4,
-      { value: new Date('2026-07-02T10:00:00.000Z'), type: Date, format: 'mm/dd/yyyy hh:mm' },
+      { value: new Date('2026-07-02T10:00:00.000Z'), type: Date, format: 'dd/mm/yyyy' },
+      { value: new Date('2026-07-02T10:00:00.000Z'), type: Date, format: 'hh:mm' },
       'Primera',
       'Grupo A',
       'Ana/Ada',
@@ -119,7 +121,7 @@ describe('buildFixtureWorkbookSheet', () => {
     ])
   })
 
-  it('keeps unscheduled rows with a blank date cell and full match context', () => {
+  it('keeps unscheduled rows with blank date and time cells and full match context', () => {
     const sheet = buildFixtureWorkbookSheet([
       {
         matchNumber: 7,
@@ -131,9 +133,9 @@ describe('buildFixtureWorkbookSheet', () => {
       },
     ])
 
-    expect(sheet.data[0]).toHaveLength(7)
+    expect(sheet.data[0]).toHaveLength(8)
     expect(sheet.data[0]).not.toContainEqual({ value: 'Estado', fontWeight: 'bold' })
-    expect(sheet.data[1]).toEqual([7, undefined, 'Primera', 'Grupo C', 'Ana/Ada', 'Bia/Bea', ''])
+    expect(sheet.data[1]).toEqual([7, undefined, undefined, 'Primera', 'Grupo C', 'Ana/Ada', 'Bia/Bea', ''])
   })
 
   it('neutralizes formula-like user labels before writing workbook cells', () => {
@@ -178,6 +180,6 @@ describe('buildFixtureWorkbookSheet', () => {
       },
     ])
     expect(groupsSheet.data[3]).toEqual(["'\t@Ana/=cmd"])
-    expect(fixtureSheet.data[1]).toEqual([8, undefined, "'-Primera", "' @Grupo B", "'=Ana/Ada", "'+Bia/Bea", ''])
+    expect(fixtureSheet.data[1]).toEqual([8, undefined, undefined, "'-Primera", "' @Grupo B", "'=Ana/Ada", "'+Bia/Bea", ''])
   })
 })
