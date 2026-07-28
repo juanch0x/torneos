@@ -5,7 +5,7 @@ import {
   generateFixture,
   intervalOverlaps,
   isMatchAvailableForSlot,
-  moveMatchToSlot,
+  reorderMatchInSlots,
   reflowUnavailableMatches,
   syncScheduleTimes,
 } from '../schedule'
@@ -631,7 +631,7 @@ describe('availability reflow', () => {
     expect(reflowUnavailableMatches(after)).toEqual(after)
   })
 
-  it('moves a match through the same displacement path and rejects result targets', () => {
+  it('reorders adjacent pending matches while retaining the original slot times', () => {
     const moved = { ...match('moved', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
     const displaced = { ...match('displaced', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
     const played = { ...match('played', 'g', 1), pairAId: 'p5', pairBId: 'p6', scheduledAt: isoAt(90 * MIN), result: { scoreA: 6, scoreB: 1 } }
@@ -640,10 +640,147 @@ describe('availability reflow', () => {
       [category('cat1', 'Núcleo', [moved, displaced, played])],
     )
 
-    const after = moveMatchToSlot(t, 'moved', 's2')
+    const outcome = reorderMatchInSlots(t, 'moved', 's2')
+    const after = outcome.tournament
+    expect(outcome.status).toBe('moved')
     expect(after.slots.find((s) => s.id === 's2')?.matchId).toBe('moved')
     expect(after.slots.find((s) => s.id === 's1')?.matchId).toBe('displaced')
-    expect(moveMatchToSlot(after, 'moved', 's3')).toEqual(after)
+    expect(findMatch(after, 'moved')?.scheduledAt).toBe(isoAt(45 * MIN))
+  })
+
+  it('shifts all intervening occupants when moving across multiple slots', () => {
+    const matches = ['a', 'b', 'c'].map((id) => ({ ...match(id, 'g', 1), scheduledAt: START }))
+    const t = tournament(
+      [slot('s1', START, 'a'), slot('s2', isoAt(45 * MIN), 'b'), slot('s3', isoAt(90 * MIN), 'c')],
+      [category('cat1', 'Núcleo', matches)],
+    )
+
+    const after = reorderMatchInSlots(t, 'a', 's3').tournament
+
+    expect(assignmentByTime(after).map((entry) => entry.matchId)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('moves forward into a non-adjacent empty target without shifting the intervening matches', () => {
+    const moved = { ...match('moved', 'g', 1), scheduledAt: START }
+    const middle = { ...match('middle', 'g', 1), scheduledAt: isoAt(45 * MIN) }
+    const later = { ...match('later', 'g', 1), scheduledAt: isoAt(90 * MIN) }
+    const t = tournament(
+      [
+        slot('s1', START, 'moved'),
+        slot('s2', isoAt(45 * MIN), 'middle'),
+        slot('s3', isoAt(90 * MIN), 'later'),
+        slot('s4', isoAt(135 * MIN)),
+      ],
+      [category('cat1', 'Núcleo', [moved, middle, later])],
+    )
+
+    const after = reorderMatchInSlots(t, 'moved', 's4').tournament
+
+    expect(assignmentByTime(after).map((entry) => entry.matchId)).toEqual([undefined, 'middle', 'later', 'moved'])
+  })
+
+  it('moves backward into a non-adjacent empty target without shifting the intervening matches', () => {
+    const early = { ...match('early', 'g', 1), scheduledAt: isoAt(45 * MIN) }
+    const middle = { ...match('middle', 'g', 1), scheduledAt: isoAt(90 * MIN) }
+    const moved = { ...match('moved', 'g', 1), scheduledAt: isoAt(135 * MIN) }
+    const t = tournament(
+      [
+        slot('s1', START),
+        slot('s2', isoAt(45 * MIN), 'early'),
+        slot('s3', isoAt(90 * MIN), 'middle'),
+        slot('s4', isoAt(135 * MIN), 'moved'),
+      ],
+      [category('cat1', 'Núcleo', [early, middle, moved])],
+    )
+
+    const after = reorderMatchInSlots(t, 'moved', 's1').tournament
+
+    expect(assignmentByTime(after).map((entry) => entry.matchId)).toEqual(['moved', 'early', 'middle', undefined])
+  })
+
+  it('blocks a move that crosses a played match', () => {
+    const moving = { ...match('moving', 'g', 1), scheduledAt: START }
+    const played = { ...match('played', 'g', 1), scheduledAt: isoAt(45 * MIN), result: { scoreA: 6, scoreB: 1 } }
+    const t = tournament(
+      [slot('s1', START, 'moving'), slot('s2', isoAt(45 * MIN), 'played'), slot('s3', isoAt(90 * MIN))],
+      [category('cat1', 'Núcleo', [moving, played])],
+    )
+
+    const outcome = reorderMatchInSlots(t, 'moving', 's3')
+
+    expect(outcome.status).toBe('blocked')
+    expect(outcome.reason).toBe('played-match')
+    expect(outcome.tournament).toBe(t)
+  })
+
+  it('blocks a move when any shifted match is unavailable at its new slot', () => {
+    const moving = { ...match('moving', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
+    const shifted = { ...match('shifted', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
+    const t: Tournament = {
+      ...tournament(
+        [slot('s1', START, 'moving'), slot('s2', isoAt(45 * MIN), 'shifted')],
+        [category('cat1', 'Núcleo', [moving, shifted])],
+      ),
+      fixtureSettings: { matchDurationMinutes: 45 },
+      pairUnavailableWindows: [{ id: 'window', pairId: 'p3', startsAt: START, endsAt: isoAt(45 * MIN) }],
+    }
+
+    const outcome = reorderMatchInSlots(t, 'moving', 's2')
+
+    expect(outcome.status).toBe('blocked')
+    expect(outcome.reason).toBe('availability-conflict')
+  })
+
+  it('is a no-op when source and target are the same slot', () => {
+    const moving = { ...match('moving', 'g', 1), scheduledAt: START }
+    const t = tournament([slot('s1', START, 'moving')], [category('cat1', 'Núcleo', [moving])])
+
+    const outcome = reorderMatchInSlots(t, 'moving', 's1')
+
+    expect(outcome.status).toBe('no-op')
+    expect(outcome.tournament).toBe(t)
+  })
+
+  it('warns when a valid reorder creates back-to-back matches for a pair', () => {
+    const first = { ...match('first', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
+    const middle = { ...match('middle', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
+    const last = { ...match('last', 'g', 1), pairAId: 'p1', pairBId: 'p5', scheduledAt: isoAt(90 * MIN) }
+    const t: Tournament = {
+      ...tournament(
+        [slot('s1', START, 'first'), slot('s2', isoAt(45 * MIN), 'middle'), slot('s3', isoAt(90 * MIN), 'last')],
+        [category('cat1', 'Núcleo', [first, middle, last])],
+      ),
+      fixtureSettings: { matchDurationMinutes: 45 },
+    }
+
+    const outcome = reorderMatchInSlots(t, 'first', 's2')
+
+    expect(outcome.status).toBe('moved')
+    expect(outcome.createsBackToBack).toBe(true)
+  })
+
+  it('warns about a new adjacent pairing even when a different pairing is removed', () => {
+    const first = { ...match('first', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
+    const moving = { ...match('moving', 'g', 1), pairAId: 'p1', pairBId: 'p3', scheduledAt: isoAt(45 * MIN) }
+    const middle = { ...match('middle', 'g', 1), pairAId: 'p4', pairBId: 'p5', scheduledAt: isoAt(90 * MIN) }
+    const last = { ...match('last', 'g', 1), pairAId: 'p1', pairBId: 'p6', scheduledAt: isoAt(135 * MIN) }
+    const t: Tournament = {
+      ...tournament(
+        [
+          slot('s1', START, 'first'),
+          slot('s2', isoAt(45 * MIN), 'moving'),
+          slot('s3', isoAt(90 * MIN), 'middle'),
+          slot('s4', isoAt(135 * MIN), 'last'),
+        ],
+        [category('cat1', 'Núcleo', [first, moving, middle, last])],
+      ),
+      fixtureSettings: { matchDurationMinutes: 45 },
+    }
+
+    const outcome = reorderMatchInSlots(t, 'moving', 's4')
+
+    expect(outcome.status).toBe('moved')
+    expect(outcome.createsBackToBack).toBe(true)
   })
 })
 
