@@ -53,6 +53,7 @@ export interface TournamentState {
   setCategoryGroupCount: (categoryId: ID, count: number) => void
   shuffleGroups: (categoryId: ID) => void // reparte parejas al azar entre los grupos
   addPair: (categoryId: ID, player1: string, player2: string) => void
+  updatePair: (categoryId: ID, pairId: ID, player1: string, player2: string) => void
   assignPairToGroup: (categoryId: ID, pairId: ID, groupId: ID) => void
   movePairToGroup: (categoryId: ID, pairId: ID, toGroupId: ID) => void
   regeneratePairings: (categoryId: ID) => void
@@ -252,6 +253,17 @@ export const useTournamentStore = create<TournamentState>()(
         mutateCategory(categoryId, (c) => ({
           ...c,
           pairs: [...c.pairs, createPair(player1, player2)],
+        }))
+      },
+
+      // Corrige los nombres de una pareja sin alterar su identidad ni las
+      // referencias existentes en grupos, cruces, calendario o playoffs.
+      updatePair(categoryId, pairId, player1, player2) {
+        mutateCategory(categoryId, (c) => ({
+          ...c,
+          pairs: c.pairs.map((pair) =>
+            pair.id === pairId ? { ...pair, player1, player2 } : pair,
+          ),
         }))
       },
 
