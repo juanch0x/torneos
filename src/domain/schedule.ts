@@ -522,20 +522,129 @@ export function reflowUnavailableMatches(tournament: Tournament): Tournament {
   return fillEmptyAvailabilitySlots(syncScheduledState({ ...tournament, slots }), duration)
 }
 
-export function moveMatchToSlot(tournament: Tournament, matchId: ID, targetSlotId: ID): Tournament {
+export type ManualReorderBlockReason =
+  | 'missing-match-or-slot'
+  | 'match-is-unscheduled'
+  | 'played-match'
+  | 'availability-conflict'
+
+export interface ManualReorderOutcome {
+  tournament: Tournament
+  status: 'moved' | 'no-op' | 'blocked'
+  reason?: ManualReorderBlockReason
+  shiftedMatchCount: number
+  createsBackToBack: boolean
+}
+
+function backToBackPairings(tournament: Tournament): Set<string> {
+  const durationMinutes = tournament.fixtureSettings?.matchDurationMinutes ?? 45
+  const orderedSlots = [...tournament.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+  const pairings = new Set<string>()
+
+  for (let index = 0; index < orderedSlots.length - 1; index++) {
+    const current = orderedSlots[index]
+    const next = orderedSlots[index + 1]
+    const currentMatch = findMatch(tournament, current.matchId)
+    const nextMatch = findMatch(tournament, next.matchId)
+    if (!currentMatch || !nextMatch || endsAt(current.startsAt, durationMinutes) !== next.startsAt) continue
+
+    const matchIds = [currentMatch.id, nextMatch.id].sort().join('\0')
+    const nextPairIds = new Set([nextMatch.pairAId, nextMatch.pairBId])
+    for (const pairId of [currentMatch.pairAId, currentMatch.pairBId]) {
+      if (nextPairIds.has(pairId)) pairings.add(`${pairId}\0${matchIds}`)
+    }
+  }
+
+  return pairings
+}
+
+/**
+ * Reorders a pending match within the existing time slots.
+ *
+ * This is intentionally local: the target time is kept, occupants in the
+ * crossed range are shifted by one slot, and no availability filler or global
+ * optimizer runs afterwards. A blank target simply travels back to the source
+ * slot. Played matches and availability conflicts make the entire move invalid.
+ */
+export function reorderMatchInSlots(
+  tournament: Tournament,
+  matchId: ID,
+  targetSlotId: ID,
+): ManualReorderOutcome {
+  const orderedSlots = [...tournament.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+  const sourceIndex = orderedSlots.findIndex((slot) => slot.matchId === matchId)
+  const targetIndex = orderedSlots.findIndex((slot) => slot.id === targetSlotId)
   const moving = findMatch(tournament, matchId)
-  const target = tournament.slots.find((slot) => slot.id === targetSlotId)
-  if (!moving || !target || moving.result != null) return tournament
-  if (isResultMatch(tournament, target.matchId)) return tournament
+
+  if (!moving || targetIndex < 0) {
+    return { tournament, status: 'blocked', reason: 'missing-match-or-slot', shiftedMatchCount: 0, createsBackToBack: false }
+  }
+  if (sourceIndex < 0) {
+    return { tournament, status: 'blocked', reason: 'match-is-unscheduled', shiftedMatchCount: 0, createsBackToBack: false }
+  }
+  if (sourceIndex === targetIndex) {
+    return { tournament, status: 'no-op', shiftedMatchCount: 0, createsBackToBack: false }
+  }
+
+  const rangeStart = Math.min(sourceIndex, targetIndex)
+  const rangeEnd = Math.max(sourceIndex, targetIndex)
+  const range = orderedSlots.slice(rangeStart, rangeEnd + 1)
+  const affectedMatches = range
+    .map((slot) => findMatch(tournament, slot.matchId))
+    .filter((match): match is Match => match != null)
+
+  if (affectedMatches.some((match) => match.result != null)) {
+    return { tournament, status: 'blocked', reason: 'played-match', shiftedMatchCount: 0, createsBackToBack: false }
+  }
 
   const duration = tournament.fixtureSettings?.matchDurationMinutes ?? 45
-  if (!isMatchAvailableForSlot(moving, target.startsAt, duration, tournament)) return tournament
 
-  const slots = tournament.slots.map((slot) => {
-    if (slot.matchId === matchId) return { ...slot, matchId: undefined }
-    if (slot.id === targetSlotId) return { ...slot, matchId }
-    return slot
-  })
+  if (orderedSlots[targetIndex].matchId == null) {
+    if (!isMatchAvailableForSlot(moving, orderedSlots[targetIndex].startsAt, duration, tournament)) {
+      return { tournament, status: 'blocked', reason: 'availability-conflict', shiftedMatchCount: 0, createsBackToBack: false }
+    }
 
-  return fillEmptyAvailabilitySlots(syncScheduledState({ ...tournament, slots }), duration)
+    const slots = tournament.slots.map((slot) => {
+      if (slot.id === orderedSlots[sourceIndex].id) return { ...slot, matchId: undefined }
+      if (slot.id === targetSlotId) return { ...slot, matchId }
+      return slot
+    })
+    const reordered = syncScheduledState({ ...tournament, slots })
+    const beforePairings = backToBackPairings(tournament)
+
+    return {
+      tournament: reordered,
+      status: 'moved',
+      shiftedMatchCount: 0,
+      createsBackToBack: [...backToBackPairings(reordered)].some((pairing) => !beforePairings.has(pairing)),
+    }
+  }
+
+  const matchIds = range.map((slot) => slot.matchId)
+  const reorderedMatchIds = sourceIndex < targetIndex
+    ? [...matchIds.slice(1), matchIds[0]]
+    : [matchIds[matchIds.length - 1], ...matchIds.slice(0, -1)]
+
+  for (let index = 0; index < range.length; index++) {
+    const shiftedMatch = findMatch(tournament, reorderedMatchIds[index])
+    if (shiftedMatch && !isMatchAvailableForSlot(shiftedMatch, range[index].startsAt, duration, tournament)) {
+      return { tournament, status: 'blocked', reason: 'availability-conflict', shiftedMatchCount: 0, createsBackToBack: false }
+    }
+  }
+
+  const bySlotId = new Map(range.map((slot, index) => [slot.id, reorderedMatchIds[index]]))
+  const slots = tournament.slots.map((slot) => (
+    bySlotId.has(slot.id)
+      ? { ...slot, matchId: bySlotId.get(slot.id) }
+      : slot
+  ))
+  const reordered = syncScheduledState({ ...tournament, slots })
+  const beforePairings = backToBackPairings(tournament)
+
+  return {
+    tournament: reordered,
+    status: 'moved',
+    shiftedMatchCount: range.filter((slot) => slot.matchId != null).length - 1,
+    createsBackToBack: [...backToBackPairings(reordered)].some((pairing) => !beforePairings.has(pairing)),
+  }
 }

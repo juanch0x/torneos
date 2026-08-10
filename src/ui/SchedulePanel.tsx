@@ -23,6 +23,7 @@ import {
   useMantineTheme,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
+import { reorderMatchInSlots } from '../domain/schedule'
 import type { ID, Match, Slot, Tournament } from '../domain/types'
 import { exportTournamentXlsx } from '../export'
 import { useTournamentStore } from '../store/tournamentStore'
@@ -215,6 +216,9 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const [unavailableEndsAt, setUnavailableEndsAt] = useState('')
   const [unavailableReason, setUnavailableReason] = useState('')
   const [exportState, setExportState] = useState(initialExportXlsxState)
+  const [draggedMatchId, setDraggedMatchId] = useState<ID | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<ID | null>(null)
+  const [reorderFeedback, setReorderFeedback] = useState<{ color: 'green' | 'orange' | 'red'; message: string } | null>(null)
   const exportControllerRef = useRef(createExportXlsxController(setExportState))
 
   // Below sm (48em) → card list; at/above sm → TanStack table.
@@ -248,6 +252,37 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const openSlots = data.filter((slot) => !slot.matchId)
   const scheduledMatchesCount = data.length - openSlots.length
 
+  function handleReorder(matchId: ID, slotId: ID) {
+    const outcome = moveMatchToSlot(matchId, slotId)
+    setDraggedMatchId(null)
+    setDropTargetId(null)
+    if (!outcome) return
+
+    if (outcome.status === 'moved') {
+      const shifted = outcome.shiftedMatchCount > 0
+        ? ` Se reacomodó ${outcome.shiftedMatchCount} partido${outcome.shiftedMatchCount === 1 ? '' : 's'}.`
+        : ''
+      const warning = outcome.createsBackToBack
+        ? ' Atención: una pareja quedó con partidos consecutivos.'
+        : ''
+      setReorderFeedback({ color: outcome.createsBackToBack ? 'orange' : 'green', message: `Partido reordenado.${shifted}${warning}` })
+      return
+    }
+
+    if (outcome.status === 'no-op') {
+      setReorderFeedback({ color: 'orange', message: 'El partido ya estaba en esa franja.' })
+      return
+    }
+
+    const messages = {
+      'missing-match-or-slot': 'No se encontró el partido o la franja de destino.',
+      'match-is-unscheduled': 'Solo se pueden reordenar partidos que ya tienen horario.',
+      'played-match': 'No se puede mover ni cruzar un partido que ya tiene resultado.',
+      'availability-conflict': 'El movimiento entra en conflicto con la disponibilidad de una pareja.',
+    }
+    setReorderFeedback({ color: 'red', message: messages[outcome.reason ?? 'missing-match-or-slot'] })
+  }
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -269,7 +304,10 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         cell: ({ row }) => {
           const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
           return info ? (
-            info.label
+            <Group gap="xs" wrap="nowrap">
+              <Text size="sm">{info.label}</Text>
+              {info.match.result == null && <Badge size="xs" variant="light">Arrastrable</Badge>}
+            </Group>
           ) : (
             <Text span c="dimmed">
               — libre —
@@ -298,23 +336,31 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           const matchId = row.original.matchId
           const previous = data[row.index - 1]
           const next = data[row.index + 1]
+          const canMovePrevious = matchId && previous
+            ? reorderMatchInSlots(tournament, matchId, previous.id).status === 'moved'
+            : false
+          const canMoveNext = matchId && next
+            ? reorderMatchInSlots(tournament, matchId, next.id).status === 'moved'
+            : false
           return (
             <Group gap="xs" wrap="nowrap">
               <Button
                 size="xs"
                 variant="default"
-                disabled={!matchId || !previous}
+                disabled={!canMovePrevious}
                 title="Adelantar"
-                onClick={() => matchId && previous && moveMatchToSlot(matchId, previous.id)}
+                aria-label="Adelantar partido"
+                onClick={() => matchId && previous && handleReorder(matchId, previous.id)}
               >
                 ↑
               </Button>
               <Button
                 size="xs"
                 variant="default"
-                disabled={!matchId || !next}
+                disabled={!canMoveNext}
                 title="Atrasar"
-                onClick={() => matchId && next && moveMatchToSlot(matchId, next.id)}
+                aria-label="Atrasar partido"
+                onClick={() => matchId && next && handleReorder(matchId, next.id)}
               >
                 ↓
               </Button>
@@ -332,7 +378,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         ),
       }),
     ],
-    [matches, data, moveMatchToSlot, removeSlot, setOpenMatch],
+    [matches, data, tournament, removeSlot, setOpenMatch],
   )
 
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
@@ -418,7 +464,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           </Group>
           <Title order={2}>Fixture y horarios</Title>
           <Text c="dimmed" size="sm">
-            Generá la grilla base, reordená partidos con las flechas y usá disponibilidades para reacomodar sin tocar la lógica del torneo.
+            Generá la grilla base y reordená partidos pendientes arrastrándolos o con las flechas. Las franjas mantienen su horario.
           </Text>
         </Stack>
 
@@ -464,7 +510,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
 
             <Text c="dimmed" size="sm">
               Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
-              Después podés reordenarlos con las flechas usando el mismo reacomodo que las disponibilidades.
+              Después podés cambiar el orden sin recalcular el fixture completo.
             </Text>
           </Stack>
         </Paper>
@@ -472,6 +518,12 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         {exportState.errorMessage && (
           <Alert color="red" title="Error al exportar">
             <Text size="sm">{exportState.errorMessage}</Text>
+          </Alert>
+        )}
+
+        {reorderFeedback && (
+          <Alert color={reorderFeedback.color} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del fixture'}>
+            <Text size="sm">{reorderFeedback.message}</Text>
           </Alert>
         )}
 
@@ -604,10 +656,52 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               <Table.Tbody>
                 {table.getRowModel().rows.map((row) => {
                   const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
+                  const dropPreview = draggedMatchId
+                    ? reorderMatchInSlots(tournament, draggedMatchId, row.original.id)
+                    : undefined
+                  const isDropTarget = dropTargetId === row.original.id
+                  const isInvalidTarget = draggedMatchId != null && dropPreview?.status !== 'moved'
                   return (
                     <Table.Tr
                       key={row.id}
-                      style={info ? { boxShadow: `inset 4px 0 0 ${info.color}` } : undefined}
+                      draggable={Boolean(info && info.match.result == null)}
+                      title={draggedMatchId
+                        ? (dropPreview?.status === 'moved'
+                          ? 'Soltá para reordenar esta franja'
+                          : 'Esta franja no admite el movimiento')
+                        : (info?.match.result == null ? 'Arrastrá para reordenar' : undefined)}
+                      onDragStart={(event) => {
+                        if (!info || info.match.result != null) return
+                        event.dataTransfer.effectAllowed = 'move'
+                        event.dataTransfer.setData('text/plain', info.match.id)
+                        setDraggedMatchId(info.match.id)
+                        setReorderFeedback(null)
+                      }}
+                      onDragOver={(event) => {
+                        if (!draggedMatchId || dropPreview?.status !== 'moved') return
+                        event.preventDefault()
+                        event.dataTransfer.dropEffect = 'move'
+                        setDropTargetId(row.original.id)
+                      }}
+                      onDragLeave={() => {
+                        if (dropTargetId === row.original.id) setDropTargetId(null)
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault()
+                        if (draggedMatchId && dropPreview?.status === 'moved') {
+                          handleReorder(draggedMatchId, row.original.id)
+                        }
+                      }}
+                      onDragEnd={() => {
+                        setDraggedMatchId(null)
+                        setDropTargetId(null)
+                      }}
+                      style={{
+                        ...(info ? { boxShadow: `inset 4px 0 0 ${info.color}` } : {}),
+                        ...(isDropTarget ? { backgroundColor: theme.colors.courtTeal[1], outline: `2px solid ${theme.colors.courtTeal[6]}` } : {}),
+                        ...(isInvalidTarget ? { opacity: 0.55 } : {}),
+                        ...(info?.match.result == null ? { cursor: 'grab' } : {}),
+                      }}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <Table.Td key={cell.id}>

@@ -102,6 +102,7 @@ describe('exportTournamentXlsx', () => {
           [
             { value: 'Partido #', fontWeight: 'bold' },
             { value: 'Fecha', fontWeight: 'bold' },
+            { value: 'Hora', fontWeight: 'bold' },
             { value: 'Categoría', fontWeight: 'bold' },
             { value: 'Grupo', fontWeight: 'bold' },
             { value: 'Pareja A', fontWeight: 'bold' },
@@ -110,7 +111,8 @@ describe('exportTournamentXlsx', () => {
           ],
           [
             1,
-            { value: new Date('2026-07-02T09:00:00.000Z'), type: Date, format: 'mm/dd/yyyy hh:mm' },
+            { value: new Date('2026-07-02T09:00:00.000Z'), type: Date, format: 'dd/mm/yyyy' },
+            { value: new Date('2026-07-02T09:00:00.000Z'), type: Date, format: 'hh:mm' },
             'Primera',
             'Grupo A',
             'Ana/Ada',
@@ -120,7 +122,8 @@ describe('exportTournamentXlsx', () => {
         ],
         columns: [
           { width: 10 },
-          { width: 22 },
+          { width: 14 },
+          { width: 10 },
           { width: 18 },
           { width: 16 },
           { width: 18 },
@@ -128,7 +131,7 @@ describe('exportTournamentXlsx', () => {
           { width: 12 },
         ],
         stickyRowsCount: 1,
-        dateFormat: 'mm/dd/yyyy hh:mm',
+        dateFormat: 'dd/mm/yyyy',
       },
     ])
     expect(toFileMock).toHaveBeenCalledWith('winter-cup-export.xlsx')

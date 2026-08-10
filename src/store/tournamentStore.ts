@@ -13,11 +13,10 @@ import { reconcilePairings, regenerateSchedule } from '../domain/reconcile'
 import {
   fillSchedule,
   generateFixture as buildFixture,
-  moveMatchToSlot as moveMatchToSlotInFixture,
+  reorderMatchInSlots,
   reflowUnavailableMatches,
-  syncScheduleTimes,
 } from '../domain/schedule'
-import type { FixtureOptions } from '../domain/schedule'
+import type { FixtureOptions, ManualReorderOutcome } from '../domain/schedule'
 import { buildMockTournament } from '../mock/fmpTournament'
 import type { Category, ID, MatchResult, PairUnavailableWindow, Tournament } from '../domain/types'
 import { repo } from '../persistence/repo'
@@ -42,11 +41,10 @@ export interface TournamentState {
   addSlot: (startsAt: string) => void
   removeSlot: (slotId: ID) => void
   assignMatchToSlot: (slotId: ID, matchId: ID | null) => void
-  moveSlotMatch: (slotId: ID, direction: 'up' | 'down') => void // reordenar con flechas
   fillSchedule: () => void
   addPairUnavailableWindow: (window: Omit<PairUnavailableWindow, 'id'>) => void
   removePairUnavailableWindow: (windowId: ID) => void
-  moveMatchToSlot: (matchId: ID, slotId: ID) => void
+  moveMatchToSlot: (matchId: ID, slotId: ID) => ManualReorderOutcome | undefined
 
   // edición (mutaciones puras en memoria — NO persisten; eso lo hace el autosave)
   addCategory: (name: string, numGroups: number) => void
@@ -172,25 +170,6 @@ export const useTournamentStore = create<TournamentState>()(
         }))
       },
 
-      // Flechas ↑/↓: intercambia el partido de esta franja con el de la franja
-      // contigua en el orden cronológico (reordena los partidos en el tiempo).
-      moveSlotMatch(slotId, direction) {
-        mutate((t) => {
-          const ordered = [...t.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-          const index = ordered.findIndex((s) => s.id === slotId)
-          const swapWith = direction === 'up' ? index - 1 : index + 1
-          if (index < 0 || swapWith < 0 || swapWith >= ordered.length) return t
-          const a = ordered[index]
-          const b = ordered[swapWith]
-          const slots = t.slots.map((s) => {
-            if (s.id === a.id) return { ...s, matchId: b.matchId }
-            if (s.id === b.id) return { ...s, matchId: a.matchId }
-            return s
-          })
-          return syncScheduleTimes({ ...t, slots })
-        })
-      },
-
       fillSchedule() {
         mutate(fillSchedule)
       },
@@ -212,7 +191,13 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       moveMatchToSlot(matchId, slotId) {
-        mutate((t) => moveMatchToSlotInFixture(t, matchId, slotId))
+        const current = get().current
+        if (!current) return undefined
+        const outcome = reorderMatchInSlots(current, matchId, slotId)
+        if (outcome.status === 'moved') {
+          set({ current: { ...outcome.tournament, updatedAt: nowISO() } })
+        }
+        return outcome
       },
 
       addCategory(name, numGroups) {
