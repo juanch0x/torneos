@@ -12,6 +12,7 @@ export function GroupsPage() {
 
   // TournamentLayout already guarantees current is loaded before rendering children
   if (!current) return null
+  const hasPlayedMatch = current.categories.some((category) => category.matches.some((match) => match.result != null))
 
   return (
     <Stack gap="md">
@@ -30,6 +31,7 @@ export function GroupsPage() {
             placeholder="Nombre de categoría (ej: Núcleo)"
             value={catName}
             onChange={(e) => setCatName(e.target.value)}
+            disabled={hasPlayedMatch}
             style={{ flex: '1 1 18rem' }}
           />
           <NumberInput
@@ -37,12 +39,14 @@ export function GroupsPage() {
             min={1}
             style={{ width: '7rem' }}
             value={numGroups}
+            disabled={hasPlayedMatch}
             onChange={(val) =>
               setNumGroups(Math.max(1, typeof val === 'number' ? val || 1 : 1))
             }
           />
           <Button
-            disabled={!catName.trim()}
+            disabled={hasPlayedMatch || !catName.trim()}
+            title={hasPlayedMatch ? 'No se pueden agregar categorías después de cargar resultados' : undefined}
             onClick={() => {
               addCategory(catName.trim(), numGroups)
               setCatName('')
@@ -52,6 +56,7 @@ export function GroupsPage() {
             Agregar categoría
           </Button>
           </Group>
+          {hasPlayedMatch && <Text c="dimmed" size="sm">No se pueden agregar categorías después de cargar resultados.</Text>}
         </Stack>
       </Paper>
 

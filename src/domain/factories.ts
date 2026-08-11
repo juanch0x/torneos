@@ -10,8 +10,12 @@ export function createTournament(name: string, date: string): Tournament {
     id: crypto.randomUUID(),
     name,
     date,
-    startDate: date, // por defecto la ventana arranca y termina el mismo día
-    endDate: date,
+    calendar: {
+      startDate: date,
+      endDate: date,
+      defaultWindow: { startsAt: '09:00', endsAt: '22:00' },
+      overrides: [],
+    },
     slots: [],
     categories: [],
     createdAt: timestamp,

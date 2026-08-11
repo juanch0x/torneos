@@ -7,6 +7,7 @@ import {
   isMatchAvailableForSlot,
   reorderMatchInSlots,
   reflowUnavailableMatches,
+  removeFixtureSlot,
   syncScheduleTimes,
 } from '../schedule'
 
@@ -219,6 +220,10 @@ const DAY = 24 * 60 * MIN
 
 function isoAt(offsetMs: number): string {
   return new Date(startMs + offsetMs).toISOString()
+}
+
+function localIso(date: string, time: string): string {
+  return new Date(`${date}T${time}:00`).toISOString()
 }
 
 function sortedSlotTimes(t: Tournament): string[] {
@@ -784,6 +789,14 @@ describe('availability reflow', () => {
   })
 })
 
+describe('played slot protection', () => {
+  it('does not remove a slot containing a result', () => {
+    const played = match('played', 'g', 1, { result: { scoreA: 6, scoreB: 3 } })
+    const t = tournament([slot('played-slot', START, 'played')], [category('cat1', 'Núcleo', [played])])
+    expect(removeFixtureSlot(t, 'played-slot')).toEqual(t)
+  })
+})
+
 describe('syncScheduleTimes', () => {
   it('pone en cada partido la hora de la franja que lo aloja', () => {
     const t = tournament(
@@ -812,5 +825,100 @@ describe('syncScheduleTimes', () => {
     const after = syncScheduleTimes(t)
     const m1 = after.categories[0].matches.find((m) => m.id === 'm1')!
     expect(m1.scheduledAt).toBe('2026-06-20T10:00:00.000Z') // m1 tomó la hora de s2
+  })
+})
+
+describe('calendar windows', () => {
+  it('builds slots from the default daily window and skips a closed day', () => {
+    const after = generateFixture(tournament([], [categoryWithPairs('cat1', 'Núcleo', ['a', 'b', 'c'])]), {
+      calendar: {
+        startDate: '2026-06-20', endDate: '2026-06-22',
+        defaultWindow: { startsAt: '09:00', endsAt: '10:30' },
+        overrides: [{ date: '2026-06-21', kind: 'closed' }],
+      },
+      matchDurationMinutes: 45,
+    })
+    expect(sortedSlotTimes(after)).toEqual([
+      localIso('2026-06-20', '09:00'), localIso('2026-06-20', '09:45'),
+      localIso('2026-06-22', '09:00'), localIso('2026-06-22', '09:45'),
+    ])
+  })
+
+  it('uses a custom day window instead of the default window', () => {
+    const after = generateFixture(tournament([], [categoryWithPairs('cat1', 'Núcleo', ['a', 'b'])]), {
+      calendar: {
+        startDate: '2026-06-20', endDate: '2026-06-21',
+        defaultWindow: { startsAt: '09:00', endsAt: '10:00' },
+        overrides: [{ date: '2026-06-21', kind: 'custom', startsAt: '14:00', endsAt: '15:30' }],
+      },
+      matchDurationMinutes: 30,
+    })
+    expect(sortedSlotTimes(after)).toEqual([
+      localIso('2026-06-20', '09:00'), localIso('2026-06-20', '09:30'),
+      localIso('2026-06-21', '14:00'), localIso('2026-06-21', '14:30'), localIso('2026-06-21', '15:00'),
+    ])
+  })
+
+  it('keeps a pair unscheduled when every real calendar slot overlaps its unavailability', () => {
+    const after = generateFixture({
+      ...tournament([], [categoryWithPairs('cat1', 'Núcleo', ['a', 'b'])]),
+      pairUnavailableWindows: [{ id: 'away', pairId: 'a', startsAt: localIso('2026-06-20', '09:00'), endsAt: localIso('2026-06-21', '10:00') }],
+    }, {
+      calendar: { startDate: '2026-06-20', endDate: '2026-06-20', defaultWindow: { startsAt: '09:00', endsAt: '10:00' }, overrides: [] },
+      matchDurationMinutes: 30,
+    })
+    expect(after.categories[0].matches[0].scheduledAt).toBeUndefined()
+    expect(after.slots.filter((slot) => !slot.matchId)).toHaveLength(2)
+  })
+
+  it('removes generated slots that overlap a played lock after the duration changes', () => {
+    const played: Match = { id: 'played', groupId: 'cat1-g', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 2 } }
+    const pending: Match = { id: 'pending', groupId: 'cat1-g', pairAId: 'c', pairBId: 'd', round: 2 }
+    const startsAt = localIso('2026-06-20', '09:00')
+    const cat = { ...categoryWithPairs('cat1', 'Núcleo', ['a', 'b', 'c', 'd']), matches: [played, pending] }
+    const after = generateFixture({
+      ...tournament([slot('played-slot', startsAt, 'played')], [cat]),
+      fixtureSettings: { matchDurationMinutes: 60 },
+    }, {
+      calendar: { startDate: '2026-06-20', endDate: '2026-06-20', defaultWindow: { startsAt: '09:00', endsAt: '11:00' }, overrides: [] },
+      matchDurationMinutes: 30,
+    })
+    expect(after.fixtureSettings?.matchDurationMinutes).toBe(60)
+    expect(after.slots.some((item) => item.startsAt === localIso('2026-06-20', '09:30'))).toBe(false)
+    expect(after.slots.find((item) => item.matchId === 'played')?.startsAt).toBe(startsAt)
+  })
+
+
+  it('keeps every regenerated pending slot outside a played lock at the unchanged duration', () => {
+    const calendar = { startDate: '2026-06-20', endDate: '2026-06-20', defaultWindow: { startsAt: '09:00', endsAt: '12:00' }, overrides: [] }
+    const first = generateFixture(tournament([], [categoryWithPairs('cat1', 'Núcleo', ['a', 'b', 'c'])]), { calendar, matchDurationMinutes: 45 })
+    const playedId = first.slots.find((slot) => slot.matchId)?.matchId!
+    const withResult: Tournament = {
+      ...first,
+      categories: first.categories.map((category) => ({ ...category, matches: category.matches.map((match) => match.id === playedId ? { ...match, result: { scoreA: 6, scoreB: 2 } } : match) })),
+    }
+    const regenerated = generateFixture(withResult, { calendar, matchDurationMinutes: 45 })
+    const regeneratedAgain = generateFixture(regenerated, { calendar, matchDurationMinutes: 45 })
+    const playedSlot = regeneratedAgain.slots.find((slot) => slot.matchId === playedId)!
+    expect(playedSlot.startsAt).toBe(regenerated.slots.find((slot) => slot.matchId === playedId)?.startsAt)
+    const playedInterval = { startsAt: playedSlot.startsAt, endsAt: new Date(new Date(playedSlot.startsAt).getTime() + 45 * MIN).toISOString() }
+    for (const slot of regeneratedAgain.slots.filter((slot) => slot.id !== playedSlot.id)) {
+      const slotInterval = { startsAt: slot.startsAt, endsAt: new Date(new Date(slot.startsAt).getTime() + 45 * MIN).toISOString() }
+      expect(intervalOverlaps(slotInterval, playedInterval)).toBe(false)
+    }
+  })
+
+})
+
+describe('empty fixture generation', () => {
+  it('does not create open calendar slots when no group has a scheduleable match', () => {
+    const t = tournament([], [categoryWithPairs('cat1', 'Núcleo', ['a'])])
+    const after = generateFixture(t, {
+      calendar: { startDate: '2026-06-20', endDate: '2026-06-20', defaultWindow: { startsAt: '09:00', endsAt: '12:00' }, overrides: [] },
+      matchDurationMinutes: 45,
+    })
+
+    expect(after.slots).toEqual([])
+    expect(after.fixtureSettings).toBeUndefined()
   })
 })

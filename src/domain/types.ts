@@ -4,8 +4,9 @@ export interface Tournament {
   id: ID
   name: string
   date: string // ISO date "YYYY-MM-DD" — fecha de referencia (legacy / display)
-  startDate?: string // ISO date — inicio de la ventana del torneo
-  endDate?: string // ISO date — fin de la ventana del torneo
+  calendar?: TournamentCalendar
+  startDate?: string // legacy display metadata; persistence v2 writes calendar instead
+  endDate?: string
   slots: Slot[] // calendario GLOBAL cross-categoría (una sola cancha)
   categories: Category[]
   pairUnavailableWindows?: PairUnavailableWindow[]
@@ -25,6 +26,22 @@ export interface PairUnavailableWindow {
 export interface FixtureSettings {
   matchDurationMinutes: number
 }
+
+export interface TournamentCalendar {
+  startDate: string // ISO date YYYY-MM-DD
+  endDate: string // ISO date YYYY-MM-DD
+  defaultWindow: DailyTimeWindow
+  overrides: CalendarDayOverride[]
+}
+
+export interface DailyTimeWindow {
+  startsAt: string // local wall-clock time HH:mm
+  endsAt: string // local wall-clock time HH:mm
+}
+
+export type CalendarDayOverride =
+  | { date: string; kind: 'custom'; startsAt: string; endsAt: string }
+  | { date: string; kind: 'closed' }
 
 // Franja horaria del calendario. Como hay UNA sola cancha, las franjas son
 // secuenciales: a una misma hora juega un único partido (de cualquier categoría).

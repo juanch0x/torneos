@@ -92,7 +92,7 @@ describe('tournamentStore — loadTournament status transitions', () => {
     expect(useTournamentStore.getState().current?.id).toBe('t1')
   })
 
-  it('normalizes availability and fixture settings defaults for old tournaments', async () => {
+  it('does not create a legacy compatibility path for old tournaments', async () => {
     vi.mocked(repo.load).mockResolvedValue({
       ...makeTournament('old'),
       pairUnavailableWindows: undefined,
@@ -101,8 +101,19 @@ describe('tournamentStore — loadTournament status transitions', () => {
 
     await useTournamentStore.getState().loadTournament('old')
 
-    expect(useTournamentStore.getState().current?.pairUnavailableWindows).toEqual([])
-    expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 45 })
+    expect(useTournamentStore.getState().current?.pairUnavailableWindows).toBeUndefined()
+    expect(useTournamentStore.getState().current?.fixtureSettings).toBeUndefined()
+  })
+})
+
+describe('fixture calendar draft', () => {
+  it('keeps immediate general calendar edits before any fixture generation', () => {
+    useTournamentStore.setState({ current: makeTournament('t1'), status: 'loaded' } as any)
+    const calendar = { startDate: '2024-01-01', endDate: '2024-01-03', defaultWindow: { startsAt: '10:00', endsAt: '15:00' }, overrides: [] }
+
+    useTournamentStore.getState().setFixtureCalendar(calendar)
+
+    expect(useTournamentStore.getState().current?.calendar).toEqual(calendar)
   })
 })
 
@@ -115,6 +126,78 @@ describe('tournamentStore — availability reflow actions', () => {
       matchDurationMinutes: 30,
       matchesPerDay: 8,
     })
+
+    expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 30 })
+  })
+
+  it('keeps the initial duration unset through availability edits before the first fixture', () => {
+    useTournamentStore.setState({
+      current: {
+        ...makeTournament('t1'),
+        categories: [{
+          id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' },
+          pairs: [{ id: 'a', player1: 'A', player2: 'A2' }, { id: 'b', player1: 'B', player2: 'B2' }],
+          groups: [{ id: 'g1', name: 'Grupo A', pairIds: ['a', 'b'] }],
+          matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 3 } }],
+        }],
+      }, status: 'loaded',
+    } as any)
+    const actions = useTournamentStore.getState()
+
+    actions.addPairUnavailableWindow({ pairId: 'a', startsAt: '2024-01-01T10:00:00.000Z', endsAt: '2024-01-01T11:00:00.000Z' })
+    expect(useTournamentStore.getState().current?.fixtureSettings).toBeUndefined()
+    actions.removePairUnavailableWindow(useTournamentStore.getState().current!.pairUnavailableWindows![0].id)
+    expect(useTournamentStore.getState().current?.fixtureSettings).toBeUndefined()
+
+    actions.generateFixture({ calendar: { startDate: '2024-01-01', endDate: '2024-01-01', defaultWindow: { startsAt: '09:00', endsAt: '12:00' }, overrides: [] }, matchDurationMinutes: 30 })
+    expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 30 })
+  })
+
+  it('generates the first fixture after results when no duration was set yet', () => {
+    useTournamentStore.setState({
+      current: {
+        ...makeTournament('t1'),
+        categories: [{
+          id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' },
+          pairs: [{ id: 'a', player1: 'A', player2: 'A2' }, { id: 'b', player1: 'B', player2: 'B2' }],
+          groups: [{ id: 'g1', name: 'Grupo A', pairIds: ['a', 'b'] }],
+          matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 3 } }],
+        }],
+      }, status: 'loaded',
+    } as any)
+
+    useTournamentStore.getState().generateFixture({
+      calendar: { startDate: '2024-01-01', endDate: '2024-01-01', defaultWindow: { startsAt: '09:00', endsAt: '10:00' }, overrides: [] },
+      matchDurationMinutes: 45,
+    })
+
+    expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 45 })
+    expect(useTournamentStore.getState().current?.slots.some((slot) => slot.matchId === 'm1')).toBe(true)
+  })
+
+  it('refuses a global duration change once a result exists', () => {
+    useTournamentStore.setState({
+      current: {
+        ...makeTournament('t1'),
+        fixtureSettings: { matchDurationMinutes: 45 },
+        categories: [{
+          id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)',
+          config: { numGroups: 1, format: 'round-robin' }, pairs: [],
+          groups: [{ id: 'g1', name: 'Grupo A', pairIds: [] }],
+          matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 3 } }],
+        }],
+      }, status: 'loaded',
+    } as any)
+
+    useTournamentStore.getState().generateFixture({ startsAt: '2024-01-01T09:00:00.000Z', matchDurationMinutes: 30, matchesPerDay: 8 })
+
+    expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 45 })
+  })
+
+  it('allows a duration change before any result exists', () => {
+    useTournamentStore.setState({ current: makeTournament('t1'), status: 'loaded' } as any)
+
+    useTournamentStore.getState().generateFixture({ startsAt: '2024-01-01T09:00:00.000Z', matchDurationMinutes: 30, matchesPerDay: 8 })
 
     expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 30 })
   })
@@ -135,6 +218,67 @@ describe('tournamentStore — availability reflow actions', () => {
     useTournamentStore.getState().removePairUnavailableWindow(added!.id)
 
     expect(useTournamentStore.getState().current?.pairUnavailableWindows).toEqual([])
+  })
+
+  it('clears obsolete matches and slots when membership changes before results', () => {
+    const current: Tournament = {
+      ...makeTournament('t1'),
+      slots: [{ id: 'stale-slot', startsAt: '2024-01-01T09:00:00.000Z', matchId: 'stale-match' }],
+      categories: [{
+        id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' },
+        pairs: [{ id: 'a', player1: 'A', player2: 'A2' }, { id: 'b', player1: 'B', player2: 'B2' }, { id: 'c', player1: 'C', player2: 'C2' }],
+        groups: [{ id: 'g1', name: 'Grupo A', pairIds: ['a', 'b'] }],
+        matches: [{ id: 'stale-match', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1 }],
+      }],
+    }
+    useTournamentStore.setState({ current, status: 'loaded' } as any)
+    const actions = useTournamentStore.getState()
+
+    actions.assignPairToGroup('cat1', 'c', 'g1')
+    actions.setMatchResult('cat1', 'stale-match', { scoreA: 6, scoreB: 4 })
+    actions.generateFixture({ calendar: { startDate: '2024-01-01', endDate: '2024-01-01', defaultWindow: { startsAt: '09:00', endsAt: '12:00' }, overrides: [] }, matchDurationMinutes: 45 })
+
+    const after = useTournamentStore.getState().current!
+    expect(after.slots.some((slot) => slot.matchId === 'stale-match')).toBe(false)
+    expect(after.categories[0].matches.some((match) => match.id === 'stale-match' || match.result != null)).toBe(false)
+  })
+
+  it('does not alter groups, pair assignments, or pairings after a result', () => {
+    const current: Tournament = {
+      ...makeTournament('t1'),
+      categories: [{
+        id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' },
+        pairs: [{ id: 'a', player1: 'A', player2: 'A2' }, { id: 'b', player1: 'B', player2: 'B2' }],
+        groups: [{ id: 'g1', name: 'Grupo A', pairIds: ['a', 'b'] }],
+        matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 4 } }],
+      }],
+    }
+    useTournamentStore.setState({ current, status: 'loaded' } as any)
+    const actions = useTournamentStore.getState()
+
+    actions.addCategory('Other', 1)
+    actions.addPair('cat1', 'C', 'C2')
+    actions.setCategoryGroupCount('cat1', 2)
+    actions.shuffleGroups('cat1')
+    actions.assignPairToGroup('cat1', 'a', 'g1')
+    actions.movePairToGroup('cat1', 'a', 'g1')
+    actions.regeneratePairings('cat1')
+    actions.regenerateSchedule('cat1')
+
+    expect(useTournamentStore.getState().current?.categories).toEqual(current.categories)
+  })
+
+  it('does not remove a slot containing a result', () => {
+    const current: Tournament = {
+      ...makeTournament('t1'),
+      slots: [{ id: 'played-slot', startsAt: '2024-01-01T09:00:00.000Z', matchId: 'm1' }],
+      categories: [{ id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' }, pairs: [], groups: [{ id: 'g1', name: 'Grupo A', pairIds: [] }], matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 4 } }] }],
+    }
+    useTournamentStore.setState({ current, status: 'loaded' } as any)
+
+    useTournamentStore.getState().removeSlot('played-slot')
+
+    expect(useTournamentStore.getState().current?.slots).toEqual(current.slots)
   })
 
   it('manual move is a no-op when the target slot contains a result match', () => {

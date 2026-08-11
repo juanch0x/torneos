@@ -4,8 +4,10 @@ import type { TournamentRepository } from './TournamentRepository'
 
 // Granularidad: una key por documento + una key de índice liviano.
 // NO metemos todos los torneos en una sola key.
-const DOC_PREFIX = 'tournament:'
-const INDEX_KEY = 'tournaments:index'
+// v2 is a deliberate clean break: old local tournaments used an incompatible
+// fixture calendar model, so they are intentionally not listed or loaded.
+const DOC_PREFIX = 'tournament:v2:'
+const INDEX_KEY = 'tournaments:v2:index'
 
 function docKey(id: ID): string {
   return `${DOC_PREFIX}${id}`
