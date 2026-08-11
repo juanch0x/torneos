@@ -79,7 +79,7 @@ export function TournamentLayout() {
               <Text size="xs" c="dimmed">
                 Fecha del torneo
               </Text>
-              <Text fw={700}>{formatDate(current.startDate ?? current.date)}</Text>
+              <Text fw={700}>{formatDate(current.calendar?.startDate ?? current.date)}</Text>
             </Paper>
           </Group>
 

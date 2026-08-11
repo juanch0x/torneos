@@ -4,7 +4,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   Badge,
@@ -23,8 +23,8 @@ import {
   useMantineTheme,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { reorderMatchInSlots } from '../domain/schedule'
-import type { ID, Match, Slot, Tournament } from '../domain/types'
+import type { CalendarDayOverride, ID, Match, Slot, Tournament, TournamentCalendar } from '../domain/types'
+import { buildCalendarSlots, hasScheduleableMatches, reorderMatchInSlots, validateTournamentCalendar } from '../domain/schedule'
 import { exportTournamentXlsx } from '../export'
 import { useTournamentStore } from '../store/tournamentStore'
 import { createExportXlsxController, initialExportXlsxState } from './exportXlsxController'
@@ -41,6 +41,20 @@ interface MatchInfo {
   categoryId: ID
   labelA: string
   labelB: string
+}
+
+export function isFixtureDurationLocked(tournament: Tournament): boolean {
+  return tournament.fixtureSettings?.matchDurationMinutes != null
+    && tournament.categories.some((category) => category.matches.some((match) => match.result != null))
+}
+
+export function withCalendarOverride(calendar: TournamentCalendar, override: CalendarDayOverride | null, date: string): TournamentCalendar {
+  return {
+    ...calendar,
+    overrides: override
+      ? [...calendar.overrides.filter((item) => item.date !== date), override].sort((a, b) => a.date.localeCompare(b.date))
+      : calendar.overrides.filter((item) => item.date !== date),
+  }
 }
 
 // Collects ALL tournament matches with human-readable labels and their category id.
@@ -66,19 +80,11 @@ function collectMatches(tournament: Tournament): Map<ID, MatchInfo> {
   return result
 }
 
+
 function fromLocalInput(local: string): string | null {
   if (!local) return null
   const date = new Date(local)
-  if (Number.isNaN(date.getTime())) return null
-  return date.toISOString()
-}
-
-// Cuántos partidos entran por día según la hora de inicio y la de corte.
-function matchesPerDay(startsAtIso: string, durationMin: number, endHour: number): number {
-  const start = new Date(startsAtIso)
-  const startMinutes = start.getHours() * 60 + start.getMinutes()
-  const span = endHour * 60 - startMinutes
-  return Math.max(1, Math.floor(span / durationMin))
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
 interface FixtureOutcomeSummaryProps {
@@ -195,31 +201,51 @@ function FixtureOutcomeSummary({
   )
 }
 
+export const CALENDAR_DISCLOSURE_BUTTON_TYPE = 'button'
+
 const columnHelper = createColumnHelper<Slot>()
 
 export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const theme = useMantineTheme()
   const generateFixture = useTournamentStore((s) => s.generateFixture)
+  const setFixtureCalendar = useTournamentStore((s) => s.setFixtureCalendar)
   const removeSlot = useTournamentStore((s) => s.removeSlot)
   const moveMatchToSlot = useTournamentStore((s) => s.moveMatchToSlot)
   const addPairUnavailableWindow = useTournamentStore((s) => s.addPairUnavailableWindow)
   const removePairUnavailableWindow = useTournamentStore((s) => s.removePairUnavailableWindow)
   const setMatchResult = useTournamentStore((s) => s.setMatchResult)
 
-  // Defaults: 09:00 del día de inicio del torneo, 45 min, corte 22hs.
-  const [startInput, setStartInput] = useState(`${tournament.startDate ?? tournament.date}T09:00`)
-  const [duration, setDuration] = useState(45)
-  const [endHour, setEndHour] = useState(22)
+  const persistedCalendar = tournament.calendar ?? {
+    startDate: tournament.date,
+    endDate: tournament.date,
+    defaultWindow: { startsAt: '09:00', endsAt: '22:00' },
+    overrides: [],
+  }
+  const [calendar, setCalendar] = useState<TournamentCalendar>(persistedCalendar)
+  const [duration, setDuration] = useState(tournament.fixtureSettings?.matchDurationMinutes ?? 45)
+  const [exceptionDate, setExceptionDate] = useState(calendar.startDate)
+  const [exceptionKind, setExceptionKind] = useState<'custom' | 'closed'>('custom')
+  const [exceptionStartsAt, setExceptionStartsAt] = useState(calendar.defaultWindow.startsAt)
+  const [exceptionEndsAt, setExceptionEndsAt] = useState(calendar.defaultWindow.endsAt)
+  const [calendarError, setCalendarError] = useState<string | null>(null)
+  const [exceptionsOpened, setExceptionsOpened] = useState(false)
   const [openMatch, setOpenMatch] = useState<MatchInfo | null>(null)
+  const [draggedMatchId, setDraggedMatchId] = useState<ID | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<ID | null>(null)
+  const [reorderFeedback, setReorderFeedback] =
+    useState<{ color: 'green' | 'orange' | 'red'; message: string } | null>(null)
   const [unavailablePairId, setUnavailablePairId] = useState<string | null>(null)
   const [unavailableStartsAt, setUnavailableStartsAt] = useState('')
   const [unavailableEndsAt, setUnavailableEndsAt] = useState('')
   const [unavailableReason, setUnavailableReason] = useState('')
   const [exportState, setExportState] = useState(initialExportXlsxState)
-  const [draggedMatchId, setDraggedMatchId] = useState<ID | null>(null)
-  const [dropTargetId, setDropTargetId] = useState<ID | null>(null)
-  const [reorderFeedback, setReorderFeedback] = useState<{ color: 'green' | 'orange' | 'red'; message: string } | null>(null)
   const exportControllerRef = useRef(createExportXlsxController(setExportState))
+
+  // A different tournament may reuse this component instance; a current-tournament
+  // update must not overwrite the organizer's in-progress calendar draft.
+  useEffect(() => {
+    setCalendar(persistedCalendar)
+  }, [tournament.id])
 
   // Below sm (48em) → card list; at/above sm → TanStack table.
   const isMobile = useMediaQuery('(max-width: 48em)')
@@ -251,6 +277,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
 
   const openSlots = data.filter((slot) => !slot.matchId)
   const scheduledMatchesCount = data.length - openSlots.length
+  const durationLocked = isFixtureDurationLocked(tournament)
 
   function handleReorder(matchId: ID, slotId: ID) {
     const outcome = moveMatchToSlot(matchId, slotId)
@@ -371,26 +398,57 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       columnHelper.display({
         id: 'acciones',
         header: '',
-        cell: ({ row }) => (
-          <Button size="xs" variant="subtle" color="red" onClick={() => removeSlot(row.original.id)}>
-            Quitar
-          </Button>
-        ),
+        cell: ({ row }) => {
+          const match = row.original.matchId ? matches.get(row.original.matchId)?.match : undefined
+          if (match?.result != null) return <Text size="xs" c="dimmed">Resultado bloqueado</Text>
+          return <Button size="xs" variant="subtle" color="red" onClick={() => removeSlot(row.original.id)}>Quitar</Button>
+        },
       }),
     ],
-    [matches, data, tournament, removeSlot, setOpenMatch],
+    [matches, data, removeSlot, setOpenMatch, tournament],
   )
 
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
 
+  function currentCalendar(): TournamentCalendar {
+    return calendar
+  }
+
+  function persistCalendar(nextCalendar: TournamentCalendar): void {
+    setCalendar(nextCalendar)
+    setFixtureCalendar(nextCalendar)
+  }
+
   function handleGenerate() {
-    const startsAt = fromLocalInput(startInput)
-    if (!startsAt) return
-    generateFixture({
-      startsAt,
-      matchDurationMinutes: duration,
-      matchesPerDay: matchesPerDay(startsAt, duration, endHour),
-    })
+    const calendar = currentCalendar()
+    if (durationLocked && duration !== tournament.fixtureSettings?.matchDurationMinutes) {
+      setCalendarError('La duración no puede cambiar después de cargar resultados.')
+      return
+    }
+    const error = validateTournamentCalendar(calendar)
+    if (error) { setCalendarError(error); return }
+    if (!hasScheduleableMatches(tournament)) {
+      setCalendarError('No hay partidos para agendar. Cargá al menos dos parejas en un grupo antes de generar el fixture.')
+      return
+    }
+    if (buildCalendarSlots(calendar, duration).length === 0) {
+      setCalendarError('No hay horarios disponibles. Ampliá el rango, abrí algún día o aumentá el horario habitual.')
+      return
+    }
+    setCalendarError(null)
+    generateFixture({ calendar, matchDurationMinutes: duration })
+  }
+
+  function handleAddException() {
+    const calendar = currentCalendar()
+    const next: CalendarDayOverride = exceptionKind === 'closed'
+      ? { date: exceptionDate, kind: 'closed' }
+      : { date: exceptionDate, kind: 'custom', startsAt: exceptionStartsAt, endsAt: exceptionEndsAt }
+    const error = validateTournamentCalendar({ ...calendar, overrides: [...calendar.overrides.filter((item) => item.date !== exceptionDate), next] })
+    if (error) { setCalendarError(error); return }
+    setCalendarError(null)
+    const nextCalendar = withCalendarOverride(calendar, next, exceptionDate)
+    persistCalendar(nextCalendar)
   }
 
   function handleAddUnavailableWindow() {
@@ -464,7 +522,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           </Group>
           <Title order={2}>Fixture y horarios</Title>
           <Text c="dimmed" size="sm">
-            Generá la grilla base y reordená partidos pendientes arrastrándolos o con las flechas. Las franjas mantienen su horario.
+            Generá la grilla base, reordená partidos con las flechas y usá disponibilidades para reacomodar sin tocar la lógica del torneo.
           </Text>
         </Stack>
 
@@ -475,55 +533,52 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         >
           <Stack gap="sm">
             <Group gap="sm" wrap="wrap" align="flex-end">
-              <TextInput
-                label="Arranca:"
-                type="datetime-local"
-                value={startInput}
-                onChange={(e) => setStartInput(e.target.value)}
-              />
-              <NumberInput
-                label="Duración (min):"
-                min={1}
-                style={{ width: '6.5rem' }}
-                value={duration}
-                onChange={(val) =>
-                  setDuration(Math.max(1, typeof val === 'number' ? val || 1 : 1))
-                }
-              />
-              <NumberInput
-                label="Corte diario (hs):"
-                min={1}
-                max={23}
-                style={{ width: '7rem' }}
-                value={endHour}
-                onChange={(val) =>
-                  setEndHour(Math.min(23, Math.max(1, typeof val === 'number' ? val || 1 : 1)))
-                }
-              />
-              <Button disabled={!startInput} onClick={handleGenerate}>
-                ⚡ Generar fixture
-              </Button>
-              <Button variant="default" onClick={() => void handleExportXlsx()} disabled={exportState.isExporting} loading={exportState.isExporting}>
-                Export XLSX
-              </Button>
+              <TextInput label="Desde" type="date" value={calendar.startDate} onInput={(e) => persistCalendar({ ...currentCalendar(), startDate: e.currentTarget.value })} />
+              <TextInput label="Hasta" type="date" value={calendar.endDate} onInput={(e) => persistCalendar({ ...currentCalendar(), endDate: e.currentTarget.value })} />
+              <TextInput label="Horario habitual desde" type="time" value={calendar.defaultWindow.startsAt} onInput={(e) => persistCalendar({ ...currentCalendar(), defaultWindow: { ...currentCalendar().defaultWindow, startsAt: e.currentTarget.value } })} />
+              <TextInput label="Hasta" type="time" value={calendar.defaultWindow.endsAt} onInput={(e) => persistCalendar({ ...currentCalendar(), defaultWindow: { ...currentCalendar().defaultWindow, endsAt: e.currentTarget.value } })} />
+              <NumberInput label="Duración (min)" min={1} disabled={durationLocked} style={{ width: '7rem' }} value={duration} onChange={(value) => setDuration(Math.max(1, typeof value === 'number' ? value || 1 : 1))} />
+              <Button onClick={handleGenerate}>⚡ Generar fixture</Button>
+              <Button type="button" variant="default" onClick={() => void handleExportXlsx()} disabled={exportState.isExporting} loading={exportState.isExporting}>Export XLSX</Button>
             </Group>
-
-            <Text c="dimmed" size="sm">
-              Genera los cruces de todos los grupos y los agenda en secuencia desde la fecha de inicio.
-              Después podés cambiar el orden sin recalcular el fixture completo.
-            </Text>
+            <Text c="dimmed" size="sm">{durationLocked ? 'La duración queda fija porque ya hay resultados cargados. Podés seguir ajustando días y horarios.' : 'Elegí un rango y un horario habitual. Solo cargá excepciones cuando un día sea distinto.'}</Text>
+            <Button type={CALENDAR_DISCLOSURE_BUTTON_TYPE} variant="subtle" size="compact-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setExceptionsOpened((opened) => !opened)}>
+              {exceptionsOpened ? 'Ocultar cambios por día' : 'Cambiar horario de un día'}
+            </Button>
+            <Collapse expanded={exceptionsOpened}>
+              <Paper p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+                <Stack gap="xs">
+                  <Text fw={600} size="sm">Excepción por día</Text>
+                  <Group gap="sm" wrap="wrap" align="flex-end">
+                    <TextInput label="Fecha" type="date" value={exceptionDate} onChange={(e) => setExceptionDate(e.currentTarget.value)} />
+                    <Select label="Tipo" data={[{ value: 'custom', label: 'Horario especial' }, { value: 'closed', label: 'Club cerrado' }]} value={exceptionKind} onChange={(value) => setExceptionKind(value === 'closed' ? 'closed' : 'custom')} />
+                    {exceptionKind === 'custom' && <><TextInput label="Desde" type="time" value={exceptionStartsAt} onChange={(e) => setExceptionStartsAt(e.currentTarget.value)} /><TextInput label="Hasta" type="time" value={exceptionEndsAt} onChange={(e) => setExceptionEndsAt(e.currentTarget.value)} /></>}
+                    <Button type="button" variant="light" onClick={handleAddException}>Guardar excepción</Button>
+                  </Group>
+                  {calendar.overrides.map((override) => <Group key={override.date} justify="space-between"><Text size="sm">{override.date} · {override.kind === 'closed' ? 'Club cerrado' : `${override.startsAt} a ${override.endsAt}`}</Text><Button type="button" size="xs" variant="subtle" color="red" onClick={() => { const nextCalendar = withCalendarOverride(currentCalendar(), null, override.date); persistCalendar(nextCalendar) }}>Quitar</Button></Group>)}
+                </Stack>
+              </Paper>
+            </Collapse>
+            {calendarError && (
+              <Alert
+                color="red"
+                title={calendarError.startsWith('No hay partidos') ? 'Faltan partidos para generar el fixture' : 'Revisá el calendario'}
+              >
+                {calendarError}
+              </Alert>
+            )}
           </Stack>
         </Paper>
-
-        {exportState.errorMessage && (
-          <Alert color="red" title="Error al exportar">
-            <Text size="sm">{exportState.errorMessage}</Text>
-          </Alert>
-        )}
 
         {reorderFeedback && (
           <Alert color={reorderFeedback.color} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del fixture'}>
             <Text size="sm">{reorderFeedback.message}</Text>
+          </Alert>
+        )}
+
+        {exportState.errorMessage && (
+          <Alert color="red" title="Error al exportar">
+            <Text size="sm">{exportState.errorMessage}</Text>
           </Alert>
         )}
 
@@ -584,7 +639,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                 value={unavailableReason}
                 onChange={(event) => setUnavailableReason(event.currentTarget.value)}
               />
-              <Button onClick={handleAddUnavailableWindow}>Agregar y reacomodar</Button>
+              <Button type="button" onClick={handleAddUnavailableWindow}>Agregar y reacomodar</Button>
             </Group>
 
             {(tournament.pairUnavailableWindows ?? []).length === 0 ? (
@@ -608,7 +663,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                             {formatDateTime(window.startsAt)} → {formatDateTime(window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
                           </Text>
                         </Box>
-                        <Button size="xs" variant="subtle" color="red" onClick={() => removePairUnavailableWindow(window.id)}>
+                        <Button type="button" size="xs" variant="subtle" color="red" onClick={() => removePairUnavailableWindow(window.id)}>
                           Quitar
                         </Button>
                       </Group>
@@ -628,12 +683,16 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           >
             <Stack gap="xs">
               <Group gap="xs" wrap="wrap">
-                <Badge color="gray">Sin calendario todavía</Badge>
-                <Badge color="courtTeal">Paso siguiente</Badge>
+                <Badge color={calendarError ? 'red' : 'gray'}>
+                  {!hasScheduleableMatches(tournament) ? 'Faltan partidos por agendar' : calendarError ? 'Calendario sin capacidad' : 'Sin calendario todavía'}
+                </Badge>
+                {!calendarError && <Badge color="courtTeal">Paso siguiente</Badge>}
               </Group>
-              <Text fw={700}>Todavía no hay horarios generados</Text>
+              <Text fw={700}>
+                {!hasScheduleableMatches(tournament) ? 'Faltan parejas o grupos con partidos' : calendarError ? 'No se pudo generar el fixture' : 'Todavía no hay horarios generados'}
+              </Text>
               <Text c="dimmed" size="sm">
-                Definí categorías, grupos y parejas; después tocá "Generar fixture" para crear cruces, franjas y el primer orden de juego.
+                {calendarError ?? 'Definí categorías, grupos y parejas; después tocá "Generar fixture" para crear cruces, franjas y el primer orden de juego.'}
               </Text>
             </Stack>
           </Paper>

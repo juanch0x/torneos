@@ -47,6 +47,7 @@ export function CategoryPanel({ category }: { category: Category }) {
   const assignPairToGroup = useTournamentStore((s) => s.assignPairToGroup)
   const movePairToGroup = useTournamentStore((s) => s.movePairToGroup)
   const regeneratePairings = useTournamentStore((s) => s.regeneratePairings)
+  const hasPlayedMatch = useTournamentStore((s) => s.current?.categories.some((item) => item.matches.some((match) => match.result != null)) ?? false)
 
   const [p1, setP1] = useState('')
   const [p2, setP2] = useState('')
@@ -67,6 +68,8 @@ export function CategoryPanel({ category }: { category: Category }) {
           return (
             <NativeSelect
               value={assigned ?? ''}
+              disabled={hasPlayedMatch}
+              aria-label={hasPlayedMatch ? 'Los grupos no se pueden modificar después de cargar resultados' : undefined}
               onChange={(e) => {
                 const groupId = e.target.value
                 if (!groupId) return
@@ -95,7 +98,7 @@ export function CategoryPanel({ category }: { category: Category }) {
         ),
       }),
     ],
-    [category, assignPairToGroup, movePairToGroup],
+    [category, assignPairToGroup, movePairToGroup, hasPlayedMatch],
   )
 
   const table = useReactTable({
@@ -161,16 +164,17 @@ export function CategoryPanel({ category }: { category: Category }) {
                 min={1}
                 style={{ width: '9rem' }}
                 value={category.groups.length}
+                disabled={hasPlayedMatch}
                 onChange={(val) =>
                   setCategoryGroupCount(category.id, typeof val === 'number' ? val || 1 : 1)
                 }
               />
-              <Button variant="default" onClick={() => shuffleGroups(category.id)}>
+              <Button variant="default" disabled={hasPlayedMatch} title={hasPlayedMatch ? 'Los grupos no se pueden modificar después de cargar resultados' : undefined} onClick={() => shuffleGroups(category.id)}>
                 🎲 Mezclar grupos
               </Button>
             </Group>
             <Text c="dimmed" size="sm">
-              Cambiar la cantidad de grupos o mezclar reparte las parejas al azar y limpia los cruces.
+              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger los resultados ya cargados.' : 'Cambiar la cantidad de grupos o mezclar reparte las parejas al azar y limpia los cruces.'}
             </Text>
           </Stack>
         </Paper>
@@ -197,7 +201,8 @@ export function CategoryPanel({ category }: { category: Category }) {
                 style={{ flex: '1 1 12rem' }}
               />
               <Button
-                disabled={!p1.trim() || !p2.trim()}
+                disabled={hasPlayedMatch || !p1.trim() || !p2.trim()}
+                title={hasPlayedMatch ? 'No se pueden agregar parejas después de cargar resultados' : undefined}
                 onClick={() => {
                   addPair(category.id, p1.trim(), p2.trim())
                   setP1('')
@@ -208,7 +213,7 @@ export function CategoryPanel({ category }: { category: Category }) {
               </Button>
             </Group>
             <Text c="dimmed" size="sm">
-              Cargá la pareja y después asignala al grupo correspondiente desde la tabla.
+              {hasPlayedMatch ? 'No se pueden agregar parejas después de cargar resultados.' : 'Cargá la pareja y después asignala al grupo correspondiente desde la tabla.'}
             </Text>
           </Stack>
         </Paper>
@@ -265,7 +270,7 @@ export function CategoryPanel({ category }: { category: Category }) {
           style={getMutedSurfaceStyle(theme)}
         >
           <Group gap="sm" align="flex-start" wrap="wrap">
-            <Button variant="default" onClick={() => regeneratePairings(category.id)}>
+            <Button variant="default" disabled={hasPlayedMatch} title={hasPlayedMatch ? 'Los cruces no se pueden regenerar después de cargar resultados' : undefined} onClick={() => regeneratePairings(category.id)}>
               Regenerar cruces de esta categoría
             </Button>
             <Text c="dimmed" size="sm" style={{ flex: '1 1 18rem' }}>

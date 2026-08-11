@@ -6,7 +6,6 @@ import {
   createPair,
   createSlot,
   createTournament,
-  randomLightColor,
 } from '../domain/factories'
 import { distributePairs } from '../domain/groups'
 import { reconcilePairings, regenerateSchedule } from '../domain/reconcile'
@@ -15,10 +14,12 @@ import {
   generateFixture as buildFixture,
   reorderMatchInSlots,
   reflowUnavailableMatches,
+  removeFixtureSlot,
+  syncScheduleTimes,
 } from '../domain/schedule'
 import type { FixtureOptions, ManualReorderOutcome } from '../domain/schedule'
 import { buildMockTournament } from '../mock/fmpTournament'
-import type { Category, ID, MatchResult, PairUnavailableWindow, Tournament } from '../domain/types'
+import type { Category, ID, MatchResult, PairUnavailableWindow, Tournament, TournamentCalendar } from '../domain/types'
 import { repo } from '../persistence/repo'
 import type { TournamentMeta } from '../domain/types'
 
@@ -37,10 +38,11 @@ export interface TournamentState {
 
   // calendario GLOBAL (cross-categoría, una sola cancha)
   generateFixture: (options: FixtureOptions) => void // EL botón: cruces + horarios
-  setTournamentWindow: (startDate: string, endDate: string) => void
+  setFixtureCalendar: (calendar: TournamentCalendar) => void
   addSlot: (startsAt: string) => void
   removeSlot: (slotId: ID) => void
   assignMatchToSlot: (slotId: ID, matchId: ID | null) => void
+  moveSlotMatch: (slotId: ID, direction: 'up' | 'down') => void // reordenar con flechas
   fillSchedule: () => void
   addPairUnavailableWindow: (window: Omit<PairUnavailableWindow, 'id'>) => void
   removePairUnavailableWindow: (windowId: ID) => void
@@ -86,6 +88,31 @@ export const useTournamentStore = create<TournamentState>()(
       }))
     }
 
+    function hasPlayedMatch(tournament: Tournament): boolean {
+      return tournament.categories.some((category) => category.matches.some((match) => match.result != null))
+    }
+
+    function mutateCategoryUnlessPlayed(categoryId: ID, fn: (c: Category) => Category): void {
+      mutate((t) => hasPlayedMatch(t) ? t : {
+        ...t,
+        categories: t.categories.map((c) => (c.id === categoryId ? fn(c) : c)),
+      })
+    }
+
+    function mutateCategoryStructureUnlessPlayed(categoryId: ID, fn: (c: Category) => Category): void {
+      mutate((t) => {
+        if (hasPlayedMatch(t)) return t
+        const category = t.categories.find((item) => item.id === categoryId)
+        if (!category) return t
+        const obsoleteMatchIds = new Set(category.matches.map((match) => match.id))
+        return {
+          ...t,
+          categories: t.categories.map((item) => item.id === categoryId ? { ...fn(item), matches: [] } : item),
+          slots: t.slots.filter((slot) => !slot.matchId || !obsoleteMatchIds.has(slot.matchId)),
+        }
+      })
+    }
+
     return {
       current: null,
       status: 'idle',
@@ -104,7 +131,7 @@ export const useTournamentStore = create<TournamentState>()(
         set({ status: 'loading', current: null })
         const loaded = await repo.load(id)
         set(loaded
-          ? { current: normalize(loaded), status: 'loaded' }
+          ? { current: loaded, status: 'loaded' }
           : { current: null, status: 'not-found' })
       },
 
@@ -122,25 +149,17 @@ export const useTournamentStore = create<TournamentState>()(
         await get().loadList()
       },
 
-      // EL botón: genera los cruces de todas las categorías y los agenda en
-      // secuencia desde la fecha de inicio. Ajusta la ventana del torneo al
-      // primer/último partido generados.
       generateFixture(options) {
         mutate((t) => {
-          const next = buildFixture(t, options)
-          const startDate = options.startsAt.slice(0, 10)
-          const last = next.slots[next.slots.length - 1]
-          return {
-            ...next,
-            fixtureSettings: { matchDurationMinutes: options.matchDurationMinutes },
-            startDate,
-            endDate: last ? last.startsAt.slice(0, 10) : startDate,
-          }
+          const hasPlayedMatch = t.categories.some((category) => category.matches.some((match) => match.result != null))
+          const currentDuration = t.fixtureSettings?.matchDurationMinutes
+          if (hasPlayedMatch && currentDuration != null && currentDuration !== options.matchDurationMinutes) return t
+          return buildFixture(t, options)
         })
       },
 
-      setTournamentWindow(startDate, endDate) {
-        mutate((t) => ({ ...t, startDate, endDate }))
+      setFixtureCalendar(calendar) {
+        mutate((t) => ({ ...t, calendar }))
       },
 
       addSlot(startsAt) {
@@ -154,20 +173,47 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       removeSlot(slotId) {
-        mutate((t) => ({ ...t, slots: t.slots.filter((s) => s.id !== slotId) }))
+        mutate((t) => removeFixtureSlot(t, slotId))
       },
 
       // Asigna (o limpia, con matchId=null) un partido a una franja a mano.
       // Si el partido ya estaba en otra franja, lo sacamos de allá (1 franja = 1 partido).
       assignMatchToSlot(slotId, matchId) {
-        mutate((t) => ({
-          ...t,
-          slots: t.slots.map((s) => {
-            if (s.id === slotId) return { ...s, matchId: matchId ?? undefined }
-            if (matchId && s.matchId === matchId) return { ...s, matchId: undefined }
+        mutate((t) => {
+          const target = t.slots.find((slot) => slot.id === slotId)
+          const moving = matchId ? t.categories.flatMap((category) => category.matches).find((match) => match.id === matchId) : undefined
+          const targetMatch = target?.matchId ? t.categories.flatMap((category) => category.matches).find((match) => match.id === target.matchId) : undefined
+          if (!target || targetMatch?.result != null || moving?.result != null) return t
+          return {
+            ...t,
+            slots: t.slots.map((s) => {
+              if (s.id === slotId) return { ...s, matchId: matchId ?? undefined }
+              if (matchId && s.matchId === matchId) return { ...s, matchId: undefined }
+              return s
+            }),
+          }
+        })
+      },
+
+      // Flechas ↑/↓: intercambia el partido de esta franja con el de la franja
+      // contigua en el orden cronológico (reordena los partidos en el tiempo).
+      moveSlotMatch(slotId, direction) {
+        mutate((t) => {
+          const ordered = [...t.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+          const index = ordered.findIndex((s) => s.id === slotId)
+          const swapWith = direction === 'up' ? index - 1 : index + 1
+          if (index < 0 || swapWith < 0 || swapWith >= ordered.length) return t
+          const a = ordered[index]
+          const b = ordered[swapWith]
+          const matchById = new Map(t.categories.flatMap((category) => category.matches).map((match) => [match.id, match]))
+          if (matchById.get(a.matchId ?? '')?.result != null || matchById.get(b.matchId ?? '')?.result != null) return t
+          const slots = t.slots.map((s) => {
+            if (s.id === a.id) return { ...s, matchId: b.matchId }
+            if (s.id === b.id) return { ...s, matchId: a.matchId }
             return s
-          }),
-        }))
+          })
+          return syncScheduleTimes({ ...t, slots })
+        })
       },
 
       fillSchedule() {
@@ -178,7 +224,6 @@ export const useTournamentStore = create<TournamentState>()(
         mutate((t) => reflowUnavailableMatches({
           ...t,
           pairUnavailableWindows: [...(t.pairUnavailableWindows ?? []), { ...window, id: crypto.randomUUID() }],
-          fixtureSettings: t.fixtureSettings ?? { matchDurationMinutes: 45 },
         }))
       },
 
@@ -186,7 +231,6 @@ export const useTournamentStore = create<TournamentState>()(
         mutate((t) => reflowUnavailableMatches({
           ...t,
           pairUnavailableWindows: (t.pairUnavailableWindows ?? []).filter((window) => window.id !== windowId),
-          fixtureSettings: t.fixtureSettings ?? { matchDurationMinutes: 45 },
         }))
       },
 
@@ -201,7 +245,7 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       addCategory(name, numGroups) {
-        mutate((t) => ({ ...t, categories: [...t.categories, createCategory(name, numGroups)] }))
+        mutate((t) => hasPlayedMatch(t) ? t : { ...t, categories: [...t.categories, createCategory(name, numGroups)] })
       },
 
       // Cambia la cantidad de grupos (mínimo 1) y RE-REPARTE las parejas al azar
@@ -209,7 +253,7 @@ export const useTournamentStore = create<TournamentState>()(
       // Cambiar los grupos invalida los cruces → se limpian (regenerás después).
       setCategoryGroupCount(categoryId, count) {
         const target = Math.max(1, Math.floor(count))
-        mutateCategory(categoryId, (c) => {
+        mutateCategoryStructureUnlessPlayed(categoryId, (c) => {
           let groups = c.groups
           if (target > groups.length) {
             const extra = Array.from({ length: target - groups.length }, (_, i) =>
@@ -231,11 +275,11 @@ export const useTournamentStore = create<TournamentState>()(
       // Re-reparte las parejas al azar entre los grupos actuales. Limpia los
       // cruces (cambió la composición de los grupos → hay que regenerar).
       shuffleGroups(categoryId) {
-        mutateCategory(categoryId, (c) => distributePairs({ ...c, matches: [] }))
+        mutateCategoryStructureUnlessPlayed(categoryId, (c) => distributePairs({ ...c, matches: [] }))
       },
 
       addPair(categoryId, player1, player2) {
-        mutateCategory(categoryId, (c) => ({
+        mutateCategoryUnlessPlayed(categoryId, (c) => ({
           ...c,
           pairs: [...c.pairs, createPair(player1, player2)],
         }))
@@ -254,7 +298,7 @@ export const useTournamentStore = create<TournamentState>()(
 
       // Agrega la pareja al grupo (si no estaba). No la saca de ningún otro lado.
       assignPairToGroup(categoryId, pairId, groupId) {
-        mutateCategory(categoryId, (c) => ({
+        mutateCategoryStructureUnlessPlayed(categoryId, (c) => ({
           ...c,
           groups: c.groups.map((g) =>
             g.id === groupId && !g.pairIds.includes(pairId)
@@ -266,7 +310,7 @@ export const useTournamentStore = create<TournamentState>()(
 
       // La saca de cualquier grupo donde esté y la agrega al destino.
       movePairToGroup(categoryId, pairId, toGroupId) {
-        mutateCategory(categoryId, (c) => ({
+        mutateCategoryStructureUnlessPlayed(categoryId, (c) => ({
           ...c,
           groups: c.groups.map((g) => {
             const without = g.pairIds.filter((id) => id !== pairId)
@@ -277,11 +321,11 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       regeneratePairings(categoryId) {
-        mutateCategory(categoryId, reconcilePairings)
+        mutateCategoryUnlessPlayed(categoryId, reconcilePairings)
       },
 
       regenerateSchedule(categoryId) {
-        mutateCategory(categoryId, regenerateSchedule)
+        mutateCategoryUnlessPlayed(categoryId, regenerateSchedule)
       },
 
       setMatchResult(categoryId, matchId, result) {
@@ -301,18 +345,3 @@ export const useTournamentStore = create<TournamentState>()(
     }
   }),
 )
-
-// Rellena campos nuevos en documentos viejos (que no tenían calendario), para
-// que el resto de la app pueda asumir que siempre existen.
-function normalize(t: Tournament): Tournament {
-  return {
-    ...t,
-    slots: t.slots ?? [],
-    startDate: t.startDate ?? t.date,
-    endDate: t.endDate ?? t.date,
-    pairUnavailableWindows: t.pairUnavailableWindows ?? [],
-    fixtureSettings: t.fixtureSettings ?? { matchDurationMinutes: 45 },
-    // Backfill de color para categorías de documentos viejos sin color.
-    categories: t.categories.map((c) => ({ ...c, color: c.color ?? randomLightColor() })),
-  }
-}
