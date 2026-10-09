@@ -144,7 +144,7 @@ export const useTournamentStore = create<TournamentState>()(
           const loaded = await repo.load(id)
           if (token !== loadRevision) return
           set(loaded ? { current: loaded, status: 'loaded' } : { current: null, status: 'not-found' })
-        } catch { if (token === loadRevision) set({ current: null, status: 'error', loadError: 'No se pudo leer el torneo. Reintenta sin cambiar los datos guardados.' }) }
+        } catch { if (token === loadRevision) set({ current: null, status: 'error', loadError: 'No se pudo leer el torneo. Reintentá sin cambiar los datos guardados.' }) }
       },
 
       async newTournament(name, date) {

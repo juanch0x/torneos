@@ -21,7 +21,7 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
   if (!hasCompleteV2Configuration(source)) return failure(['Completá y guardá período, Disponibilidad de la cancha, Horario del torneo, Días del torneo y duración antes de generar.'])
   const readiness = v2ReadinessIssues(source); if (readiness.length) return failure(readiness)
   const calendar = source.calendar!; const duration = source.fixtureSettings!.matchDurationMinutes * 60000
-  if (source.categories.reduce((total, c) => total+c.groups.reduce((count,g) => count+g.pairIds.length*(g.pairIds.length-1)/2,0),0) > 1000) return failure(['Los partidos superan el límite de1000 partidos de esta generación. No se evaluó su factibilidad.'])
+  if (source.categories.reduce((total, c) => total+c.groups.reduce((count,g) => count+g.pairIds.length*(g.pairIds.length-1)/2,0),0) > 1000) return failure(['Los partidos superan el límite de 1000 partidos de esta generación. No se evaluó su factibilidad.'])
   const issues: string[] = []
   // Read adapter detects opaque duplicate IDs/references without repairing the source.
   for (const issue of adaptV2Tournament(source).diagnostics) if (!['timezone-ambiguity'].includes(issue.code)) issues.push(`${issue.path}: ${issue.message}`)
@@ -70,7 +70,7 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
   if (new Set(originalSlotInstants).size !== originalSlotInstants.length) return failure(['Hay franjas originales repetidas en el mismo horario. Revisalas en el diagnóstico técnico; no se elimina ninguna automáticamente.'])
   const candidates: number[] = []
   const first = new Date(`${calendar.startDate}T00:00`); const last = new Date(`${calendar.endDate}T00:00`)
-  if ((Date.parse(calendar.endDate)-Date.parse(calendar.startDate)) / 86400000 > 366 || planned.length > 1000) return failure(['El período o los partidos superan el límite de esta generación (367 días /1000 partidos). No se evaluó su factibilidad.'])
+  if ((Date.parse(calendar.endDate)-Date.parse(calendar.startDate)) / 86400000 > 366 || planned.length > 1000) return failure(['El período o los partidos superan el límite de esta generación (367 días / 1000 partidos). No se evaluó su factibilidad.'])
   let eligibleDays = 0
   for (const date = new Date(first); date <= last; date.setDate(date.getDate()+1)) {
     const day = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
@@ -82,7 +82,7 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
     if (opening === undefined || closing === undefined) return failure([`${day}: el horario no existe en la zona local. Revisá la configuración de cancha.`])
     for (let start = opening; start + duration <= closing; start += duration) {
       candidates.push(start)
-      if (candidates.length > 20000) return failure(['Se superó el límite de20000 franjas; no se evaluó la factibilidad. Reducí el período o revisá la duración.'])
+      if (candidates.length > 20000) return failure(['Se superó el límite de 20000 franjas; no se evaluó la factibilidad. Reducí el período o revisá la duración.'])
     }
   }
   const daysLabel = v2AutomaticWeekdayLabel(source)

@@ -46,7 +46,7 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       return { ok: true, merges: result.merges }
     } catch {
       if (uncertainAttempt) store.setState({ writeUncertain: true })
-      return fail('No se pudo confirmar el guardado. El documento podría haberse actualizado parcialmente; conserva el borrador y reintenta para completar el guardado.')
+      return fail('No se pudo confirmar el guardado. El documento podría haberse actualizado parcialmente; conservá el borrador y reintentá para completar el guardado.')
     } finally { store.setState({ saving: false }) }
   }
   return {

@@ -34,9 +34,9 @@ export function validateV2Move(source: Tournament, request: V2MoveRequest): V2Mo
   if (original.instant === target.instant) return { ok: false,noop: true,error: 'El partido conserva su horario.' }
   if (!hasCompleteV2Configuration(source)) return fail('Completá la configuración válida antes de mover partidos.')
   const audit = adaptV2Tournament(source).diagnostics.filter(issue => issue.code !== 'timezone-ambiguity')
-  if (audit.length) return fail('Datos o franjas inconsistentes. Revisá grupos, restricciones y configuración; si el problema persiste, solicita una revisión de los datos de este torneo. No se modifica ningún registro.')
+  if (audit.length) return fail('Datos o franjas inconsistentes. Revisá grupos, restricciones y configuración; si el problema persiste, solicitá una revisión de los datos de este torneo. No se modifica ningún registro.')
   const slotTimes = source.slots.map(slot => parseV2Timestamp(slot.startsAt)!.instant)
-  if (new Set(slotTimes).size !== slotTimes.length) return fail('Hay franjas repetidas en el mismo horario. Solicita una revisión de los datos de este torneo; no se modifica ningún registro.')
+  if (new Set(slotTimes).size !== slotTimes.length) return fail('Hay franjas repetidas en el mismo horario. Solicitá una revisión de los datos de este torneo; no se modifica ningún registro.')
   const config = getV2RestrictionConfig(source)!; const duration = source.fixtureSettings!.matchDurationMinutes*60000
   if (target.instant < parseV2Timestamp(config.start)!.instant || target.instant+duration > parseV2Timestamp(config.end)!.instant) return fail('El partido completo debe quedar dentro del período configurado.')
   const date = new Date(target.instant); const day = v2LocalDateTime(date).slice(0,10); const hours = v2CourtDay(source.calendar,day)
