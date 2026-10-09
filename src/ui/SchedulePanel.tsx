@@ -31,7 +31,7 @@ import { createExportXlsxController, initialExportXlsxState } from './exportXlsx
 import { MobileMatchCard } from './MobileMatchCard'
 import { ResultTriggerButton } from './ResultTriggerButton'
 import { ResultDrawer } from './ResultDrawer'
-import { formatDate, formatDateTime } from './format'
+import { formatShortDate, formatDayDateTime, formatTimeRange } from './format'
 import { getMutedSurfaceStyle } from './surfaceStyles'
 
 interface MatchInfo {
@@ -322,7 +322,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       }),
       columnHelper.accessor('startsAt', {
         header: 'Cuándo',
-        cell: (ctx) => formatDateTime(ctx.getValue()),
+        cell: (ctx) => formatDayDateTime(ctx.getValue()),
       }),
       columnHelper.display({
         id: 'partido',
@@ -478,7 +478,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         <MobileMatchCard
           key={slot.id}
           matchNumber={info.match.number}
-          contextLabel={formatDateTime(slot.startsAt)}
+          contextLabel={formatDayDateTime(slot.startsAt)}
           metaLabel={info.label}
           teamA={info.labelA}
           teamB={info.labelB}
@@ -501,7 +501,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       >
         <Stack gap="xs">
           <Group justify="space-between" gap="xs" wrap="wrap">
-            <Text size="sm" c="dimmed">{formatDateTime(slot.startsAt)}</Text>
+            <Text size="sm" c="dimmed">{formatDayDateTime(slot.startsAt)}</Text>
             <Badge color="gray">Franja libre</Badge>
           </Group>
           <Text c="dimmed" size="sm">
@@ -555,7 +555,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                     {exceptionKind === 'custom' && <><TextInput label="Desde" type="time" value={exceptionStartsAt} onChange={(e) => setExceptionStartsAt(e.currentTarget.value)} /><TextInput label="Hasta" type="time" value={exceptionEndsAt} onChange={(e) => setExceptionEndsAt(e.currentTarget.value)} /></>}
                     <Button type="button" variant="light" onClick={handleAddException}>Guardar excepción</Button>
                   </Group>
-                  {calendar.overrides.map((override) => <Group key={override.date} justify="space-between"><Text size="sm">{formatDate(override.date)} · {override.kind === 'closed' ? 'Club cerrado' : `${override.startsAt} a ${override.endsAt}`}</Text><Button type="button" size="xs" variant="subtle" color="red" onClick={() => { const nextCalendar = withCalendarOverride(currentCalendar(), null, override.date); persistCalendar(nextCalendar) }}>Quitar</Button></Group>)}
+                  {calendar.overrides.map((override) => <Group key={override.date} justify="space-between"><Text size="sm">{formatShortDate(override.date)} · {override.kind === 'closed' ? 'Club cerrado' : `${override.startsAt} a ${override.endsAt}`}</Text><Button type="button" size="xs" variant="subtle" color="red" onClick={() => { const nextCalendar = withCalendarOverride(currentCalendar(), null, override.date); persistCalendar(nextCalendar) }}>Quitar</Button></Group>)}
                 </Stack>
               </Paper>
             </Collapse>
@@ -660,7 +660,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                             {pair?.label ?? window.pairId}
                           </Text>
                           <Text size="sm" c="dimmed">
-                            {formatDateTime(window.startsAt)} → {formatDateTime(window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
+                            {formatTimeRange(window.startsAt, window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
                           </Text>
                         </Box>
                         <Button type="button" size="xs" variant="subtle" color="red" onClick={() => removePairUnavailableWindow(window.id)}>

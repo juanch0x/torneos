@@ -16,13 +16,13 @@ import { v2Reader, type V2ReadSnapshot } from '../../router/v2ReadService'
 import { isV2Date, v2CourtDay, v2DisplayBounds, pairLabel, type V2DisplayMatch } from '../../domain/v2Display'
 import type { TournamentMeta } from '../../domain/types'
 import '../preparation-v2/preparationMock.css'
-import { formatDate, formatDateRange, formatDateTime } from '../format'
+import { formatShortDate, formatDateRange, formatDayDateTime } from '../format'
 import { plural } from '../../domain/text'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const toolbar = { start: 'prev,next', center: 'title', end: '' }
 const timeFormat = { hour: '2-digit', minute: '2-digit', hour12: false } as const
-const local = (instant: number) => formatDateTime(instant)
+const local = (instant: number) => formatDayDateTime(instant)
 function Matches({ matches }: { matches: V2DisplayMatch[] }) {
   return <Table.ScrollContainer minWidth={680}><Table><Table.Thead><Table.Tr><Table.Th>Partido</Table.Th><Table.Th>Categoría / grupo</Table.Th><Table.Th>Horario local / original</Table.Th></Table.Tr></Table.Thead><Table.Tbody>
     {matches.map(match => <Table.Tr key={match.key}><Table.Td><Text size="sm">{match.pairA} vs. {match.pairB}</Text><Text size="xs" c="dimmed">ID: {match.id}{match.played ? ' · Con resultado, solo lectura' : ''}</Text></Table.Td>
@@ -64,7 +64,7 @@ export function ReadOnlyV2Page() {
     {snapshot && display && <>
       <Paper withBorder p="md"><Stack gap="xs"><Group justify="space-between"><Title order={3}>{display.name}</Title><Group><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: snapshot.sourceId }} />} size="xs" variant="light">Abrir grupos en sandbox</Button><Button renderRoot={props => <Link {...props} to="/v2/calendar" search={{ tournamentId: snapshot.sourceId }} />} size="xs" variant="light">Abrir calendario en sandbox</Button></Group></Group><Text size="sm">Fuente: {snapshot.sourceId} · Versión: {snapshot.sourceVersion}</Text><Text size="sm">{plural(display.categories.length, 'categoría', 'categorías')} · {plural(display.matches.length, 'partido', 'partidos')} · {plural(snapshot.baseline.slots.length, 'franja', 'franjas')}</Text>
         <Text size="sm">Duración global: {display.duration === null ? 'Sin configuración válida' : `${display.duration} minutos`}</Text>
-        {display.calendar ? <><Text size="sm">Período original: {formatDateRange(display.calendar.startDate, display.calendar.endDate)} · Horario general: {display.calendar.defaultWindow?.startsAt}–{display.calendar.defaultWindow?.endsAt}</Text>{(display.calendar.overrides ?? []).map((override, index) => <Text key={index} size="xs">{formatDate(override.date)}: {override.kind === 'closed' ? 'Cancha cerrada' : `${override.startsAt}–${override.endsAt}`}</Text>)}</> : <Text c="orange.8" size="sm">Calendario incompleto. No se usan los valores del ejemplo.</Text>}
+        {display.calendar ? <><Text size="sm">Período original: {formatDateRange(display.calendar.startDate, display.calendar.endDate)} · Horario general: {display.calendar.defaultWindow?.startsAt}–{display.calendar.defaultWindow?.endsAt}</Text>{(display.calendar.overrides ?? []).map((override, index) => <Text key={index} size="xs">{formatShortDate(override.date)}: {override.kind === 'closed' ? 'Cancha cerrada' : `${override.startsAt}–${override.endsAt}`}</Text>)}</> : <Text c="orange.8" size="sm">Calendario incompleto. No se usan los valores del ejemplo.</Text>}
         <Text size="xs" c="dimmed">Los instantes se muestran en la zona del navegador ({Intl.DateTimeFormat().resolvedOptions().timeZone}). Horarios sin zona son ambiguos. Los textos originales se conservan; no se afirma que el calendario sea válido.</Text>
       </Stack></Paper>
       {!!display.diagnostics.length && <Alert color="orange" title={`${plural(display.diagnostics.length, 'diagnóstico', 'diagnósticos')} · Sin reparaciones automáticas`}><Stack gap={4}>{display.diagnostics.map((issue, index) => <Text size="xs" key={index}>{issue.path}: {issue.message}</Text>)}</Stack></Alert>}

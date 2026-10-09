@@ -13,7 +13,7 @@ import { MobileMatchCard } from './MobileMatchCard'
 import { ResultTriggerButton } from './ResultTriggerButton'
 import { useTournamentStore } from '../store/tournamentStore'
 import { ResultDrawer } from './ResultDrawer'
-import { formatDateTime } from './format'
+import { formatDayDateTime } from './format'
 import { getMutedSurfaceStyle } from './surfaceStyles'
 
 function buildLabelLookup(category: Category): (id: ID) => string {
@@ -80,7 +80,7 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
         cell: (ctx) => {
           const iso = ctx.getValue()
           return iso ? (
-            formatDateTime(iso)
+            formatDayDateTime(iso)
           ) : (
             <Text span c="dimmed">
               —
@@ -200,7 +200,7 @@ function MatchMobileCard({
 }) {
   const { original: match } = row
   const contextParts = [label(match.groupId), `Ronda ${match.round}`]
-  const timeLabel = match.scheduledAt ? formatDateTime(match.scheduledAt) : 'Sin horario asignado'
+  const timeLabel = match.scheduledAt ? formatDayDateTime(match.scheduledAt) : 'Sin horario asignado'
 
   return (
     <MobileMatchCard

@@ -9,7 +9,7 @@ import { useMemo, useState, useRef } from 'react'
 import { Alert, Button, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { TournamentMeta } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
-import { formatDate, localDateInput } from './format'
+import { formatFullDate, localDateInput } from './format'
 
 // Today's date as ISO "YYYY-MM-DD" for the default date input value.
 function today(): string {
@@ -36,7 +36,7 @@ export function TournamentList() {
   const columns = useMemo(
     () => [
       columnHelper.accessor('name', { header: 'Nombre' }),
-      columnHelper.accessor('date', { header: 'Fecha', cell: (ctx) => formatDate(ctx.getValue()) }),
+      columnHelper.accessor('date', { header: 'Fecha', cell: (ctx) => formatFullDate(ctx.getValue()) }),
       columnHelper.accessor('categoryCount', { header: 'Categorías' }),
       columnHelper.display({
         id: 'acciones',

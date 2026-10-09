@@ -5,7 +5,7 @@ import { Alert, Button, Box, Breadcrumbs, Group, Loader, Paper, Stack, Tabs, Tex
 import { useTournamentStore } from '../store/tournamentStore'
 import { deriveCockpitGuidance } from '../ui/cockpitGuidance'
 import { CockpitGuidanceCard } from '../ui/CockpitGuidanceCard'
-import { formatDate } from '../ui/format'
+import { formatShortDate } from '../ui/format'
 import { NotFound } from './NotFound'
 
 export function TournamentLayout() {
@@ -88,7 +88,7 @@ export function TournamentLayout() {
               <Text size="xs" c="dimmed">
                 Fecha del torneo
               </Text>
-              <Text fw={700}>{formatDate(current.calendar?.startDate ?? current.date)}</Text>
+              <Text fw={700}>{formatShortDate(current.calendar?.startDate ?? current.date)}</Text>
             </Paper>
           </Group>
 

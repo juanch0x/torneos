@@ -1,9 +1,8 @@
 import { parseV2Timestamp } from '../domain/v2Display'
 
 // One local date/time format for everything the organizer reads (es-AR, 24h):
-//   date-time  lun, 12 oct 2026, 20:15
-//   date       lun, 12 oct 2026
-//   range      12 oct → 23 oct 2026
+//   weekday only in calendar contexts: lun 12/10 18:00; plain dates are DD/MM.
+//   always two-digit day/month, 24h clock.
 // Instants are rendered in the browser's zone unless a timeZone is passed
 // (tests pass one explicitly so they do not depend on the machine).
 
@@ -30,64 +29,92 @@ function resolve(value: Input, timeZone?: string): Resolved | null {
   return Number.isNaN(date.getTime()) ? null : { date, timeZone }
 }
 
-const fmt = (date: Date, timeZone: string | undefined, options: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat(LOCALE, { ...options, timeZone }).format(date)
+const pad = (n: number | string) => String(n).padStart(2, '0')
 
-const DAY = { day: 'numeric', month: 'short' } as const
-const FULL_DAY = { weekday: 'short', ...DAY, year: 'numeric' } as const
-const CLOCK = { hour: '2-digit', minute: '2-digit', hour12: false } as const
+interface Parts { weekday: string; day: string; month: string; year: string; hour: string; minute: string }
 
-const dayKey = (date: Date, timeZone: string | undefined) => fmt(date, timeZone, { year: 'numeric', month: 'numeric', day: 'numeric' })
+// Fields are read through formatToParts so the output never depends on the locale's separators.
+function parts(date: Date, timeZone: string | undefined): Parts {
+  const out: Record<string, string> = {}
+  for (const p of new Intl.DateTimeFormat(LOCALE, {
+    weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone,
+  }).formatToParts(date)) out[p.type] = p.value
+  return {
+    weekday: out.weekday.replace(/\./g, '').toLowerCase(),
+    day: pad(out.day), month: pad(out.month), year: out.year, hour: pad(out.hour), minute: pad(out.minute),
+  }
+}
+
+const dayKey = (r: Resolved) => { const p = parts(r.date, r.timeZone); return `${p.year}-${p.month}-${p.day}` }
 const raw = (value: Input) => String(value)
 
-export function formatDate(value: Input, timeZone?: string): string {
+const short = (p: Parts) => `${p.day}/${p.month}`
+const full = (p: Parts) => `${p.day}/${p.month}/${p.year}`
+const dayDate = (p: Parts) => `${p.weekday} ${short(p)}`
+const clock = (p: Parts) => `${p.hour}:${p.minute}`
+
+function format(value: Input, timeZone: string | undefined, render: (p: Parts) => string): string {
   const r = resolve(value, timeZone)
-  return r ? fmt(r.date, r.timeZone, FULL_DAY) : raw(value)
+  return r ? render(parts(r.date, r.timeZone)) : raw(value)
 }
 
-export function formatDateTime(value: Input, timeZone?: string): string {
+// DD/MM, for plain dates (tournament header, overrides).
+export const formatShortDate = (value: Input, timeZone?: string) => format(value, timeZone, short)
+
+// DD/MM/YYYY, for lists where the year matters (tournament list).
+export const formatFullDate = (value: Input, timeZone?: string) => format(value, timeZone, full)
+
+// "lun 12/10", a calendar day with its weekday.
+export const formatDayDate = (value: Input, timeZone?: string) => format(value, timeZone, dayDate)
+
+// "lun 12/10 18:00", for matches and moves.
+export const formatDayDateTime = (value: Input, timeZone?: string) => format(value, timeZone, (p) => `${dayDate(p)} ${clock(p)}`)
+
+// "09/10/2026 16:07", a technical timestamp that keeps the year.
+export const formatTimestamp = (value: Input, timeZone?: string) => format(value, timeZone, (p) => `${full(p)} ${clock(p)}`)
+
+export const formatTime = (value: Input, timeZone?: string) => format(value, timeZone, clock)
+
+// Null when the value is not a valid date-time, so callers can mark it as invalid.
+export function tryFormatDayDateTime(value: Input, timeZone?: string): string | null {
   const r = resolve(value, timeZone)
-  return r ? fmt(r.date, r.timeZone, { ...FULL_DAY, ...CLOCK }) : raw(value)
+  if (!r) return null
+  const p = parts(r.date, r.timeZone)
+  return `${dayDate(p)} ${clock(p)}`
 }
 
-export function formatTime(value: Input, timeZone?: string): string {
-  const r = resolve(value, timeZone)
-  return r ? fmt(r.date, r.timeZone, CLOCK) : raw(value)
-}
-
-// "12 oct → 23 oct 2026"; the year is repeated only when the ends fall in different years.
+// "12/10 → 23/10"; the year appears on both ends only when they fall in different years.
 export function formatDateRange(from: Input, to: Input, timeZone?: string): string {
   const a = resolve(from, timeZone)
   const b = resolve(to, timeZone)
   if (!a || !b) return `${raw(from)} → ${raw(to)}`
-  if (dayKey(a.date, a.timeZone) === dayKey(b.date, b.timeZone)) return fmt(a.date, a.timeZone, FULL_DAY)
-  const year = (r: Resolved) => fmt(r.date, r.timeZone, { year: 'numeric' })
-  const day = (r: Resolved) => fmt(r.date, r.timeZone, DAY)
-  // Day and month are formatted apart from the year: combined, es-AR inserts "de".
-  return year(a) === year(b) ? `${day(a)} → ${day(b)} ${year(b)}` : `${day(a)} ${year(a)} → ${day(b)} ${year(b)}`
+  const pa = parts(a.date, a.timeZone)
+  const pb = parts(b.date, b.timeZone)
+  if (dayKey(a) === dayKey(b)) return short(pa)
+  return pa.year === pb.year ? `${short(pa)} → ${short(pb)}` : `${full(pa)} → ${full(pb)}`
 }
 
-// Null when the value is not a valid date-time, so callers can mark it as invalid.
-export function tryFormatDateTime(value: Input, timeZone?: string): string | null {
-  const r = resolve(value, timeZone)
-  return r ? fmt(r.date, r.timeZone, { ...FULL_DAY, ...CLOCK }) : null
-}
+const isLocalMidnight = (r: Resolved) => { const p = parts(r.date, r.timeZone); return p.hour === '00' && p.minute === '00' && r.date.getTime() % 60_000 === 0 }
 
-const isLocalMidnight = (date: Date, timeZone: string | undefined) => fmt(date, timeZone, { ...CLOCK, second: '2-digit' }) === '00:00:00'
-
-// Two instants: "lun, 12 oct 2026, 18:00 → 19:00", or both date-times when the span crosses local midnight.
-// A block from local midnight to local midnight (exclusive end) is whole days:
-// "mié, 14 oct 2026 · Día completo" or "14 oct → 16 oct 2026 · Día completo".
+// Restriction blocks between two instants:
+//   timed, same day     jue 15/10 15:00–16:00
+//   timed, spans days   lun 12/10 23:00 → mar 13/10 01:00
+//   whole days          mié 14/10 · Día completo  /  mié 14/10 → vie 16/10 · Día completo
+// A block from local midnight to local midnight (exclusive end) is whole days.
 export function formatTimeRange(from: Input, to: Input, timeZone?: string): string {
   const a = resolve(from, timeZone)
   const b = resolve(to, timeZone)
   if (!a || !b) return `${raw(from)} → ${raw(to)}`
-  if (b.date > a.date && isLocalMidnight(a.date, a.timeZone) && isLocalMidnight(b.date, b.timeZone)) {
-    return `${formatDateRange(a.date, new Date(b.date.getTime() - 1), timeZone)} · Día completo`
+  const pa = parts(a.date, a.timeZone)
+  if (b.date > a.date && isLocalMidnight(a) && isLocalMidnight(b)) {
+    const last = parts(new Date(b.date.getTime() - 1), b.timeZone)
+    return `${dayKey(a) === `${last.year}-${last.month}-${last.day}` ? dayDate(pa) : `${dayDate(pa)} → ${dayDate(last)}`} · Día completo`
   }
-  return dayKey(a.date, a.timeZone) === dayKey(b.date, b.timeZone)
-    ? `${formatDateTime(a.date, timeZone)} → ${formatTime(b.date, timeZone)}`
-    : `${formatDateTime(a.date, timeZone)} → ${formatDateTime(b.date, timeZone)}`
+  const pb = parts(b.date, b.timeZone)
+  return dayKey(a) === dayKey(b)
+    ? `${dayDate(pa)} ${clock(pa)}–${clock(pb)}`
+    : `${dayDate(pa)} ${clock(pa)} → ${dayDate(pb)} ${clock(pb)}`
 }
 
 // Today's (or any) local calendar day as "YYYY-MM-DD", for date inputs. Never the UTC day.
