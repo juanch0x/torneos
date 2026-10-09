@@ -133,7 +133,7 @@ export const useTournamentStore = create<TournamentState>()(
 
       async loadList() {
         try { set({ list: await repo.list(), listError: '' }) }
-        catch { set({ listError: 'No se pudo leer la lista de torneos. Reintenta; no se eliminaron datos.' }) }
+        catch { set({ listError: 'No se pudo leer la lista de torneos. Reintentá; no se eliminaron datos.' }) }
       },
 
       async loadTournament(id, force = false) {
