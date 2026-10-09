@@ -6,7 +6,7 @@ import { V2ConfigurationHeader } from './V2ConfigurationPanel'
 import { hasCompleteV2Configuration } from '../../domain/v2Configuration'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
-import { formatDate } from '../format'
+import { formatFullDate } from '../format'
 
 export function V2SourceControls({ view, tournamentId }: { view: 'groups' | 'calendar'; tournamentId?: string }) {
   const state = useStore(v2SessionStore)
@@ -33,7 +33,7 @@ export function V2SourceControls({ view, tournamentId }: { view: 'groups' | 'cal
       {tournamentId ? <V2ConfigurationHeader tournamentId={tournamentId} /> : <Group><Badge color="grape">Ejemplo ficticio independiente</Badge><Text size="xs" c="dimmed">Edición de demostración, sin datos reales</Text></Group>}
       <Group justify="flex-end" gap="xs"><Button disabled={!!tournamentId && view === 'groups' && !hasCompleteV2Configuration(state.working)} renderRoot={props => <Link {...props} to={view === 'groups' ? '/v2/calendar' : '/v2/groups'} search={{ tournamentId }} />} variant="light" size="xs">{view === 'groups' ? 'Ver calendario' : 'Ver grupos'}</Button>{tournamentId && <><Button renderRoot={props => <Link {...props} to="/tournaments/$id/groups" params={{ id: tournamentId }} />} variant="default" size="xs">Editar categorías y parejas</Button><Button component={Link} to="/" variant="subtle" size="xs">Torneos</Button></>}<Button component={Link} to="/v2/read" variant="subtle" size="xs">Diagnóstico técnico</Button></Group>
       {!tournamentId && <NativeSelect disabled={state.saving} label="Fuente de prueba V2" value={tournamentId ?? ''} onChange={event => { const search = { tournamentId: event.currentTarget.value || undefined }; if (view === 'groups') void navigate({ to: '/v2/groups', search }); else void navigate({ to: '/v2/calendar', search }) }}
-        data={[{ value: '', label: 'Usar ejemplo ficticio (independiente)' }, ...state.sources.map(source => ({ value: source.id, label: `${source.name} · ${formatDate(source.date)}` })), ...(tournamentId && !state.sources.some(source => source.id === tournamentId) ? [{ value: tournamentId, label: `Fuente seleccionada: ${tournamentId}` }] : [])]} />}
+        data={[{ value: '', label: 'Usar ejemplo ficticio (independiente)' }, ...state.sources.map(source => ({ value: source.id, label: `${source.name} · ${formatFullDate(source.date)}` })), ...(tournamentId && !state.sources.some(source => source.id === tournamentId) ? [{ value: tournamentId, label: `Fuente seleccionada: ${tournamentId}` }] : [])]} />}
       {state.listError && <Text role="alert" c="red" size="sm">{state.listError}</Text>}
       {tournamentId && <Group justify="space-between"><Text size="xs">Fuente: {tournamentId} · Versión: {state.sourceVersion ?? 'Sin cargar'}{state.dirty ? ' · Cambios sin guardar' : ''}</Text><Group gap="xs"><Button variant="default" size="xs" disabled={state.saving || !state.baseline} onClick={() => action('reset')}>Restablecer vista</Button><Button variant="subtle" size="xs" disabled={state.saving || state.status === 'loading'} onClick={() => action('reload')}>Releer original</Button></Group></Group>}
       {state.saveError && <Text role="alert" c="red" size="sm">{state.saveError}</Text>}

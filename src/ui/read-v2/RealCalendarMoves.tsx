@@ -5,8 +5,8 @@ import { useStore } from 'zustand'
 import { validateV2Move, type V2MoveRequest } from '../../domain/v2Moves'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
-import { formatDateTime } from '../format'
-const label = (value: string | Date) => formatDateTime(value)
+import { formatDayDateTime } from '../format'
+const label = (value: string | Date) => formatDayDateTime(value)
 export interface PlanningMoveInteraction {
   pickingId: string | null; previewDate: Date | null; previewError: string | null; court: boolean; busy: boolean; reviewing: boolean
   hover: (date: Date | null) => void; cursor: (date: Date) => void

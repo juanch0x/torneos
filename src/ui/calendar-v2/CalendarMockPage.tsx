@@ -14,11 +14,10 @@ import { CATEGORIES, COURT_HOURS, DEMO_DATE, DEMO_MATCHES, MATCH_MINUTES, checkD
 import { getPreviewSlot } from './previewSlot'
 import { formatWeekRange } from './formatWeekRange'
 import './calendarMock.css'
-import { formatDate, formatDateTime } from '../format'
+import { formatDayDate, formatDayDateTime } from '../format'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const clock = (date: Date) => date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
-const dateLabel = (date: Date) => formatDate(date)
 const hours = COURT_HOURS.map(([opens, closes], day) => ({
   daysOfWeek: [day], startTime: `${Math.floor(opens / 60)}:${String(opens % 60).padStart(2, '0')}`,
   endTime: `${Math.floor(closes / 60)}:${String(closes % 60).padStart(2, '0')}`,
@@ -113,7 +112,7 @@ function DemoCalendarPage() {
 
   function showSuccess(title: string, match: typeof DEMO_MATCHES[number], start: Date) {
     const rect = undoControl.current?.getBoundingClientRect()
-    const message = `${match.title} · ${dateLabel(start)}, ${clock(start)}`
+    const message = `${match.title} · ${formatDayDateTime(start)}`
     setNotice(`${title}: ${message}`)
     setFeedback({ title, message, x: rect?.left ?? 24, y: rect?.bottom ?? 120 })
   }
@@ -140,7 +139,7 @@ function DemoCalendarPage() {
             <Stack gap={3} className="calendar-v2-move-card-copy">
               <Text size="xs" fw={600}>Partido en movimiento · {CATEGORIES[movingMatch.category].name}</Text>
               <Text size="sm" fw={600}>{movingMatch.title}</Text>
-              <Text size="xs">Horario actual: {formatDateTime(movingMatch.start)}</Text><Text size="xs">Elige una casilla de destino.</Text>
+              <Text size="xs">Horario actual: {formatDayDateTime(movingMatch.start)}</Text><Text size="xs">Elige una casilla de destino.</Text>
             </Stack>
             <Button variant="default" h={44} onClick={cancelMove}>Cancelar</Button>
           </Group>
@@ -238,7 +237,7 @@ function DemoCalendarPage() {
       </Paper>
 
       <Group justify="space-between" align="flex-end">
-        <Stack gap={4} className="calendar-v2-status"><Text role="status" aria-live="polite" size="sm">{movingMatch ? `Moviendo ${movingMatch.title}. ${notice}` : notice}</Text><Text size="xs" className="calendar-v2-cursor-status">{movingMatch && cursor ? `Casilla enfocada: ${dateLabel(cursor)}, ${clock(cursor)}. Flechas y Enter para elegir; Escape cancela.` : '\u00a0'}</Text><Text size="xs" c="dimmed">Solo probamos horarios y ocupación. Las restricciones de las parejas todavía no se validan.</Text></Stack>
+        <Stack gap={4} className="calendar-v2-status"><Text role="status" aria-live="polite" size="sm">{movingMatch ? `Moviendo ${movingMatch.title}. ${notice}` : notice}</Text><Text size="xs" className="calendar-v2-cursor-status">{movingMatch && cursor ? `Casilla enfocada: ${formatDayDateTime(cursor)}. Flechas y Enter para elegir; Escape cancela.` : '\u00a0'}</Text><Text size="xs" c="dimmed">Solo probamos horarios y ocupación. Las restricciones de las parejas todavía no se validan.</Text></Stack>
         <Group align="flex-end">
           <NativeSelect label="Partido" value={selectedId} onChange={(event) => setSelectedId(event.currentTarget.value)} data={matches.map((match) => ({ value: match.id, label: match.title }))} />
           <Button onClick={() => openMove(selectedId)}>Mover partido</Button>
@@ -267,7 +266,7 @@ function DemoCalendarPage() {
             </Menu>
           </Group>
           <Text fw={600}>{detailsMatch.title}</Text>
-          <Text>{dateLabel(detailsMatch.start)}</Text>
+          <Text>{formatDayDate(detailsMatch.start)}</Text>
           <Text>{clock(detailsMatch.start)} – {clock(new Date(detailsMatch.start.getTime() + MATCH_MINUTES * 60_000))} · {MATCH_MINUTES} minutos</Text>
           <Text size="sm" c="dimmed">Partido ficticio. No se validan restricciones de las parejas.</Text>
           <Group justify="flex-end"><Button variant="default" onClick={() => setDetailsId(null)}>Cerrar</Button><Button onClick={() => openMove(detailsMatch.id)}>Mover</Button></Group>
@@ -277,8 +276,8 @@ function DemoCalendarPage() {
       <Modal opened={!!proposal} onClose={() => setProposal(null)} title="Revisar cambio" closeButtonProps={{ 'aria-label': movingId ? 'Descartar propuesta y volver a elegir destino' : 'Descartar propuesta de movimiento' }} centered>
         {proposal && proposedMatch && <Stack>
           <Text fw={600}>{proposedMatch.title}</Text>
-          <Text size="sm">De: {dateLabel(proposedMatch.start)}, {clock(proposedMatch.start)}</Text>
-          <Text size="sm">A: {dateLabel(proposal.start)}, {clock(proposal.start)}</Text>
+          <Text size="sm">De: {formatDayDateTime(proposedMatch.start)}</Text>
+          <Text size="sm">A: {formatDayDateTime(proposal.start)}</Text>
           <Paper p="sm" bg="gray.0"><Text size="sm">1 partido cambia · Ningún otro se mueve.</Text></Paper>
           <Text size="sm" c="dimmed">Confirma la disponibilidad con ambas parejas. Este ejemplo no conoce sus restricciones.</Text>
           <Group justify="flex-end"><Button onClick={() => {
