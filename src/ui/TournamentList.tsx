@@ -9,11 +9,11 @@ import { useMemo, useState, useRef } from 'react'
 import { Alert, Button, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { TournamentMeta } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
-import { formatDate } from './format'
+import { formatDate, localDateInput } from './format'
 
 // Today's date as ISO "YYYY-MM-DD" for the default date input value.
 function today(): string {
-  return new Date().toISOString().slice(0, 10)
+  return localDateInput()
 }
 
 const columnHelper = createColumnHelper<TournamentMeta>()

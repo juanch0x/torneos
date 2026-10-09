@@ -10,17 +10,13 @@ import '@fullcalendar/react/skeleton.css'
 import '@fullcalendar/react/themes/monarch/theme.css'
 import { v2CourtDay } from '../../domain/v2Display'
 import type { V2RestrictionConfig } from '../../domain/v2Restrictions'
-import { formatDateRange, formatDateTime } from '../format'
+import { formatDateRange, formatTimeRange } from '../format'
 import { formatWeekRange } from '../calendar-v2/formatWeekRange'
 import { DEMO_START, DEMO_END, DEMO_VISIBLE_HOURS, retainRestrictionWeek, isRestrictionDraftDirty, deleteRestriction, restoreRestriction, validateInteraction, hasOutsideVisibleTimedWindows, localDateTime, normalizeWindows, parseLocalDateTime, validateWindow, type RestrictionDeletion, type RestrictionWindow } from './restrictionWindows'
 import { plural } from '../../domain/text'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
-const label = (value: string) => {
-  const date = parseLocalDateTime(value)
-  return date ? formatDateTime(date) : value
-}
-
+const blockLabel = (start: string, end: string) => formatTimeRange(parseLocalDateTime(start) ?? start, parseLocalDateTime(end) ?? end)
 export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, config, onDraftDirtyChange, suspendFocus = false }: {
   pairName: string; initialWindows: RestrictionWindow[]; onSave: (windows: RestrictionWindow[]) => void | string | Promise<void | string>; onCancel: () => void; config?: V2RestrictionConfig; onDraftDirtyChange?: (dirty: boolean) => void; suspendFocus?: boolean
 }) {
@@ -164,7 +160,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
         <Popover.Dropdown aria-label="Acciones del bloque no disponible">
           {actionWindow && <Stack gap="sm">
             <Text fw={600} size="sm">No disponible</Text>
-            <Text size="xs">{label(actionWindow.start)} → {label(actionWindow.end)}</Text>
+            <Text size="xs">{blockLabel(actionWindow.start, actionWindow.end)}</Text>
             <TextInput disabled={saving} label="Motivo (opcional)" value={actionWindow.reason} onChange={(event) => {
               const value = event.currentTarget.value; setDraft((current) => current.map((window) => window.id === actionWindow.id ? { ...window, reason: value } : window))
             }} />
@@ -178,7 +174,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
       <Group justify="space-between" gap="xs" mih={30}><Text role="status" aria-live="polite" size="sm">{saving ? 'Guardando restricciones…' : notice}</Text>{deleted && <Button disabled={saving} variant="subtle" size="xs" onClick={() => {
         setDraft((current) => restoreRestriction(current, deleted)); setSelectedId(deleted.window.id)
         calendar.current?.getApi().gotoDate(deleted.window.start)
-        setDeleted(null); setNotice(`Bloque restaurado: ${label(deleted.window.start)} → ${label(deleted.window.end)}.`)
+        setDeleted(null); setNotice(`Bloque restaurado: ${blockLabel(deleted.window.start, deleted.window.end)}.`)
       }}>Deshacer eliminación</Button>}</Group>
       {saveError && <Text role="alert" size="sm" c="red">{saveError}</Text>}
       {invalid && <Text role="alert" size="sm" c="red">Corrige el borrador antes de guardar: {invalid}</Text>}
