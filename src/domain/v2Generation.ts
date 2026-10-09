@@ -4,6 +4,7 @@ import type { Match, Tournament } from './types'
 import { generateRoundRobin } from './roundRobin'
 import { hasCompleteV2Configuration } from './v2Configuration'
 import { adaptV2Tournament, pairLabel, parseV2Timestamp } from './v2Display'
+import { plural } from './text'
 
 export type V2GenerationResult = { ok: true; document: Tournament } | { ok: false; error: string; issues: string[] }
 const failure = (issues: string[]): V2GenerationResult => ({ ok: false, error: issues[0], issues })
@@ -91,10 +92,10 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
   for (const [mi, slots] of allowed.entries()) if (!slots.length) {
     const match = planned[mi]
     const restrictions = windows.filter(w => [match.match.pairAId,match.match.pairBId].includes(w.pairId)).map(w => `${w.startsAt} → ${w.endsAt}${w.reason ? ` (${w.reason})` : ''}`).join('; ')
-    issues.push(`${match.label}: ninguna franja de la grilla de ${duration/60000} minutos disponible entre ${calendar.startDate} y ${calendar.endDate} (Horario del torneo ${getV2AutomaticWindow(source)!.startsAt}–${getV2AutomaticWindow(source)!.endsAt}, días seleccionados: ${daysLabel}, intersectado con las excepciones de cancha). ${restrictions || 'Revisa los días cerrados y sus horarios de cancha.'} No se usan otras horas de cancha fuera del Horario del torneo para completar.`)
+    issues.push(`${match.label}: ninguna franja de la grilla de ${plural(duration/60000, 'minuto', 'minutos')} disponible entre ${calendar.startDate} y ${calendar.endDate} (Horario del torneo ${getV2AutomaticWindow(source)!.startsAt}–${getV2AutomaticWindow(source)!.endsAt}, días seleccionados: ${daysLabel}, intersectado con las excepciones de cancha). ${restrictions || 'Revisa los días cerrados y sus horarios de cancha.'} No se usan otras horas de cancha fuera del Horario del torneo para completar.`)
   }
   if (issues.length) return failure(issues)
-  if (candidates.length < planned.length) return failure([`Capacidad insuficiente: ${planned.length} partidos necesitan ${planned.length} franjas; solo hay ${candidates.length} franjas completas dentro del período y Horario del torneo configurados (${daysLabel}). No se usan días no seleccionados ni otras horas de cancha para completar. Amplía el período o ajusta los Días del torneo / Horario del torneo.`])
+  if (candidates.length < planned.length) return failure([`Capacidad insuficiente: ${plural(planned.length, 'partido necesita', 'partidos necesitan')} ${plural(planned.length, 'franja', 'franjas')}; solo hay ${plural(candidates.length, 'franja completa', 'franjas completas')} dentro del período y Horario del torneo configurados (${daysLabel}). No se usan días no seleccionados ni otras horas de cancha para completar. Amplía el período o ajusta los Días del torneo / Horario del torneo.`])
   if (allowed.reduce((count, slots) => count+slots.length,0) > 2000000) return failure(['Se superó el límite de búsqueda (2 millones de alternativas); no se evaluó la factibilidad. Reduce el período.'])
   const owners = new Map<number, number>(); const assigned = new Map<number, number>()
   // Iterative augmenting paths: constrained-first is a preference, not a correctness assumption.
@@ -106,7 +107,7 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
       if (owner === undefined) { free = { match: queue[qi], slot }; break }
       if (!visited.has(owner)) { visited.add(owner); parent.set(owner, { match: queue[qi], slot }); queue.push(owner) }
     }
-    if (!free) return failure([`No se puede completar la asignación en las franjas configuradas: ${visited.size} cruces compiten por horarios compatibles (${daysLabel}). Revisa estas restricciones o amplía el período.`, ...[...visited].map(mi => `${planned[mi].label}. ${windows.filter(w => [planned[mi].match.pairAId, planned[mi].match.pairBId].includes(w.pairId)).map(w => `${w.startsAt} → ${w.endsAt}${w.reason ? ` (${w.reason})` : ''}`).join('; ')}`)])
+    if (!free) return failure([`No se puede completar la asignación en las franjas configuradas: ${plural(visited.size, 'cruce compite', 'cruces compiten')} por horarios compatibles (${daysLabel}). Revisa estas restricciones o amplía el período.`, ...[...visited].map(mi => `${planned[mi].label}. ${windows.filter(w => [planned[mi].match.pairAId, planned[mi].match.pairBId].includes(w.pairId)).map(w => `${w.startsAt} → ${w.endsAt}${w.reason ? ` (${w.reason})` : ''}`).join('; ')}`)])
     let step: { match: number; slot: number } | undefined = free
     while (step) { owners.set(step.slot, step.match); assigned.set(step.match, step.slot); step = parent.get(step.match) }
   }

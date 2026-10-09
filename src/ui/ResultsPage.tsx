@@ -5,6 +5,7 @@ import { useTournamentStore } from '../store/tournamentStore'
 import { GroupResultsBlock } from './GroupResultsBlock'
 import { RouterLink } from './RouterLink'
 import { getMutedSurfaceStyle } from './surfaceStyles'
+import { plural } from '../domain/text'
 
 interface CategorySectionProps {
   category: Category
@@ -39,9 +40,9 @@ function CategorySection({ category }: CategorySectionProps) {
             </Text>
           </Stack>
           <Group gap="xs">
-            <Badge color="courtTeal">{groupCount} grupos</Badge>
+            <Badge color="courtTeal">{plural(groupCount, 'grupo', 'grupos')}</Badge>
             <Badge color={matchCount > 0 ? 'clay' : 'gray'} variant="light">
-              {matchCount} partidos
+              {plural(matchCount, 'partido', 'partidos')}
             </Badge>
           </Group>
         </Group>

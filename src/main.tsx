@@ -6,14 +6,14 @@ import '@mantine/core/styles.css'
 import './index.css'
 import { router } from './router'
 import { startAutosave } from './store/autosave'
-import { theme } from './ui/theme'
+import { cssVariablesResolver, theme } from './ui/theme'
 
 // Arrancamos el autosave una sola vez, al montar la app.
 startAutosave()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="light">
+    <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver} defaultColorScheme="light">
       <RouterProvider router={router} />
     </MantineProvider>
   </StrictMode>,

@@ -5,7 +5,8 @@ import { useStore } from 'zustand'
 import { validateV2Move, type V2MoveRequest } from '../../domain/v2Moves'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
-const label = (value: string | Date) => new Date(value).toLocaleString('es-AR',{ weekday: 'short',day: 'numeric',month: 'short',year: 'numeric',hour: '2-digit',minute: '2-digit',hour12: false })
+import { formatDateTime } from '../format'
+const label = (value: string | Date) => formatDateTime(value)
 export interface PlanningMoveInteraction {
   pickingId: string | null; previewDate: Date | null; previewError: string | null; court: boolean; busy: boolean; reviewing: boolean
   hover: (date: Date | null) => void; cursor: (date: Date) => void

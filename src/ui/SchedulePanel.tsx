@@ -31,7 +31,7 @@ import { createExportXlsxController, initialExportXlsxState } from './exportXlsx
 import { MobileMatchCard } from './MobileMatchCard'
 import { ResultTriggerButton } from './ResultTriggerButton'
 import { ResultDrawer } from './ResultDrawer'
-import { formatDateTime } from './format'
+import { formatDate, formatDateTime } from './format'
 import { getMutedSurfaceStyle } from './surfaceStyles'
 
 interface MatchInfo {
@@ -555,7 +555,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                     {exceptionKind === 'custom' && <><TextInput label="Desde" type="time" value={exceptionStartsAt} onChange={(e) => setExceptionStartsAt(e.currentTarget.value)} /><TextInput label="Hasta" type="time" value={exceptionEndsAt} onChange={(e) => setExceptionEndsAt(e.currentTarget.value)} /></>}
                     <Button type="button" variant="light" onClick={handleAddException}>Guardar excepción</Button>
                   </Group>
-                  {calendar.overrides.map((override) => <Group key={override.date} justify="space-between"><Text size="sm">{override.date} · {override.kind === 'closed' ? 'Club cerrado' : `${override.startsAt} a ${override.endsAt}`}</Text><Button type="button" size="xs" variant="subtle" color="red" onClick={() => { const nextCalendar = withCalendarOverride(currentCalendar(), null, override.date); persistCalendar(nextCalendar) }}>Quitar</Button></Group>)}
+                  {calendar.overrides.map((override) => <Group key={override.date} justify="space-between"><Text size="sm">{formatDate(override.date)} · {override.kind === 'closed' ? 'Club cerrado' : `${override.startsAt} a ${override.endsAt}`}</Text><Button type="button" size="xs" variant="subtle" color="red" onClick={() => { const nextCalendar = withCalendarOverride(currentCalendar(), null, override.date); persistCalendar(nextCalendar) }}>Quitar</Button></Group>)}
                 </Stack>
               </Paper>
             </Collapse>

@@ -26,6 +26,7 @@ import { useTournamentStore } from '../store/tournamentStore'
 import { RouterLink } from './RouterLink'
 import { EditPairDrawer } from './EditPairDrawer'
 import { getMutedSurfaceStyle } from './surfaceStyles'
+import { plural } from '../domain/text'
 
 function pairLabel(pair: Pair): string {
   return `${pair.player1} / ${pair.player2}`
@@ -133,7 +134,7 @@ export function CategoryPanel({ category }: { category: Category }) {
               <Group gap="xs" wrap="wrap">
                 <Title order={3}>{category.name}</Title>
                 <Badge color="gray" variant="light">
-                  {category.groups.length} grupos
+                  {plural(category.groups.length, 'grupo', 'grupos')}
                 </Badge>
               </Group>
               <Text c="dimmed" size="sm">

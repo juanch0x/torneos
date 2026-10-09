@@ -6,6 +6,7 @@ import { Badge, Button, Group, Menu, Modal, NativeSelect, Paper, SimpleGrid, Sta
 import { RestrictionModal } from './RestrictionModal'
 import { type RestrictionWindow } from './restrictionWindows'
 import './preparationMock.css'
+import { plural } from '../../domain/text'
 
 interface DemoPair { id: string; categoryId: string; groupId: string | null; first: string; second: string; windows: RestrictionWindow[] }
 const categories = [
@@ -64,7 +65,7 @@ function DemoGroupsPage() {
             {[...groups.filter((group) => group.categoryId === category.id), { id: null, name: 'Sin grupo' }].map((group) => {
               const members = pairs.filter((pair) => pair.categoryId === category.id && pair.groupId === group.id)
               return <Paper key={group.id ?? 'unassigned'} withBorder p="md" radius="lg"><Stack gap="md">
-                <Group justify="space-between"><Title order={3} size="h5">{group.name}</Title><Text size="sm" c="dimmed">{members.length} parejas</Text></Group>
+                <Group justify="space-between"><Title order={3} size="h5">{group.name}</Title><Text size="sm" c="dimmed">{plural(members.length, 'pareja', 'parejas')}</Text></Group>
                 {members.length === 0 && <Text size="sm" c="dimmed">Sin parejas asignadas.</Text>}
                 {members.map((pair) => <Paper key={pair.id} withBorder p="sm" radius="md">
                   <Group justify="space-between" wrap="nowrap" align="flex-start"><Stack gap={3}>
