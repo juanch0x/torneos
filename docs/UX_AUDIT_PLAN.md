@@ -38,7 +38,7 @@ Screens referenced below: **S1** tournament list (`/`), **S2** capture
 | ID | Decision | Notes |
 |----|----------|-------|
 | D-01 (#18) | Is deleting a pair or a category **before scheduling** in scope? | Today there is no delete at all; a mistyped or duplicate pair cannot be removed. PRODUCT.md does not mention it. |
-| D-02 (#19) | Glossary and voice | Proposal: *calendario* (not cronograma/programa/fixture/planificación), *partido* (not cruce), *restricción* (not disponibilidad/indisponibilidad/bloque). One voice: *vos* (S2 today) or *tú* (S3/S4 today). |
+| D-02 (#19) | Glossary and voice | **Decided 2026-10-09:** *calendario* (not cronograma/programa/fixture/planificación), *partido* (not cruce), *restricción* (not disponibilidad/indisponibilidad/bloque). Voice: *vos* (the audience is Argentine). Applies to user-visible copy only; code identifiers and routes are unchanged. |
 | D-03 (#20) | Tournament date field | Saving configuration overwrites it with the period start (UX-08). Keep it as an independent field, derive it from the period, or remove it. |
 | D-04 (#21) | Developer tools (`/v2/read`, diagnostics, mock tournament) | Decided: hide them from organizer screens, keep `/v2/read` reachable by URL in all builds, and move mock creation there. Local-first browser data cannot be inspected from a separate localhost origin. |
 
@@ -69,7 +69,7 @@ Screens referenced below: **S1** tournament list (`/`), **S2** capture
   - Done when: every user-visible date/time uses the local format already used by the move
     review (`lun, 12 oct 2026, 20:15`, or the date-only equivalent). No ISO or UTC string is
     visible outside a developer tool.
-- [ ] **UX-04 (#30) Apply the glossary and a single voice.** *Model: Haiku. Blocked by D-02.*
+- [ ] **UX-04 (#30) Apply the glossary and a single voice.** *Model: Haiku. Unblocked: D-02 decided.*
   - Evidence: schedule is called calendario / cronograma / programa / fixture / planificación;
     matches are partidos / cruces; S2 uses *vos* ("Creá", "Cargá"), S3/S4 use *tú*
     ("Completa", "Puedes"). S2 route/breadcrumb says "Grupos" while the content is
