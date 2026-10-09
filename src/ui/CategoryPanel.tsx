@@ -134,7 +134,7 @@ export function CategoryPanel({ category }: { category: Category }) {
                 </Badge>
               </Group>
               <Text c="dimmed" size="sm">
-                Organizá las parejas, distribuí los grupos y revisá los cruces de esta categoría.
+                Organizá las parejas, distribuí los grupos y revisá los partidos de esta categoría.
               </Text>
             </Stack>
           </Group>
@@ -160,7 +160,7 @@ export function CategoryPanel({ category }: { category: Category }) {
               />
             </Group>
             <Text c="dimmed" size="sm">
-              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger horarios y resultados.' : 'Cambiar la cantidad de grupos reparte las parejas al azar y limpia los cruces.'}
+              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger horarios y resultados.' : 'Cambiar la cantidad de grupos reparte las parejas al azar y limpia los partidos.'}
             </Text>
           </Stack>
         </Paper>

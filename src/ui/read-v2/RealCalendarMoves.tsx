@@ -23,7 +23,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
   const [cursor,setCursor] = useState<Date | null>(null); const [hover,setHover] = useState<Date | null>(null)
   const [context,setContext] = useState<{ id: string; x: number; y: number } | null>(null)
   const [undo,setUndo] = useState<V2MoveRequest | null>(null)
-  const [notice,setNotice] = useState('Arrastra o abre un partido para proponer un movimiento. Solo se guarda al aplicar.')
+  const [notice,setNotice] = useState('Arrastrá o abrí un partido para proponer un movimiento. Solo se guarda al aplicar.')
   const [feedback,setFeedback] = useState<{ text: string; x: number; y: number } | null>(null)
   const card = useRef<HTMLDivElement>(null)
   const contextOrigin = useRef<HTMLElement | null>(null)
@@ -50,7 +50,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
     const current = v2SessionStore.getState(); const match = current.display?.matches.find(m => m.id === id)
     if (current.saving || current.writeUncertain || !match?.scheduledAt || match.instant === null || match.played) return
     closeDetails(); setContext(null); setFeedback(null); setMoving({ id,from: match.scheduledAt,epoch: current.epoch }); setCursor(new Date(match.instant)); setHover(null)
-    calendar.current?.getApi().gotoDate(new Date(match.instant)); setNotice('Elige una casilla; puedes cambiar de semana. El partido aún conserva su horario.')
+    calendar.current?.getApi().gotoDate(new Date(match.instant)); setNotice('Elegí una casilla; podés cambiar de semana. El partido aún conserva su horario.')
   }
   function propose(id: string,date: Date,point?: { x: number; y: number }) {
     const current = v2SessionStore.getState(); if (current.saving || current.writeUncertain || !current.working || proposal) return
@@ -79,16 +79,16 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
   }
   const contextMatch = display?.matches.find(match => match.id === context?.id)
   const controls = <Stack gap={4}><Group justify="space-between" mih={44}><Button disabled={state.saving || !!proposal} variant="light" onClick={() => { setCourt(value => !value); setHover(null); setCursor(null); setFeedback(null) }}>{court ? 'Volver al horario del torneo' : 'Mostrar disponibilidad de cancha'}</Button><Button disabled={!undo || state.saving || !!moving} loading={state.saving && !!undo && !proposal} variant="default" onClick={() => undo && void commit(undo,true)}>Deshacer último movimiento</Button></Group><Text role="status" aria-live="polite" size="sm" lineClamp={2} mih={42} title={notice}>{notice}</Text></Stack>
-  const floating = <div className="calendar-v2-real-move-dock">{movingMatch && <Paper ref={card} withBorder shadow="sm" radius="md" p="sm" style={{ borderLeft: `5px solid ${movingMatch.categoryColor}` }}><Group wrap="nowrap"><Stack gap={2} style={{ minWidth: 0 }}><Text size="xs" fw={600}>Partido en movimiento · {movingMatch.categoryName} · {movingMatch.group}</Text><Text size="sm" fw={600} lineClamp={2} title={`${movingMatch.pairA} vs. ${movingMatch.pairB}`}>{movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="xs">Horario actual: {label(moving!.from)}</Text><Text size="xs">Elige destino; todavía no se cambió el partido.</Text></Stack><Button disabled={state.saving} variant="default" onClick={cancel}>Cancelar</Button></Group></Paper>}</div>
+  const floating = <div className="calendar-v2-real-move-dock">{movingMatch && <Paper ref={card} withBorder shadow="sm" radius="md" p="sm" style={{ borderLeft: `5px solid ${movingMatch.categoryColor}` }}><Group wrap="nowrap"><Stack gap={2} style={{ minWidth: 0 }}><Text size="xs" fw={600}>Partido en movimiento · {movingMatch.categoryName} · {movingMatch.group}</Text><Text size="sm" fw={600} lineClamp={2} title={`${movingMatch.pairA} vs. ${movingMatch.pairB}`}>{movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="xs">Horario actual: {label(moving!.from)}</Text><Text size="xs">Elegí destino; todavía no se cambió el partido.</Text></Stack><Button disabled={state.saving} variant="default" onClick={cancel}>Cancelar</Button></Group></Paper>}</div>
   const overlays = <>
     {context && <Portal><Menu opened={!!context} onChange={opened => { if (!opened) closeContext() }} width={240} withinPortal loop position="bottom-start" zIndex={400}>
       <Menu.Target><button aria-label="Acciones del partido" style={{ position: 'fixed',left: context?.x ?? 0,top: context?.y ?? 0,width: 1,height: 1,opacity: 0,padding: 0,border: 0 }} /></Menu.Target>
       <Menu.Dropdown><Menu.Label>{contextMatch?.pairA} vs. {contextMatch?.pairB}</Menu.Label><Menu.Item disabled={!!contextMatch?.played || !contextMatch?.scheduledAt} onClick={() => context && start(context.id)}>Mover</Menu.Item><Menu.Item disabled>Sugerir horarios · Próximamente</Menu.Item></Menu.Dropdown>
     </Menu></Portal>}
     <Portal><Popover opened={!!feedback} width={280} position="top-start" withinPortal floatingStrategy="fixed" trapFocus={false} returnFocus={false} middlewares={{ flip: true,shift: { padding: 8 } }}><Popover.Target><span aria-hidden className="calendar-v2-feedback-anchor" style={{ left: feedback?.x ?? 0,top: feedback?.y ?? 0 }} /></Popover.Target><Popover.Dropdown className="calendar-v2-feedback" role="status"><Text size="sm">{feedback?.text}</Text></Popover.Dropdown></Popover></Portal>
-    <Modal opened={!!proposal} onClose={() => { if (!v2SessionStore.getState().saving) { setProposal(null); setNotice('Propuesta descartada. Puedes elegir otra casilla.') } }} closeOnEscape={!state.saving && !state.navigationBlocked} closeOnClickOutside={!state.saving} trapFocus={!state.navigationBlocked} centered title="Revisar movimiento" closeButtonProps={{ disabled: state.saving,'aria-label': 'Descartar propuesta y volver a elegir destino' }}>
+    <Modal opened={!!proposal} onClose={() => { if (!v2SessionStore.getState().saving) { setProposal(null); setNotice('Propuesta descartada. Podés elegir otra casilla.') } }} closeOnEscape={!state.saving && !state.navigationBlocked} closeOnClickOutside={!state.saving} trapFocus={!state.navigationBlocked} centered title="Revisar movimiento" closeButtonProps={{ disabled: state.saving,'aria-label': 'Descartar propuesta y volver a elegir destino' }}>
       {proposal && movingMatch && <Stack><Text fw={600}>{movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="sm">De: {label(proposal.from)}</Text><Text size="sm">A: {label(proposal.to)} · {state.display?.duration} minutos</Text><Text size="sm">Solo cambia este partido. Se revisarán nuevamente cancha, ocupación y ambas parejas al aplicar.</Text>{state.saveError && <Text c="red" role="alert" size="sm">{state.saveError}</Text>}<Group justify="flex-end"><Button loading={state.saving} disabled={state.saving} onClick={() => void commit(proposal)}>Aplicar y guardar</Button></Group></Stack>}
     </Modal>
   </>
-  return { interaction,controls,overlays,floating,start,cancel,clearHistory: () => { setUndo(null); setNotice('Los ajustes manuales anteriores se reemplazaron. Puedes proponer nuevos movimientos.') } }
+  return { interaction,controls,overlays,floating,start,cancel,clearHistory: () => { setUndo(null); setNotice('Los ajustes manuales anteriores se reemplazaron. Podés proponer nuevos movimientos.') } }
 }

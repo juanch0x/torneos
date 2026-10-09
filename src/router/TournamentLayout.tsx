@@ -45,7 +45,7 @@ export function TournamentLayout() {
     }
   }
 
-  const sectionLabel = activeTab === 'results' ? 'Resultados' : activeTab === 'fixture' ? 'Fixture' : 'Grupos'
+  const sectionLabel = activeTab === 'results' ? 'Resultados' : activeTab === 'fixture' ? 'Calendario' : 'Categorías y parejas'
   const guidance = deriveCockpitGuidance(current)
 
   return (
@@ -92,7 +92,7 @@ export function TournamentLayout() {
             </Paper>
           </Group>
 
-          {activeTab === 'groups' ? <Stack gap="xs"><Text size="sm">Carga categorías y parejas; podrás completar las asignaciones en el siguiente paso.</Text><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: id }} />}>Continuar a grupos y disponibilidades</Button></Stack> : <CockpitGuidanceCard guidance={guidance} />}
+          {activeTab === 'groups' ? <Stack gap="xs"><Text size="sm">Cargá categorías y parejas; podés completar las asignaciones en el siguiente paso.</Text><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: id }} />}>Continuar a grupos y restricciones</Button></Stack> : <CockpitGuidanceCard guidance={guidance} />}
         </Stack>
       </Paper>
 
@@ -115,7 +115,7 @@ export function TournamentLayout() {
         >
           <Tabs.List grow>
             <Tabs.Tab value="groups">Categorías y parejas</Tabs.Tab>
-            {activeTab !== 'groups' && <Tabs.Tab value={activeTab}>{activeTab === 'fixture' ? 'Fixture legacy' : 'Resultados legacy'}</Tabs.Tab>}
+            {activeTab !== 'groups' && <Tabs.Tab value={activeTab}>{activeTab === 'fixture' ? 'Calendario legacy' : 'Resultados legacy'}</Tabs.Tab>}
           </Tabs.List>
         </Tabs>
 

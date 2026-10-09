@@ -25,7 +25,7 @@ describe('compact configuration header server markup', () => {
   it('keeps explicit incomplete explanation and conditional issue details', () => {
     const source = sample(); delete source.fixtureSettings
     v2SessionStore.getState().acceptSource(source, 't')
-    expect(markup()).toContain('Necesita configuración'); expect(markup()).toContain('Completa y guarda fechas')
+    expect(markup()).toContain('Necesita configuración'); expect(markup()).toContain('Completá y guardá fechas')
     expect(markup()).toContain('1 registro requiere revisión')
   })
   it('never displays a different prior tournament identity while the selected source loads', () => {
@@ -65,5 +65,5 @@ it('renders seven accessible weekday toggles with Monday–Friday selected and w
   expect(buttons[6]).toContain('aria-label="Domingo"'); expect(buttons[6]).toContain('aria-pressed="false"')
   for (const button of buttons) expect(button).toContain('type="button"')
   const empty = renderToStaticMarkup(<MantineProvider><V2AutomaticWeekdaysField value={[]} disabled onChange={() => {}} /></MantineProvider>)
-  expect(empty).toContain('Selecciona al menos un día'); expect(empty.match(/disabled=""/g)).toHaveLength(7)
+  expect(empty).toContain('Seleccioná al menos un día'); expect(empty.match(/disabled=""/g)).toHaveLength(7)
 })

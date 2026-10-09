@@ -18,7 +18,7 @@ export function createPlanningOwnerBoundary(store = useTournamentStore, getWrite
           store.getState().invalidatePreparation()
           owner = 'v2'
         } else {
-          if (!closeV2()) throw new Error('Guarda o cancela el borrador antes de salir.')
+          if (!closeV2()) throw new Error('Guardá o cancelá el borrador antes de salir.')
           if (owner === 'v2') store.getState().invalidatePreparation()
           owner = 'preparation'
           writer.resume()

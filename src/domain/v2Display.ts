@@ -86,7 +86,7 @@ export function adaptV2Tournament(source: Tournament) {
       const matchPath = `${path}.matches[${mi}]`; id(match.id, `${matchPath}.id`)
       const group = category.groups.filter(g => g.id === match.groupId)
       if (group.length !== 1) issue('missing-reference', matchPath, `Grupo ausente o ambiguo: ${match.groupId}.`)
-      if (group[0] && (!group[0].pairIds.includes(match.pairAId) || !group[0].pairIds.includes(match.pairBId))) issue('membership-mismatch', matchPath, 'El cruce incluye una pareja fuera de su grupo.')
+      if (group[0] && (!group[0].pairIds.includes(match.pairAId) || !group[0].pairIds.includes(match.pairBId))) issue('membership-mismatch', matchPath, 'El partido incluye una pareja fuera de su grupo.')
       const instant = match.scheduledAt === undefined ? null : timestamp(match.scheduledAt, `${matchPath}.scheduledAt`)
       matches.push({ key: matchPath, id: match.id, categoryName: category.name, categoryColor: category.color, group: group[0]?.name ?? `Grupo no encontrado (${match.groupId})`, pairA: lookupPair(match.pairAId, matchPath), pairB: lookupPair(match.pairBId, matchPath), scheduledAt: match.scheduledAt, instant, status: match.scheduledAt === undefined ? 'unscheduled' : instant === null ? 'invalid' : 'scheduled', played: match.result !== undefined })
     }

@@ -53,8 +53,8 @@ function DemoGroupsPage() {
   return <Stack gap="lg" className="preparation-v2">
     <Group justify="space-between" align="flex-start"><Stack gap={6}>
       <Group><Badge color="grape" variant="light">V2 · Prototipo</Badge><Text size="sm" c="dimmed">Datos ficticios · Sin guardar</Text></Group>
-      <Title order={1} size="h2">Preparar grupos y disponibilidades</Title>
-      <Text c="dimmed">Categorías definidas. Grupos claros. Marca únicamente las excepciones.</Text>
+      <Title order={1} size="h2">Preparar grupos y restricciones</Title>
+      <Text c="dimmed">Categorías definidas. Grupos claros. Marcá únicamente las excepciones.</Text>
     </Stack><Group><Button component={Link} to="/v2/calendar" variant="light">Probar calendario</Button><Button component={Link} to="/v2/read" variant="subtle">Leer torneo real</Button><Button component={Link} to="/" variant="subtle">Volver a torneos</Button></Group></Group>
     <Paper withBorder p="sm" radius="md"><Text size="sm">Este ejemplo no comparte datos con el calendario. Guardar restricciones NUNCA reprograma partidos.</Text></Paper>
     <Tabs value={categoryId} onChange={(value) => { if (value) setCategoryId(value) }}>

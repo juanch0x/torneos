@@ -97,7 +97,7 @@ describe('exportTournamentXlsx', () => {
         ],
       },
       {
-        sheet: 'Fixture',
+        sheet: 'Calendario',
         data: [
           [
             { value: 'Partido #', fontWeight: 'bold' },

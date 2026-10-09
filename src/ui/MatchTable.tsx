@@ -110,7 +110,7 @@ export function MatchTable({ category, groupId }: { category: Category; groupId?
         style={getMutedSurfaceStyle(theme)}
       >
         <Text c="dimmed" size="sm">
-          Sin partidos. Asigná parejas a grupos y generá el fixture.
+          Sin partidos. Asigná parejas a grupos y generá el calendario.
         </Text>
       </Paper>
     )

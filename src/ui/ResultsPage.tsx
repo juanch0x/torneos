@@ -64,7 +64,7 @@ function CategorySection({ category }: CategorySectionProps) {
           style={getMutedSurfaceStyle(theme)}
         >
           <Text c="dimmed" size="sm">
-            Sin partidos generados todavía. Asigná parejas y generá el fixture.
+            Sin partidos generados todavía. Asigná parejas y generá el calendario.
           </Text>
         </Paper>
       ) : (
