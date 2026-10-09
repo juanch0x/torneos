@@ -6,6 +6,7 @@ import { validateV2Move, type V2MoveRequest } from '../../domain/v2Moves'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
 import { formatDayDateTime } from '../format'
+import { organizerDisplay } from './organizerWarnings'
 const label = (value: string | Date) => formatDayDateTime(value)
 export interface PlanningMoveInteraction {
   pickingId: string | null; previewDate: Date | null; previewError: string | null; court: boolean; busy: boolean; reviewing: boolean
@@ -15,6 +16,7 @@ export interface PlanningMoveInteraction {
 }
 export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<CalendarRef | null>,closeDetails: () => void) {
   const state = useStore(v2SessionStore)
+  const display = state.display ? organizerDisplay(state.display) : null
   const [court,setCourt] = useState(false)
   const [moving,setMoving] = useState<{ id: string; from: string; epoch: number } | null>(null)
   const [proposal,setProposal] = useState<V2MoveRequest | null>(null)
@@ -26,7 +28,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
   const card = useRef<HTMLDivElement>(null)
   const contextOrigin = useRef<HTMLElement | null>(null)
   const closeContext = () => { setContext(null); contextOrigin.current?.focus() }
-  const movingMatch = state.display?.matches.find(match => match.id === moving?.id)
+  const movingMatch = display?.matches.find(match => match.id === moving?.id)
   const previewDate = hover ?? cursor
   const previewResult = moving && previewDate && state.working ? validateV2Move(state.working,{ matchId: moving.id,from: moving.from,to: previewDate.toISOString(),grid: court ? 'court' : 'automatic' }) : null
   const previewError = previewResult && !previewResult.ok && !previewResult.noop ? previewResult.error : null
@@ -67,7 +69,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
     const result = await v2SessionController.moveMatch(request,{ sourceId: tournamentId,epoch: isUndo ? current.epoch : moving?.epoch ?? current.epoch })
     if (!result.ok) { setNotice(result.error); return }
     setUndo(isUndo ? null : { matchId: request.matchId,from: request.to,to: request.from,grid: request.grid,restore: true,targetSlotId: originalSlot?.id })
-    cancel(); calendar.current?.getApi().gotoDate(new Date(request.to)); setNotice(`${isUndo ? 'Horario restaurado' : 'Movimiento guardado'}: ${state.display?.matches.find(m => m.id === request.matchId)?.pairA} vs. ${state.display?.matches.find(m => m.id === request.matchId)?.pairB} · ${label(request.to)}.`)
+    cancel(); calendar.current?.getApi().gotoDate(new Date(request.to)); setNotice(`${isUndo ? 'Horario restaurado' : 'Movimiento guardado'}: ${display?.matches.find(m => m.id === request.matchId)?.pairA} vs. ${display?.matches.find(m => m.id === request.matchId)?.pairB} · ${label(request.to)}.`)
   }
   const week = useCallback((range: { start: Date; end: Date }) => { setHover(null); setFeedback(null); setContext(null); setCursor(current => current && current >= range.start && current < range.end ? current : null) },[])
   const interaction: PlanningMoveInteraction = { pickingId: moving?.id ?? null,previewDate,previewError,court,busy: state.saving,reviewing: !!proposal,
@@ -75,7 +77,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
     dragStart: () => { closeDetails(); setContext(null); setHover(null); setFeedback(null) },
     context: (id,element) => { if (moving || state.saving || state.writeUncertain || proposal) return; const rect = element.getBoundingClientRect(); contextOrigin.current = element; element.focus(); setContext({ id,x: Math.max(8,Math.min(rect.right,window.innerWidth-248)),y: Math.max(8,Math.min(rect.top,window.innerHeight-100)) }) },
   }
-  const contextMatch = state.display?.matches.find(match => match.id === context?.id)
+  const contextMatch = display?.matches.find(match => match.id === context?.id)
   const controls = <Stack gap={4}><Group justify="space-between" mih={44}><Button disabled={state.saving || !!proposal} variant="light" onClick={() => { setCourt(value => !value); setHover(null); setCursor(null); setFeedback(null) }}>{court ? 'Volver al horario del torneo' : 'Mostrar disponibilidad de cancha'}</Button><Button disabled={!undo || state.saving || !!moving} loading={state.saving && !!undo && !proposal} variant="default" onClick={() => undo && void commit(undo,true)}>Deshacer último movimiento</Button></Group><Text role="status" aria-live="polite" size="sm" lineClamp={2} mih={42} title={notice}>{notice}</Text></Stack>
   const floating = <div className="calendar-v2-real-move-dock">{movingMatch && <Paper ref={card} withBorder shadow="sm" radius="md" p="sm" style={{ borderLeft: `5px solid ${movingMatch.categoryColor}` }}><Group wrap="nowrap"><Stack gap={2} style={{ minWidth: 0 }}><Text size="xs" fw={600}>Partido en movimiento · {movingMatch.categoryName} · {movingMatch.group}</Text><Text size="sm" fw={600} lineClamp={2} title={`${movingMatch.pairA} vs. ${movingMatch.pairB}`}>{movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="xs">Horario actual: {label(moving!.from)}</Text><Text size="xs">Elige destino; todavía no se cambió el partido.</Text></Stack><Button disabled={state.saving} variant="default" onClick={cancel}>Cancelar</Button></Group></Paper>}</div>
   const overlays = <>

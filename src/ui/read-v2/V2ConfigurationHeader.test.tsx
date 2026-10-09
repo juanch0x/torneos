@@ -2,12 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MantineProvider } from '@mantine/core'
 import { HourEntryInput } from './HourEntryInput'
-import { V2ConfigurationHeader, V2HourWindowsFields, V2AutomaticWeekdaysField } from './V2ConfigurationPanel'
+import { V2ConfigurationHeader, V2HourWindowsFields, V2AutomaticWeekdaysField, hasLegacyPlanningData } from './V2ConfigurationPanel'
 import { v2SessionStore } from '../../store/v2Session'
 import { sample } from '../../domain/__tests__/fixtures/v2Tournament'
+import { createTournament } from '../../domain/factories'
 // Render-only SSR fixture: Zustand otherwise intentionally uses the original empty server snapshot.
 beforeEach(() => { vi.spyOn(v2SessionStore, 'getInitialState').mockImplementation(v2SessionStore.getState) })
 afterEach(() => { vi.restoreAllMocks() })
+it('does not call a newly created tournament imported just because it has default court hours', () => {
+  expect(hasLegacyPlanningData(createTournament('New', '2026-10-12'))).toBe(false)
+  expect(hasLegacyPlanningData(sample())).toBe(true)
+})
 const markup = () => renderToStaticMarkup(<MantineProvider><V2ConfigurationHeader tournamentId="t" /></MantineProvider>)
 describe('compact configuration header server markup', () => {
   it('shows real title and accessible gear without permanent configuration panel when ready', () => {

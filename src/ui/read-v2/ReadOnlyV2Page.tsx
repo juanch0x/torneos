@@ -15,6 +15,7 @@ import { planningCalendarBounds, planningTimeOptions, planningWeekTitle, plannin
 import { v2Reader, type V2ReadSnapshot } from '../../router/v2ReadService'
 import { isV2Date, v2CourtDay, v2DisplayBounds, pairLabel, type V2DisplayMatch } from '../../domain/v2Display'
 import type { TournamentMeta } from '../../domain/types'
+import { useTournamentStore } from '../../store/tournamentStore'
 import '../preparation-v2/preparationMock.css'
 import { formatShortDate, formatDateRange, formatDayDateTime } from '../format'
 import { plural } from '../../domain/text'
@@ -35,6 +36,8 @@ export function ReadOnlyV2Page() {
   const [snapshot, setSnapshot] = useState<V2ReadSnapshot | null>(null)
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState('')
+  const [creatingMock, setCreatingMock] = useState(false)
+  const newMockTournament = useTournamentStore(state => state.newMockTournament)
   const request = useRef(0)
   useEffect(() => {
     let active = true
@@ -59,6 +62,17 @@ export function ReadOnlyV2Page() {
   const invalid = display?.matches.filter(match => match.status === 'invalid') ?? []
   return <Stack p="lg" gap="md">
     <Group justify="space-between"><Stack gap={4}><Group><Title order={2}>V2 · Leer un torneo real</Title><Badge color="teal">Solo lectura</Badge></Group><Text size="sm" c="dimmed">Copia aislada · Original sin cambios · No se guarda ni se carga en V1</Text></Stack><Group><Button component={Link} to="/v2/groups" variant="light">Ejemplo de grupos</Button><Button component={Link} to="/v2/calendar" variant="light">Ejemplo de calendario</Button></Group></Group>
+    <Paper withBorder p="sm"><Group justify="space-between"><Stack gap={2}><Text fw={600} size="sm">Herramientas de desarrollo</Text><Text size="xs" c="dimmed">Crear un torneo de prueba lo guarda en este navegador. El inspector de abajo no modifica torneos existentes.</Text></Stack><Button variant="default" disabled={creatingMock} loading={creatingMock} onClick={async () => {
+      if (creatingMock) return
+      setCreatingMock(true); setError('')
+      try {
+        await newMockTournament()
+        const id = useTournamentStore.getState().current!.id
+        setSources(await v2Reader.list())
+        await selectSource(id)
+      } catch { setError('No se pudo confirmar el torneo de prueba. Relee la lista antes de reintentar.') }
+      finally { setCreatingMock(false) }
+    }}>Crear torneo mock</Button></Group></Paper>
     <NativeSelect label="Selecciona explícitamente el torneo a inspeccionar" value={selected} onChange={event => void selectSource(event.currentTarget.value)} data={[{ value: '', label: sources.length ? 'Seleccionar torneo…' : 'No hay torneos en el repositorio actual' }, ...sources.map(source => ({ value: source.id, label: `${source.name} · ${source.date}` }))]} />
     {busy && <Text role="status">Leyendo…</Text>}{error && <Alert color="red" role="alert">{error}</Alert>}
     {snapshot && display && <>
