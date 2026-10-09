@@ -12,6 +12,7 @@ import {
   Table,
   Tabs,
   TextInput,
+  type CSSVariablesResolver,
   type MantineColorsTuple,
 } from '@mantine/core'
 
@@ -56,6 +57,14 @@ const surfaceOverlayStrong = 'rgba(255, 253, 249, 0.88)'
 const surfaceOverlaySoft = 'rgba(255, 253, 249, 0.82)'
 const playedRowBackground = 'rgba(31, 168, 158, 0.08)'
 const leadingRowBackground = 'rgba(224, 114, 52, 0.08)'
+
+// Mantine's default dimmed grey (#868e96) is 2.95:1 on the page background and
+// 3.27:1 on cards. textMuted gives 4.84:1 and 5.36:1 (WCAG AA for body text).
+export const cssVariablesResolver: CSSVariablesResolver = () => ({
+  variables: {},
+  light: { '--mantine-color-dimmed': textMuted },
+  dark: {},
+})
 
 export const theme = createTheme({
   colors: {
