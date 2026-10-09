@@ -5,6 +5,7 @@ import { ActionIcon, Alert, Badge, Button, Fieldset, Group, Modal, SimpleGrid, S
 import { applyV2Configuration, getV2ConfigurationDraft, hasCompleteV2Configuration, v2ConfigurationIssues, type V2ConfigurationDraft } from '../../domain/v2Configuration'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
+import { plural } from '../plural'
 
 export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }) {
   const state = useStore(v2SessionStore)
@@ -28,7 +29,7 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
     </Group>
     {source && !ready && <Text size="sm" c="orange.8">Completa y guarda fechas, Disponibilidad de la cancha, Horario del torneo, Días del torneo y duración desde el engranaje para editar restricciones o abrir el calendario.</Text>}
     {(state.saving || notice || !source) && <Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando…' : notice || (state.status === 'loading' ? 'Leyendo el torneo seleccionado…' : state.status === 'not-found' ? 'No se encontró esta fuente.' : state.status === 'error' ? 'No se pudo cargar esta fuente.' : 'Selecciona o carga este torneo para configurarlo.')}</Text>}
-    {!!issues.length && <details><summary>{issues.length} registros requieren revisión · Horarios intactos</summary><Stack mt="xs" gap={4} style={{ maxHeight: 180, overflowY: 'auto' }}>{issues.map((issue, index) => <Text size="xs" key={index} c="orange.8">{issue.message}</Text>)}</Stack></details>}
+    {!!issues.length && <details><summary>{plural(issues.length, 'registro requiere', 'registros requieren')} revisión · Horarios intactos</summary><Stack mt="xs" gap={4} style={{ maxHeight: 180, overflowY: 'auto' }}>{issues.map((issue, index) => <Text size="xs" key={index} c="orange.8">{issue.message}</Text>)}</Stack></details>}
     {editing && <ConfigurationModal initial={editing.initial} epoch={editing.epoch} tournamentId={tournamentId} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); setNotice('Configuración guardada. Restricciones y horarios intactos.') }} />}
   </Stack>
 }
@@ -59,7 +60,7 @@ function ConfigurationModal({ initial, epoch, tournamentId, onClose, onSaved }: 
       {field('duration', 'Duración de cada partido (minutos)', 'number')}
       <Text size="xs" c="dimmed">Las excepciones importadas se preservan, sin editor en esta etapa. Con resultados existentes no se permite cambiar ni inferir una duración histórica.</Text>
       {!validation.ok && <Text c="orange.8" size="sm">{validation.error}</Text>}
-      {!!impacts.length && <Alert color="orange">{impacts.length} registros requieren revisión con esta configuración. Se conservarán íntegros; revisa el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
+      {!!impacts.length && <Alert color="orange">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisa el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
       {error && <Text role="alert" c="red" size="sm">{error}</Text>}
       <Group justify="space-between"><Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando configuración…' : 'Solo se guarda al confirmar.'}</Text><Group><Button disabled={state.saving} variant="default" onClick={close}>Cancelar</Button><Button type="submit" loading={state.saving} disabled={state.saving || !validation.ok}>Guardar configuración</Button></Group></Group>
     </Stack></form>

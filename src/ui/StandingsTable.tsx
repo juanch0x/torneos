@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Badge, Group as MantineGroup, Paper, Stack, Table, Text, Title, useMantineTheme } from '@mantine/core'
 import type { Group, Match, Pair } from '../domain/types'
 import { computeGroupStandings } from '../domain/standings'
+import { plural } from './plural'
 
 interface StandingsTableProps {
   group: Group
@@ -35,7 +36,7 @@ export function StandingsTable({ group, matches, pairs }: StandingsTableProps) {
       <MantineGroup justify="space-between" align="center" gap="sm" mt="sm">
         <Title order={5}>Posiciones — {group.name}</Title>
         <Badge color="clay" variant="light">
-          {standings.length} parejas
+          {plural(standings.length, 'pareja', 'parejas')}
         </Badge>
       </MantineGroup>
       <Paper

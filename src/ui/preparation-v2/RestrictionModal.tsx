@@ -13,6 +13,7 @@ import type { V2RestrictionConfig } from '../../domain/v2Restrictions'
 import { formatDateRange, formatDateTime } from '../format'
 import { formatWeekRange } from '../calendar-v2/formatWeekRange'
 import { DEMO_START, DEMO_END, DEMO_VISIBLE_HOURS, retainRestrictionWeek, isRestrictionDraftDirty, deleteRestriction, restoreRestriction, validateInteraction, hasOutsideVisibleTimedWindows, localDateTime, normalizeWindows, parseLocalDateTime, validateWindow, type RestrictionDeletion, type RestrictionWindow } from './restrictionWindows'
+import { plural } from '../plural'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const label = (value: string) => {
@@ -122,7 +123,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
   return <><Modal opened onClose={requestClose} closeOnEscape={!saving && !actions && !discardOpen && !suspendFocus} closeOnClickOutside={!saving && !discardOpen} trapFocus={!discardOpen && !suspendFocus} title={`Restricciones · ${pairName}`} size="min(1400px, 96vw)" centered yOffset={16}
     closeButtonProps={{ 'aria-label': 'Cancelar edición de restricciones', disabled: saving }} classNames={{ content: `preparation-v2-modal-content${modalScroll ? ' preparation-v2-modal-scroll' : ''}`, header: 'preparation-v2-modal-header', body: 'preparation-v2-modal-body' }}>
     <Stack gap="sm" className="preparation-v2-modal-layout">
-      <Group justify="space-between"><Text size="sm">Arrastra para marcar cuándo NO puede jugar (cada 15 minutos). Clic o clic derecho sobre un bloque para editarlo o eliminarlo.</Text><Badge color="grape" variant="light">Borrador · {draft.length} bloques · {formatDateRange(parseLocalDateTime(start) ?? start, new Date((parseLocalDateTime(end) ?? new Date(end)).getTime() - 1))}</Badge></Group>
+      <Group justify="space-between"><Text size="sm">Arrastra para marcar cuándo NO puede jugar (cada 15 minutos). Clic o clic derecho sobre un bloque para editarlo o eliminarlo.</Text><Badge color="grape" variant="light">Borrador · {plural(draft.length, 'bloque', 'bloques')} · {formatDateRange(parseLocalDateTime(start) ?? start, new Date((parseLocalDateTime(end) ?? new Date(end)).getTime() - 1))}</Badge></Group>
       {(outsideVisible || expandedHours) && <Group justify="space-between" gap="sm">
         <Text size="sm" c="orange.8">{expandedHours ? 'Vista de 24 horas: los bloques fuera del rango siguen conservados.' : `Hay restricciones fuera de ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}. Amplía la vista para editarlas o eliminarlas.`}</Text>
         <Button disabled={saving} variant="light" size="xs" onClick={() => { setActions(null); setExpandedHours((value) => !value) }}>

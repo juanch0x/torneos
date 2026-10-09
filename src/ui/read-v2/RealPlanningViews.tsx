@@ -22,6 +22,7 @@ import { ReadCalendar } from './ReadOnlyV2Page'
 import type { V2ReadSnapshot } from '../../router/v2ReadService'
 import '../calendar-v2/calendarMock.css'
 import { formatDateRange, formatDateTime, formatTimeRange } from '../format'
+import { plural } from '../plural'
 
 export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   const state = useStore(v2SessionStore)
@@ -58,7 +59,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
       <Diagnostics count={display.diagnostics.length} /><AvailabilitySummary />
       <Tabs defaultValue="0" key={tournamentId}><Tabs.List>{display.categories.map((category, ci) => <Tabs.Tab key={ci} value={String(ci)}>{category.name}<Badge ml={6} size="sm" style={{ backgroundColor: category.color, color: '#1b2927' }}>{state.working!.categories[ci].pairs.length}</Badge></Tabs.Tab>)}</Tabs.List>
         {display.categories.map((category, ci) => <Tabs.Panel key={ci} value={String(ci)} pt="lg"><Stack gap="md"><Title order={2} size="h4">{category.name}</Title><SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-          {[...category.groups, { id: '', name: 'Sin grupo', pairs: category.unassigned.map(pair => ({ id: pair.id, label: `${pair.player1} / ${pair.player2}` })) }].map((group, gi) => <Paper key={gi} withBorder p="md" radius="lg"><Stack gap="md"><Group justify="space-between"><Title order={3} size="h5">{group.name}</Title><Text size="sm" c="dimmed">{group.pairs.length} parejas</Text></Group>{group.id && <Text size="xs" c="dimmed">ID: {group.id}</Text>}
+          {[...category.groups, { id: '', name: 'Sin grupo', pairs: category.unassigned.map(pair => ({ id: pair.id, label: `${pair.player1} / ${pair.player2}` })) }].map((group, gi) => <Paper key={gi} withBorder p="md" radius="lg"><Stack gap="md"><Group justify="space-between"><Title order={3} size="h5">{group.name}</Title><Text size="sm" c="dimmed">{plural(group.pairs.length, 'pareja', 'parejas')}</Text></Group>{group.id && <Text size="xs" c="dimmed">ID: {group.id}</Text>}
             {!group.pairs.length && <Text size="sm" c="dimmed">Sin parejas asignadas.</Text>}{group.pairs.map((pair, pi) => {
               const count = state.working!.pairUnavailableWindows?.filter(window => window.pairId === pair.id).length ?? 0
               const conflicts = state.availability.conflicts.filter(conflict => conflict.pairId === pair.id)
@@ -66,7 +67,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
               return <Paper key={pi} withBorder p="sm" radius="md"><Stack gap={3}><Text fw={600} size="sm">{pair.label}</Text><Text size="xs" c="dimmed">ID: {pair.id}</Text><Menu withinPortal loop><Menu.Target><Button variant="default" size="sm" aria-label={`Mover ${pair.label} a grupo`} disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)}>Mover a grupo…</Button></Menu.Target><Menu.Dropdown>{state.working!.categories[ci].groups.map(target => <Menu.Item key={target.id} disabled={target.id === group.id} onClick={() => {
                 const request = { categoryId: state.working!.categories[ci].id, pairId: pair.id, groupId: target.id }
                 void submitMembership({ request, epoch: state.epoch })
-              }}>{target.name}{target.id === group.id ? ' · Actual' : ''}</Menu.Item>)}</Menu.Dropdown></Menu><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${count} restricciones · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{conflicts.length} conflictos de disponibilidad</Text>}{!!pending.length && <Text size="xs" c="orange.8">{pending.length} partidos sin validación completa</Text>}</Stack></Paper>
+              }}>{target.name}{target.id === group.id ? ' · Actual' : ''}</Menu.Item>)}</Menu.Dropdown></Menu><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${plural(count, 'restricción', 'restricciones')} · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{plural(conflicts.length, 'conflicto', 'conflictos')} de disponibilidad</Text>}{!!pending.length && <Text size="xs" c="orange.8">{pending.length} partidos sin validación completa</Text>}</Stack></Paper>
             })}
           </Stack></Paper>)}
         </SimpleGrid></Stack></Tabs.Panel>)}
@@ -135,14 +136,14 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
   </Stack>
 }
 function Diagnostics({ count }: { count: number }) {
-  return count ? <Alert color="orange">{count} diagnósticos en los datos originales. Puedes revisar sus detalles en «Diagnóstico técnico». No se han reparado ni reprogramado partidos.</Alert> : null
+  return count ? <Alert color="orange">{plural(count, 'diagnóstico', 'diagnósticos')} en los datos originales. Puedes revisar sus detalles en «Diagnóstico técnico». No se han reparado ni reprogramado partidos.</Alert> : null
 }
 
 function AvailabilitySummary() {
   const availability = useStore(v2SessionStore, state => state.availability)
   const [expanded, setExpanded] = useState(false)
   if (!availability.conflicts.length && !availability.unvalidated.length) return <Text size="sm" c="dimmed">Sin solapamientos de disponibilidad detectados. Esto no valida el resto de las reglas del calendario.</Text>
-  return <Paper withBorder p="sm"><Stack gap="xs"><Group justify="space-between"><Text size="sm" c={availability.conflicts.length ? 'red' : 'orange.8'}>{availability.conflicts.length} conflictos · {availability.unvalidated.length} partidos sin validación completa</Text><Button variant="subtle" size="compact-xs" onClick={() => setExpanded(value => !value)}>{expanded ? 'Ocultar detalles' : 'Ver causas'}</Button></Group>{expanded && <Stack gap={4} style={{ maxHeight: 220, overflowY: 'auto' }}>{availability.conflicts.map((conflict, index) => <Text size="xs" c="red" key={index}>Partido {conflict.matchId} · {conflict.pair}: {formatTimeRange(conflict.startsAt, conflict.endsAt)} · {conflict.reason || 'Sin motivo'}</Text>)}{availability.unvalidated.map(item => <Text size="xs" c="orange.8" key={item.matchKey}>Partido {item.matchId}: {item.reason}</Text>)}</Stack>}</Stack></Paper>
+  return <Paper withBorder p="sm"><Stack gap="xs"><Group justify="space-between"><Text size="sm" c={availability.conflicts.length ? 'red' : 'orange.8'}>{plural(availability.conflicts.length, 'conflicto', 'conflictos')} · {plural(availability.unvalidated.length, 'partido', 'partidos')} sin validación completa</Text><Button variant="subtle" size="compact-xs" onClick={() => setExpanded(value => !value)}>{expanded ? 'Ocultar detalles' : 'Ver causas'}</Button></Group>{expanded && <Stack gap={4} style={{ maxHeight: 220, overflowY: 'auto' }}>{availability.conflicts.map((conflict, index) => <Text size="xs" c="red" key={index}>Partido {conflict.matchId} · {conflict.pair}: {formatTimeRange(conflict.startsAt, conflict.endsAt)} · {conflict.reason || 'Sin motivo'}</Text>)}{availability.unvalidated.map(item => <Text size="xs" c="orange.8" key={item.matchKey}>Partido {item.matchId}: {item.reason}</Text>)}</Stack>}</Stack></Paper>
 }
 
 
