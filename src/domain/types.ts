@@ -24,6 +24,8 @@ export interface PairUnavailableWindow {
 }
 
 export interface FixtureSettings {
+  automaticWeekdays?: number[] // ISO1(Monday)–7(Sunday); absent defaults to Monday–Friday in V2 only
+  automaticWindow?: DailyTimeWindow // optional legacy fallback: physical default court hours
   matchDurationMinutes: number
 }
 

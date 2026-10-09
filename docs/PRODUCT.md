@@ -1,251 +1,168 @@
 # Product Vision — Torneos (Pelota Paleta)
 
-> **Purpose of this document.** This is the *why* and the *for whom*, not the *how*.
-> The codebase already documents the architecture (`README.md`, `CLAUDE.md`). What was
-> missing was the product intent: the real problem, the user, the core pain, and the
-> scope boundaries that should guide every future feature exploration.
->
-> Read this **before** running any `sdd-explore`. It is the compass that keeps each
-> feature honest: does this serve the problem below, or is it scope drift?
+**Help a club organizer plan the entire group stage, then adjust it without losing control
+of the schedule already communicated to players.** Do this one job well; do not turn the
+product into an all-purpose tournament management system.
 
----
+This document is the product compass: the problem, user, decisions and scope. Read it
+before proposing features or auditing UX. Architecture belongs in [README.md](../README.md);
+implementation and acceptance evidence belong in the linked plans below. This vision
+supersedes the earlier results/standings/knockout-led roadmap.
 
-## 1. The problem
+## The problem and the user
 
-A pelota-paleta club runs tournaments **on a recurring but irregular basis** — almost
-every month, sometimes internal-only, sometimes open to outside players. Each tournament
-has **N categories** depending on who signs up, their level, and the ball type
-(e.g. *primera / segunda / tercera*, or *pelota normal / pelota lenta*).
+A tournament may have four categories with roughly 12–13 pairs in each. The organizer
+already knows the pairs' federation-defined categories and determines their groups.
+Every pair in a group plays every other pair **exactly once**.
 
-Today **the entire process is manual**, lives in spreadsheets and on paper, and is
-distributed by WhatsApp:
+Availability reaches each club's organizer informally: questions, messages and sometimes
+assumptions. A player may not be able to reach a particular venue at an early hour, have
+English class on a particular date, or receive a medical appointment after the schedule
+has been distributed. Spreadsheets help store information, but do not collect it or
+resolve the consequences of a late change.
 
-1. **Sign-ups** → a list of people who said "I'm in", dumped into Excel.
-2. **Categorization** → group pairs into coherent categories by level. By hand, by judgment.
-3. **Groups** → decide how many groups per category based on how many pairs there are
-   (4 pairs → maybe one group; 10 pairs → maybe two groups of five). By eye.
-   → *First deliverable, sent over WhatsApp: a spreadsheet with categories + groups.*
-4. **Fixture** → build the playing schedule by hand in Excel, across 2–3 days, with
-   **per-category match durations** (a *primera* match can last twice a *pelota lenta*
-   one, because stronger players miss faster and points end sooner).
-   → *Second deliverable: the fixture, including semifinals and finals.*
-5. **Results** → recorded **on paper**, match by match.
-6. **Next-phase bracket** → compute each group's standings by mental math (points,
-   point-difference, tie-breaks) and improvise the knockout crosses. By eye.
+There are two related pains:
 
-This works, but it is slow, error-prone, and — for one step in particular — genuinely painful.
+1. **Prepare reliable availability information** before generating the schedule.
+2. **Keep a communicated schedule stable** when unavoidable changes appear.
 
----
+The primary user is the **organizer**, working on a computer for almost all planning.
+A phone must support essential last-minute actions, not reproduce an ideal desktop
+planning experience. Players receive the schedule; they are not co-editors in this scope.
 
-## 2. The user
+## Product decisions
 
-- **The organizer** — the single person (or two) who runs the tournament. This is the
-  one who edits everything. **Single-writer by design.**
-- **The players** — everyone else. They only ever **read**: their group, when they play,
-  how the standings look, who advanced.
+| Topic | Direction |
+|-------|-----------|
+| Focus | Plan the group stage, from pairs and groups to a complete, editable schedule. |
+| Categories and groups | Categories are known, not inferred from player level. The organizer assigns pairs to groups; automatic group shuffling is not the core solution. |
+| Court | One shared court across all categories. Matches cannot overlap. |
+| Duration | One organizer-configured match duration for planning; often 45 minutes, never a hardcoded product rule or a promised per-category duration system. |
+| Availability | Pair-level, dated periods when the pair **cannot** play. The rest of the applicable court availability is considered available. Collect these before generation; later exceptions remain possible. |
+| Preferences | Do not negotiate “20:00 is better than 20:30.” Soft preferences and complex recurrence rules are outside the current scope. |
+| Schedule stability | Make individual changes visible and deliberate. Minimize disruption to already communicated matches rather than regenerate everything after every exception. |
+| Interaction | A clear weekly calendar with configured time slots, readable match details, drag-and-drop and an accessible explicit move action. Desktop first; essential phone actions remain usable. |
+| Persistence | Save accepted changes directly to the local tournament. Draft cancellation and save/retry states must be honest; no mandatory backup/adoption workflow. |
+| Sharing | Export a confirmed planning snapshot to XLSX for distribution, including via WhatsApp. An export is a snapshot, not a live published calendar. |
 
-This `single-writer / everyone-reads` shape is not an accident — it is the product's DNA
-and is already baked into the architecture (`README.md:3`).
+Availability collection is an organizer responsibility for now. The restriction editor
+makes recording it easier; it does not claim to automate conversations with players.
+Model pair unavailability, not individual-player cross-category conflict detection.
 
----
+## The organizer's path
 
-## 3. The core pain: the fixture
+1. **Capture categories and pairs.** A pair may remain unassigned at this step.
+2. **Prepare groups and availability.** Use the category → group → pair view to assign
+   or move pairs within their category. Configure the tournament before editing
+   restrictions; group assignment itself does not require schedule configuration.
+3. **Generate the group-stage schedule.** All participating pairs must belong to exactly
+   one valid group, with at least two pairs in each group.
+4. **Review and adjust visually.** Inspect details, move a match within or across weeks,
+   review the proposed change, cancel or apply it, and undo an eligible movement.
+5. **Export and communicate.** Download the confirmed schedule and send it to players.
 
-If the product solves **one** thing well, it is the **fixture**. It is the step that
-**depends on everything before it and conditions everything after it**, and it changes
-the most.
+The existing first capture screen is retained during incremental integration. The real V2
+preparation and calendar screens follow it. **V2 is the replacement direction, not a
+permanent second product alongside V1.** Legacy capabilities or diagnostic/demo routes
+must not define the normal organizer journey or expand this scope.
 
-The fixture hurts not because of arithmetic, but because it is an **optimization problem
-with constraints** that a human has to juggle in their head:
+## Scheduling boundaries
 
-- **Generation.** Each group of N pairs is a round-robin (all-play-all) → a pile of
-  matches appears at once.
-- **Single court.** There is **always exactly one court.** Everything is serialized.
-  Durations vary by category, so you constantly calculate spacing.
-- **Rules of a "good" fixture** (this is the organizer's *judgment*, the part Excel can't hold):
-  - A pair should **not play two matches back-to-back**.
-  - A group should **not be resolved in one block** — if all of a group's matches run
-    consecutively, the early losers are eliminated and go home. Groups and categories
-    must be **interleaved**.
-- **Re-flow is the real hell.** You send v1, someone says "I can't play at that time",
-  you move one match — and the interleaving breaks. You re-shuffle the whole thing by
-  hand, again and again.
+### Court availability is not the tournament's normal playing window
 
-> **The product's true value is not building the fixture once — it is re-building it
-> twenty times without breaking the rules.** "Let me pin/move the little that changed,
-> and re-flow the rest automatically, respecting the rules."
+Configure a bounded date period, physical court opening/closing hours, the automatic
+**tournament window**, eligible weekdays and match duration. For example, the court may
+be open 15:00–22:00 while normal tournament matches are generated only 18:00–22:00.
+Monday–Friday are selected by default; Saturday and Sunday can be enabled explicitly.
 
-### Constraints that trigger re-flows
+Generation uses only complete duration-sized slots within the eligible tournament window
+and physical court availability. A manual exception may use other valid court hours; it
+must still pass availability validation. Do not silently extend the period, enable a
+weekend or use earlier court hours to make generation succeed.
 
-- **What counts:** real personal availability windows — *"I have English class Thursday
-  at 20:00"*, *"I have a doctor's appointment at 11:00"*. Modeled simply as **"pair X is
-  unavailable in this time window."**
-- **What does NOT count:** a person playing in two categories overlapping with themselves.
-  If you signed up for two, you deal with it. The product does **not** model
-  person-vs-themselves conflicts.
-- **Frequency:** the goal is **zero** constraints, and they try for it. In practice 1, 2,
-  sometimes N appear — **but never many.** The pain is not the *quantity* (it's not a
-  giant solver problem); the pain is that **moving a single one breaks the interleaving.**
+Dated court closures/custom hours already represented in a tournament must be honored.
+A convenient editor for holidays and different daily hours remains a future UX need;
+respecting existing exceptions does not mean that editor is implemented.
 
----
+### Generate a complete calendar or change nothing
 
-## 4. The bracket (knockout phase) — a deliberate product stance
+Generate every required group-stage cross exactly once. Do not silently drop matches,
+leave a successful generation with unassigned matches, or claim infeasibility when an
+operational search limit was reached.
 
-The knockout bracket is today **pure in-the-moment judgment**. Examples from the last
-tournament (3 categories):
+If the configured capacity or pair restrictions prevent a complete assignment, explain
+which matches/constraints need attention and let the organizer revise the inputs. Preserve
+the confirmed tournament when generation fails. Regeneration explicitly warns that it
+replaces the schedule, requires confirmation, and retains the old schedule on failure.
+It is not a standalone delete/reset action or a way to unlock structural edits.
 
-- **Núcleo Damas** — 5 pairs, one group, top 4 advance → semifinal → final.
-- **Núcleo** — 6 pairs, two groups of 3, top 2 per group advance → semifinals → final.
-- **Goma** — 4 pairs, one group, top 2 advance → straight to the final.
+A complete feasible schedule is not a promise of optimal rest or category interleaving.
+The current V2 scope does **not** guarantee no back-to-back matches, optimal spacing,
+automatic displacement chains, pinned-match reflow or a “smallest possible change” solver.
 
-The fear was: *"how do I make the bracket deterministic for a system?"* — especially once
-a third group forces you to improvise quarterfinals.
+### Late changes need human control
 
-**The key insight: stop looking for the universal bracket formula. It does not exist —
-that is precisely why it gets improvised every time.** Two different things are tangled here:
+Saving a restriction or configuration does not silently reschedule matches. Surface
+conflicts, keep the existing schedule visible, and let the organizer decide what to move.
+They may need to ask the other pair before applying an exception.
 
-1. **Computing who finishes 1st/2nd/Nth in each group** → this is **NOT by eye**, it is
-   pure math (points, point-difference, tie-breaks). The system can **always** do this.
-   It is exactly what is done today with mental math and paper.
-2. **The bracket topology** (how many advance, semis vs quarters, who goes straight to the
-   final) → this is genuine organizer judgment and **should stay that way.**
+Reviewed moves and undo support that decision. Do not present a new restriction as already
+resolved merely because it was saved. Automatic cascading reprogramming and public
+notification of changes are not implemented promises.
 
-The product does **not** need to *decide* the bracket. It needs to let the organizer
-**declare** it easily, and then do the heavy lifting: compute standings and schedule the
-declared matches on the court under the same fixture rules.
+## Current scope and safety
 
-**Chosen direction: (B) the organizer designs the bracket; the system serves the
-standings and schedules what was declared.** More flexible, keeps the organizer's
-judgment, the system does the heavy work.
+**In scope:** pair/category capture, manual group membership, pair restrictions,
+tournament configuration, complete group-stage generation, visual manual adjustment,
+confirmed persistence and planning-only XLSX export.
 
-When this becomes parametrizable (see Step 3), every bracket ever built can be expressed
-with just **two reference primitives**:
+**Out of scope:** result entry, standings, qualification rules, automated repechage or
+knockout brackets, multi-court scheduling, rankings/player history, soft availability
+preferences, and self-service availability collection from players. Existing results or
+knockout records are compatibility data to protect, not a commitment to those workflows.
 
-- **"Position P in Group G"** (e.g. *1st of Group A*) — resolved deterministically from standings.
-- **"Winner / loser of match M"** — resolved when M finishes.
+The product is **local-first and single-writer**. IndexedDB data belongs to one browser;
+there is no cross-device sync, shared backend, concurrent editing guarantee or public
+live link today. Phone usability does not imply a desktop tournament appears on a phone.
 
-A semifinal is `Winner(QF1) vs Winner(QF2)`. A final with a bye is
-`1st of Group A vs Winner(Semi)`. The organizer snaps these LEGO bricks together; the
-system resolves them automatically as results come in. **Infinite flexibility for the
-human, trivial deterministic math for the machine.**
+Structural edits after scheduling or existing group/playoff results are currently blocked
+conservatively; safe name correction remains possible. The permanent policy for changing
+participants/groups after scheduling is **unresolved**. Do not invent a reset/reflow policy
+or delete history to make editing convenient.
 
----
+## Now, next and possible later directions
 
-## 5. The two faces of the product
+| Horizon | Scope |
+|---------|-------|
+| **Now** | Maintain the connected capture → preparation → calendar → XLSX flow. Functional verification and scoped browser acceptance are recorded in the closeout plan; they are not proof of every possible dataset or device. |
+| **Next** | Audit the real flow and simplify pair/group loading and navigation, then refine the application-wide UX and visual design without widening functional scope. Preserve tested persistence and scheduling behavior. |
+| **Possible later — not committed** | A live read-only schedule link with highlighted changes; easier dated holiday/daily-hour configuration; optional capacity blocks or manual support for later stages; bulk input if it demonstrably reduces organizer effort. |
 
-This is **not** just a tool to generate a fixture and export it. It is two surfaces over
-**a single source of truth**:
+Excel input was explored, not selected as the required ingestion method. Reserving court
+blocks for eliminations would reserve capacity, not guarantee the future qualifiers can
+play then. Neither idea commits the product to automating later phases. Results/standings,
+backend migration and bracket automation are not implicit roadmap milestones.
 
-1. **The organizer's cockpit** (single-writer): create the tournament, the fixture, the
-   bracket; enter results.
-2. **The public viewer** (everyone, read-only): a simple page where players see the
-   **groups, fixture, and results of the ongoing tournament**, live.
+## Success criteria
 
----
+The current product succeeds when an organizer can:
 
-## 6. Scope — V1 (the MVP)
+- Prepare a representative club tournament without navigating unnecessary features.
+- Record hard pair restrictions without a painful form-based workflow.
+- Generate all group matches within the configured period or understand why no complete
+  schedule was saved.
+- Apply a deliberate exception without silently changing unrelated communicated matches.
+- Refresh/reopen and find confirmed information intact, with clear recovery from save failures.
+- Export a trustworthy XLSX whose local dates/times match the calendar.
+- Perform essential emergency actions on a phone without relying on hover or right-click.
 
-**V1 solves the core pain: the fixture engine.** This is also largely what is already
-built today.
+The next UX audit should prioritize fewer steps, clearer actions and lower organizer
+cognitive load. Visual polish supports this goal; new tournament-management features do not.
 
-In scope:
+## Supporting evidence
 
-- Categories, groups, round-robin generation per group.
-- **Scheduling on a single court** with the organizer's rules: no back-to-back matches for
-  a pair, interleave groups and categories, per-category match durations.
-- **Availability constraints** ("pair X unavailable in this window") respected by scheduling.
-- **Pin / re-flow**: change the little that changed, re-flow the rest without breaking the rules.
-- **Result entry inside the app** — **required**, not optional. It is the foundation of the
-  automatic leaderboard: standings cannot be computed if results live on paper. This kills
-  the paper + mental-math step.
-- **Automatic leaderboard** per group (points, point-difference, tie-breaks).
-- Export of the fixture / standings.
-- **A real, presentable UI with a design system** — not "all white". The cockpit is used
-  every tournament; being usable and pleasant is part of the product, not a luxury.
-- **Mobile-first as a posture, with a boundary:**
-  - **Result entry → truly mobile-first.** It is the screen that goes to the court, on a
-    phone, one-handed.
-  - **Data-dense setup views** (loading ~40 pairs, group assignment, the multi-day fixture
-    table) → **"responsive, must not break on mobile"** is enough. Do **not** burn V1
-    making a 40-row matrix beautiful at 375px — that is gold-plating for screens that, in
-    V1, are used on desktop. Building responsive-aware from day one means Step 2's mobile
-    use is **not a rewrite**.
-
-> Note: *which* UI library / design system is **not** a decision for this document — it is
-> a dedicated `sdd-explore`. This doc captures the **requirement** (presentable,
-> responsive-aware, result-entry mobile-first); the **tool choice** is decided with
-> judgment in its own exploration. Concepts before frameworks.
-
-What V1 deliberately leaves manual (and how that pain is lived):
-
-- The knockout **bracket is built by hand** (in Excel), as today.
-- Deliverables are **distributed by WhatsApp**, as today.
-
-> This is **not** settling for less. Accepting manual brackets + WhatsApp in V1 is a
-> conscious choice to **not split the source of truth** until it can be done well.
-
-### V1 persistence note (single device)
-
-V1 runs **local-first on a single device** (IndexedDB). There is **no cross-device sync**
-in V1: the tournament lives in one browser. Live result entry works on that one device.
-The "set up on desktop → enter results on mobile" workflow is **only unlocked in Step 2**.
-
----
-
-## 7. Vision — the roadmap beyond V1
-
-| Step | Delivers | Nature | How the unsolved part is lived |
-|------|----------|--------|--------------------------------|
-| **1 · Local (MVP)** | Fixture engine + result entry + auto-leaderboard, one device, IndexedDB | Domain + UI | Bracket by hand in Excel · WhatsApp |
-| **2 · Shared** | The tournament travels across devices (real backend) | Infra | Frees the person otherwise chained to the club all day |
-| **3 · Bracket** | Parametrizable knockout (the two reference primitives) | Pure domain | — |
-| **4 · Viewer** | Public read-only page over the **same** shared source of truth | Separate codebase, **same** DB | Only worth it once Steps 1–3 exist |
-
-**Notes on the roadmap:**
-
-- **Steps 2 and 3 are interchangeable** — do whichever pain bites first. Step 3 (bracket)
-  is **pure domain** (no infra, runs on local IndexedDB); Step 2 (shared) is **pure infra**.
-  They do not depend on each other. Suggested sequence, not a rigid one.
-- **Step 2 — why shared matters.** The real driver is operational: with no sync, one person
-  must be **physically at the club the whole tournament** to enter results. Sharing across
-  devices removes that. The backend swap is already designed as a **one-line seam**
-  (`src/persistence/repo.ts`, with a documented `SupabaseRepository` stub) — built decoupled
-  on purpose so this day would not hurt.
-- **Step 4 — same source of truth, not a second database.** The viewer is a separate
-  *codebase* (a thin read-only surface) that reads from the **same** shared backend of
-  Step 2. It must **not** introduce a separate database — that would re-create the exact
-  split-source-of-truth problem this whole plan avoids.
-- **Why the viewer waits.** A public viewer is cheap to build but only earns its keep once
-  the *whole* tournament (including the bracket) lives inside the system. Built earlier, it
-  shows half the picture while the finals live in an external Excel — splitting the source
-  of truth and creating false confidence. That is **worse than not having it.**
-
----
-
-## 8. Success criteria
-
-V1 is successful when:
-
-- The organizer can run a **real tournament end-to-end** — generate the fixture, enter
-  results, read the standings — **without an external spreadsheet for the group phase.**
-- A late "I can't play at that time" no longer means **rebuilding the fixture by hand** —
-  the system re-flows it while respecting the rules.
-- The **mental math is gone**: group standings are computed by the system, not in someone's head.
-- The cockpit is **pleasant enough to actually use** every tournament, and result entry
-  works **comfortably on a phone**.
-
-The product as a whole succeeds when a player can open **one link** and see their group,
-their next match, and the live standings — without anyone copying anything into WhatsApp.
-
----
-
-## 9. Non-goals (product-level)
-
-- Modeling person-vs-themselves scheduling conflicts (two categories overlapping).
-- Auto-deciding the knockout bracket topology with hard universal rules.
-- A heavy constraint solver — availability constraints are few by design.
-- Multi-court scheduling — there is **always one court**.
-- Cross-tournament statistics, rankings, or player history.
-- Polished mobile optimization of data-dense setup screens in V1.
-
-(Architecture-level out-of-scope items are tracked in `README.md`.)
+- [V2 flow integration plan](V2_FLOW_INTEGRATION_PLAN.md): integration design, ownership,
+  membership and structural-edit boundaries.
+- [V2 closeout plan](V2_FLOW_CLOSEOUT_PLAN.md): corrections, automated verification and
+  scoped browser acceptance. Historical blocked/pending notes are superseded by its later
+  evidence sections; do not treat a stale plan header as current product status.

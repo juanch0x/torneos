@@ -220,7 +220,7 @@ describe('tournamentStore — availability reflow actions', () => {
     expect(useTournamentStore.getState().current?.pairUnavailableWindows).toEqual([])
   })
 
-  it('clears obsolete matches and slots when membership changes before results', () => {
+  it('protects membership and existing slots once the calendar is assigned', () => {
     const current: Tournament = {
       ...makeTournament('t1'),
       slots: [{ id: 'stale-slot', startsAt: '2024-01-01T09:00:00.000Z', matchId: 'stale-match' }],
@@ -235,12 +235,10 @@ describe('tournamentStore — availability reflow actions', () => {
     const actions = useTournamentStore.getState()
 
     actions.assignPairToGroup('cat1', 'c', 'g1')
-    actions.setMatchResult('cat1', 'stale-match', { scoreA: 6, scoreB: 4 })
-    actions.generateFixture({ calendar: { startDate: '2024-01-01', endDate: '2024-01-01', defaultWindow: { startsAt: '09:00', endsAt: '12:00' }, overrides: [] }, matchDurationMinutes: 45 })
-
-    const after = useTournamentStore.getState().current!
-    expect(after.slots.some((slot) => slot.matchId === 'stale-match')).toBe(false)
-    expect(after.categories[0].matches.some((match) => match.id === 'stale-match' || match.result != null)).toBe(false)
+    actions.setCategoryGroupCount('cat1', 2)
+    actions.shuffleGroups('cat1')
+    actions.addPair('cat1', 'New', 'Pair')
+    expect(useTournamentStore.getState().current).toEqual(current)
   })
 
   it('does not alter groups, pair assignments, or pairings after a result', () => {
@@ -389,5 +387,28 @@ describe('tournamentStore — newMockTournament', () => {
 describe('tournamentStore — closeTournament removed', () => {
   it('closeTournament is not present on the store interface', () => {
     expect('closeTournament' in useTournamentStore.getState()).toBe(false)
+  })
+})
+
+describe('fresh ownership reread', () => {
+  it('invalidates pending loads and the same-ID cache before returning from V2', async () => {
+    let finish!: (document: Tournament) => void
+    vi.mocked(repo.load).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const old = useTournamentStore.getState().loadTournament('t1')
+    useTournamentStore.getState().invalidatePreparation()
+    const fresh = { ...makeTournament('t1'), name: 'Confirmed V2' }
+    vi.mocked(repo.load).mockResolvedValueOnce(fresh)
+    await useTournamentStore.getState().loadTournament('t1')
+    finish(makeTournament('t1')); await old
+    expect(useTournamentStore.getState().current).toEqual(fresh)
+  })
+  it('reports read failures and supports an explicit reread retry', async () => {
+    vi.mocked(repo.load).mockRejectedValueOnce(new Error('denied'))
+    await useTournamentStore.getState().loadTournament('t1')
+    expect(useTournamentStore.getState().status).toBe('error')
+    expect(useTournamentStore.getState().loadError).toContain('No se pudo leer')
+    vi.mocked(repo.load).mockResolvedValueOnce(makeTournament('t1'))
+    await useTournamentStore.getState().loadTournament('t1', true)
+    expect(useTournamentStore.getState().status).toBe('loaded')
   })
 })

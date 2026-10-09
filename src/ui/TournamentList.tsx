@@ -5,8 +5,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
-import { Button, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core'
+import { useMemo, useState, useRef } from 'react'
+import { Alert, Button, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { TournamentMeta } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { formatDate } from './format'
@@ -21,6 +21,11 @@ const showMockTournamentButton = import.meta.env.DEV
 
 export function TournamentList() {
   const list = useTournamentStore((s) => s.list)
+  const listError = useTournamentStore(s => s.listError)
+  const loadList = useTournamentStore(s => s.loadList)
+  const [creationError, setCreationError] = useState('')
+  const [creating, setCreating] = useState(false)
+  const creatingRef = useRef(false)
   const newTournament = useTournamentStore((s) => s.newTournament)
   const newMockTournament = useTournamentStore((s) => s.newMockTournament)
   const navigate = useNavigate()
@@ -51,6 +56,8 @@ export function TournamentList() {
   return (
     <Stack gap="md">
       <Title order={2}>Torneos</Title>
+      {listError && <Alert color="red">{listError}<Button variant="light" onClick={() => void loadList()}>Reintentar lectura</Button></Alert>}
+      {creationError && <Alert color="red">{creationError}</Alert>}
 
       <Group gap="sm" wrap="wrap">
         <TextInput
@@ -64,14 +71,17 @@ export function TournamentList() {
           onChange={(e) => setDate(e.target.value)}
         />
         <Button
-          disabled={!name.trim()}
+          disabled={creating || !name.trim()}
+          loading={creating}
           onClick={() => {
+            if (creatingRef.current) return
+            creatingRef.current = true; setCreating(true); setCreationError('')
             const trimmed = name.trim()
-            setName('')
             void newTournament(trimmed, date).then(() => {
+              setName('')
               const id = useTournamentStore.getState().current!.id
-              void navigate({ to: '/tournaments/$id/groups', params: { id } })
-            })
+              return navigate({ to: '/tournaments/$id/groups', params: { id } })
+            }).catch(() => setCreationError('No se pudo confirmar la creación. Relee la lista antes de reintentar: el documento puede haberse guardado parcialmente.')).finally(() => { creatingRef.current = false; setCreating(false) })
           }}
         >
           Nuevo torneo
@@ -79,7 +89,8 @@ export function TournamentList() {
         {showMockTournamentButton ? (
           <Button
             variant="default"
-            onClick={() => void newMockTournament()}
+            disabled={creating}
+            onClick={() => { if (creatingRef.current) return; creatingRef.current = true; setCreating(true); void newMockTournament().catch(() => setCreationError('No se pudo confirmar el torneo de ejemplo. Relee la lista.')).finally(() => { creatingRef.current = false; setCreating(false) }) }}
             title="Crea 'Torneo FMP' con los datos de mock_players.json"
           >
             Crear torneo mock

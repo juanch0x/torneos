@@ -1,0 +1,93 @@
+.calendar-v2 {
+  --fc-monarch-primary: #205f5a;
+  --fc-monarch-primary-foreground: white;
+  --fc-monarch-primary-over: #184e4a;
+  --fc-monarch-primary-down: #123e3b;
+  --fc-monarch-secondary: #e3f0ed;
+  --fc-monarch-secondary-foreground: #205f5a;
+  --fc-monarch-secondary-over: #d4e7e2;
+  --fc-monarch-secondary-down: #c4ddd6;
+  --fc-monarch-background: #fff;
+  --fc-monarch-foreground: #263735;
+  --fc-monarch-border: #e1e7e5;
+  --fc-monarch-faint: #f5f8f7;
+  --fc-monarch-muted: #e7ecea;
+  --fc-monarch-strong: #cbd6d2;
+  --fc-monarch-stronger: #becbc6;
+  --fc-monarch-strongest: #aebeb7;
+  --fc-monarch-strong-border: #c5d1cc;
+  --fc-monarch-faint-foreground: #85918d;
+  --fc-monarch-selected: #205f5a;
+  --fc-monarch-selected-foreground: white;
+  --fc-monarch-selected-over: #184e4a;
+  --fc-monarch-selected-down: #123e3b;
+  --fc-monarch-popover: white;
+  --fc-monarch-tertiary: #205f5a;
+  --fc-monarch-tertiary-foreground: white;
+  --fc-monarch-tertiary-over: #184e4a;
+  --fc-monarch-tertiary-down: #123e3b;
+  --fc-monarch-muted-foreground: #536360;
+  --fc-monarch-outline: #205f5a;
+  --fc-monarch-now: #c44343;
+  --fc-monarch-event: #e5defa;
+  --fc-monarch-event-contrast: #423070;
+  --fc-monarch-highlight: #d3ede8;
+}
+.calendar-v2-scroll { overflow-x: auto; }
+.calendar-v2-scroll > div { min-width: 950px; }
+.calendar-v2-match { padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; line-height: 1.25; overflow: hidden; }
+.calendar-v2-match strong { font-size: 12px; font-weight: 600; overflow: hidden; }
+.calendar-v2-legend { font-size: 12px; color: #435653; }
+.calendar-v2-legend span { display: inline-flex; gap: 7px; align-items: center; }
+.calendar-v2-legend i { width: 13px; height: 13px; border-radius: 3px; display: inline-block; border: 1px solid #d3ddda; }
+.calendar-v2-closed-swatch { background: repeating-linear-gradient(135deg, #e3e9e6, #e3e9e6 3px, #f3f5f4 3px, #f3f5f4 6px); }
+.calendar-v2-free-swatch { background: white; }
+.calendar-v2-status { max-width: 500px; }
+@media (max-width: 600px) { .calendar-v2-panel { padding: 12px; } .calendar-v2-status { max-width: 100%; } }
+
+.calendar-v2-closed { background: repeating-linear-gradient(135deg, #e3e9e6, #e3e9e6 3px, #f3f5f4 3px, #f3f5f4 6px); opacity: 0.7; }
+.calendar-v2-choosing { cursor: crosshair; }
+.calendar-v2-choosing:focus-visible { outline: 3px solid #205f5a; outline-offset: 3px; border-radius: 4px; }
+.calendar-v2-picked { outline: 3px solid #205f5a; outline-offset: -2px; }
+
+/* The header reserves space in both states: picking never shifts the grid. */
+.calendar-v2-header { position: relative; min-height: 148px; }
+.calendar-v2-move-card { position: absolute; top: 44px; right: 0; width: 410px; max-width: 100%; z-index: 10; }
+.calendar-v2-move-card-copy { min-width: 0; flex: 1; }
+.calendar-v2-cursor-status { min-height: 30px; }
+@media (max-width: 900px) {
+  .calendar-v2-header { min-height: 280px; }
+  .calendar-v2-move-card { top: auto; bottom: 0; left: 0; right: auto; }
+}
+@media (max-width: 600px) { .calendar-v2-header { min-height: 320px; } }
+
+/* Monarch intentionally hides its first axis label; restore it within the row. */
+.calendar-v2-first-time { display: block !important; top: 4px !important; }
+.calendar-v2-feedback-anchor { position: fixed; width: 1px; height: 1px; pointer-events: none; }
+.calendar-v2-feedback { pointer-events: none; }
+
+/* Preview is a selection fill, never a second scheduled event or pending operation. */
+.calendar-v2-destination-ghost { pointer-events: none; opacity: 1; background: repeating-linear-gradient(135deg, #d3ede8a8, #d3ede8a8 6px, #ffffffaa 6px, #ffffffaa 12px) !important; border: 2px dashed #205f5a; }
+.calendar-v2-destination-ghost::before { content: var(--preview-meta); display: block; padding: 4px 6px 0; font-size: 11px; line-height: 1.2; color: #164e48; }
+.calendar-v2-destination-ghost::after { content: var(--preview-match) "\A" var(--preview-label); white-space: pre-line; display: block; padding: 2px 6px 4px; font-size: 12px; font-weight: 600; line-height: 1.25; color: #164e48; }
+.calendar-v2-preview-invalid .calendar-v2-destination-ghost { border-color: #a73737; background: repeating-linear-gradient(135deg, #f9dbdbaa, #f9dbdbaa 6px, #ffffffaa 6px, #ffffffaa 12px) !important; }
+/* Occupied slots keep their existing match readable: only show compact rejection. */
+.calendar-v2-preview-invalid .calendar-v2-destination-ghost::before { display: none; }
+.calendar-v2-preview-invalid .calendar-v2-destination-ghost::after { content: var(--preview-label); padding: 6px; color: #872424; }
+@media (min-width: 901px) and (max-height: 850px) { .calendar-v2-header { min-height: 140px; } .calendar-v2-move-card { top: 36px; } }
+.calendar-v2-destination-ghost { z-index: 4; }
+
+.calendar-v2-availability-conflict { outline: 2px solid #b53636; outline-offset: -2px; }
+.calendar-v2-availability-unknown { outline: 2px dashed #a85d16; outline-offset: -2px; }
+
+/* Real planning uses one outer frame and FullCalendar's own vertical grid scroller. */
+.calendar-v2-planning-grid { min-width: 0; }
+.calendar-v2-planning-match { padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; line-height: 1.3; overflow: hidden; }
+.calendar-v2-planning-match > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.calendar-v2-planning-pair { display: block; font-size: 12px; font-weight: 600; }
+.calendar-v2-planning-meta, .calendar-v2-planning-time { font-size: 11px; }
+.calendar-v2-planning-versus { font-weight: 400; }
+.calendar-v2-real-header { position: relative; min-height: 148px; align-items: flex-start; }
+.calendar-v2-real-header > :first-child { max-width: 55%; }
+.calendar-v2-real-move-dock { position: absolute; top: 0; right: 0; width: 430px; max-width: 100%; z-index: 8; }
+@media (max-width: 900px) { .calendar-v2-real-header { min-height: 290px; } .calendar-v2-real-header > :first-child { max-width: 100%; } .calendar-v2-real-move-dock { top: auto; bottom: 0; left: 0; } }

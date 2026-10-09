@@ -1,3 +1,8 @@
+import { v2ReadinessIssues } from '../domain/v2Readiness'
+import { hasCompleteV2Configuration } from '../domain/v2Configuration'
+import { deriveV2Conflicts, v2LocalDateTime } from '../domain/v2Restrictions'
+import { parseV2Timestamp, v2CourtDay } from '../domain/v2Display'
+import { generateRoundRobin } from '../domain/roundRobin'
 import { computeGroupStandings } from '../domain/standings'
 import type { Category, Group, Match, Pair, Tournament } from '../domain/types'
 
@@ -139,4 +144,40 @@ function formatPairLabel(pair: Pair | undefined, fallback?: string): string {
 function formatResult(match: Match): string {
   if (!match.result) return ''
   return `${match.result.scoreA}-${match.result.scoreB}`
+}
+
+/** A projection, never a mutation: planning excludes all scores and derived standings. */
+export function buildPlanningProjection(tournament: Tournament) {
+  const planning = { ...tournament, categories: tournament.categories.map(category => ({ ...category, matches: category.matches.map(match => ({ ...match, result: undefined })), playoffs: undefined })) }
+  return { groups: buildGroupsSheet(planning), fixture: buildFixtureSheet(planning).filter(row => row.scheduledAt) }
+}
+
+export function planningExportIssues(source: Tournament): string[] {
+  const issues = v2ReadinessIssues(source)
+  if (!hasCompleteV2Configuration(source)) issues.push('Completa y guarda la configuración del torneo.')
+  const availability = deriveV2Conflicts(source)
+  if (availability.conflicts.length || availability.unvalidated.length) issues.push('Revisa los conflictos y las disponibilidades sin validar antes de exportar.')
+  const semantic = (group: string, a: string, b: string) => JSON.stringify([group,...[a,b].sort()])
+  for (const category of source.categories) {
+    const expected = new Set(category.groups.flatMap(group => generateRoundRobin(group.pairIds).map(pair => semantic(group.id,pair.pairAId,pair.pairBId))))
+    const seen = new Set<string>()
+    for (const match of category.matches) {
+      const key = semantic(match.groupId,match.pairAId,match.pairBId)
+      if (!expected.has(key) || seen.has(key)) issues.push(`${category.name}: cruces ajenos o duplicados.`)
+      seen.add(key)
+      if (!match.scheduledAt || !parseV2Timestamp(match.scheduledAt)) issues.push(`${category.name}: programa todos los partidos antes de exportar.`)
+    }
+    if (seen.size !== expected.size) issues.push(`${category.name}: faltan cruces del calendario completo.`)
+  }
+  const duration = (source.fixtureSettings?.matchDurationMinutes ?? 0)*60000
+  const scheduled = source.categories.flatMap(c => c.matches.flatMap(m => { const parsed = m.scheduledAt && parseV2Timestamp(m.scheduledAt); return parsed ? [parsed.instant] : [] })).sort((a,b)=>a-b)
+  for (const [index,start] of scheduled.entries()) {
+    if (index && scheduled[index-1]+duration>start) issues.push('Hay partidos solapados en la cancha.')
+    const day = v2LocalDateTime(new Date(start)).slice(0,10)
+    const hours = v2CourtDay(source.calendar,day)
+    const close = new Date(`${day}T${hours?.endsAt === '24:00' ? '00:00' : hours?.endsAt ?? '00:00'}`); if (hours?.endsAt === '24:00') close.setDate(close.getDate()+1)
+    if (!source.calendar || day < source.calendar.startDate || day > source.calendar.endDate || !hours || start < new Date(`${day}T${hours.startsAt}`).getTime() || start+duration > close.getTime()) issues.push('Hay partidos fuera del período o de la disponibilidad de cancha. Revisa el calendario.')
+  }
+  if (!scheduled.length) issues.push('Genera y confirma un calendario completo antes de exportar.')
+  return [...new Set(issues)]
 }

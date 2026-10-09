@@ -11,6 +11,8 @@ pnpm test     # runs the domain tests (Vitest)
 pnpm build    # type-check + production build
 ```
 
+For the isolated V2 preparation experiment, see [V2 preparation](docs/V2_PREPARATION.md).
+
 ## Architectural philosophy (layering)
 
 The guiding principle: **each layer ignores the others**.

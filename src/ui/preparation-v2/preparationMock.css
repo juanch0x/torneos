@@ -1,0 +1,19 @@
+.preparation-v2-modal-content { height: calc(100dvh - 32px); display: flex; flex-direction: column; overflow: hidden; }
+.preparation-v2-modal-header { flex: 0 0 auto; }
+.preparation-v2-modal-body { flex: 1 1 0; min-height: 0; display: flex; overflow: hidden; }
+.preparation-v2-modal-layout { flex: 1 1 0; min-width: 0; min-height: 0; }
+.preparation-v2-modal-layout > * { flex-shrink: 0; }
+.preparation-v2-modal-layout > .preparation-v2-calendar { flex: 1 1 0; min-height: 0; }
+/* Short/narrow viewports use only the modal scroller, with an auto-height grid. */
+.preparation-v2-modal-scroll { height: auto; overflow-y: auto; }
+.preparation-v2-modal-scroll .preparation-v2-modal-body { flex: none; display: block; overflow: visible; }
+.preparation-v2-modal-scroll .preparation-v2-modal-layout > .preparation-v2-calendar { flex: none; }
+.preparation-v2-calendar { min-width: 0; --fc-monarch-primary: #205f5a; --fc-monarch-primary-foreground: #fff; --fc-monarch-primary-over: #184e4a; --fc-monarch-primary-down: #123e3b; --fc-monarch-secondary: #e3f0ed; --fc-monarch-secondary-foreground: #205f5a; --fc-monarch-secondary-over: #d4e7e2; --fc-monarch-secondary-down: #c4ddd6; --fc-monarch-background: white; --fc-monarch-foreground: #263735; --fc-monarch-border: #e1e7e5; --fc-monarch-faint: #f5f8f7; --fc-monarch-muted: #e7ecea; --fc-monarch-muted-foreground: #536360; --fc-monarch-highlight: #f4d6d699; --fc-monarch-outline: #205f5a; --fc-monarch-event: #f4d6d6; --fc-monarch-event-contrast: #722929; }
+.preparation-v2-window-selected { outline: 2px solid #a53737; outline-offset: -2px; }
+@media (max-width: 900px) { .preparation-v2-calendar { overflow-x: auto; } .preparation-v2-calendar > div { min-width: 700px; } }
+
+.preparation-v2-calendar { --fc-monarch-strong: #cbd6d2; --fc-monarch-stronger: #becbc6; --fc-monarch-strongest: #aebeb7; --fc-monarch-strong-border: #c5d1cc; --fc-monarch-faint-foreground: #85918d; --fc-monarch-selected: #205f5a; --fc-monarch-selected-foreground: white; --fc-monarch-selected-over: #184e4a; --fc-monarch-selected-down: #123e3b; --fc-monarch-tertiary: #205f5a; --fc-monarch-tertiary-foreground: white; --fc-monarch-popover: white; }
+.preparation-v2-actions-anchor { position: fixed; width: 1px; height: 1px; pointer-events: none; }
+
+/* Monarch hides the first axis label; keep the start visible inside its row. */
+.preparation-v2-first-time { display: block !important; top: 3px !important; }

@@ -1,3 +1,4 @@
+import { v2StructureBlocked } from '../domain/v2Membership'
 import {
   createColumnHelper,
   flexRender,
@@ -46,8 +47,7 @@ export function CategoryPanel({ category }: { category: Category }) {
   const shuffleGroups = useTournamentStore((s) => s.shuffleGroups)
   const assignPairToGroup = useTournamentStore((s) => s.assignPairToGroup)
   const movePairToGroup = useTournamentStore((s) => s.movePairToGroup)
-  const regeneratePairings = useTournamentStore((s) => s.regeneratePairings)
-  const hasPlayedMatch = useTournamentStore((s) => s.current?.categories.some((item) => item.matches.some((match) => match.result != null)) ?? false)
+  const hasPlayedMatch = useTournamentStore((s) => s.current ? !!v2StructureBlocked(s.current) : false)
 
   const [p1, setP1] = useState('')
   const [p2, setP2] = useState('')
@@ -69,7 +69,7 @@ export function CategoryPanel({ category }: { category: Category }) {
             <NativeSelect
               value={assigned ?? ''}
               disabled={hasPlayedMatch}
-              aria-label={hasPlayedMatch ? 'Los grupos no se pueden modificar después de cargar resultados' : undefined}
+              aria-label={hasPlayedMatch ? 'Los grupos no se pueden modificar cuando hay horarios o resultados' : undefined}
               onChange={(e) => {
                 const groupId = e.target.value
                 if (!groupId) return
@@ -169,12 +169,12 @@ export function CategoryPanel({ category }: { category: Category }) {
                   setCategoryGroupCount(category.id, typeof val === 'number' ? val || 1 : 1)
                 }
               />
-              <Button variant="default" disabled={hasPlayedMatch} title={hasPlayedMatch ? 'Los grupos no se pueden modificar después de cargar resultados' : undefined} onClick={() => shuffleGroups(category.id)}>
+              <Button variant="default" disabled={hasPlayedMatch} title={hasPlayedMatch ? 'Los grupos no se pueden modificar cuando hay horarios o resultados' : undefined} onClick={() => shuffleGroups(category.id)}>
                 🎲 Mezclar grupos
               </Button>
             </Group>
             <Text c="dimmed" size="sm">
-              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger los resultados ya cargados.' : 'Cambiar la cantidad de grupos o mezclar reparte las parejas al azar y limpia los cruces.'}
+              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger horarios y resultados.' : 'Cambiar la cantidad de grupos o mezclar reparte las parejas al azar y limpia los cruces.'}
             </Text>
           </Stack>
         </Paper>
@@ -202,7 +202,7 @@ export function CategoryPanel({ category }: { category: Category }) {
               />
               <Button
                 disabled={hasPlayedMatch || !p1.trim() || !p2.trim()}
-                title={hasPlayedMatch ? 'No se pueden agregar parejas después de cargar resultados' : undefined}
+                title={hasPlayedMatch ? 'No se pueden agregar parejas cuando hay horarios o resultados' : undefined}
                 onClick={() => {
                   addPair(category.id, p1.trim(), p2.trim())
                   setP1('')
@@ -213,7 +213,7 @@ export function CategoryPanel({ category }: { category: Category }) {
               </Button>
             </Group>
             <Text c="dimmed" size="sm">
-              {hasPlayedMatch ? 'No se pueden agregar parejas después de cargar resultados.' : 'Cargá la pareja y después asignala al grupo correspondiente desde la tabla.'}
+              {hasPlayedMatch ? 'No se pueden agregar parejas cuando hay horarios o resultados.' : 'Cargá la pareja y después asignala al grupo correspondiente desde la tabla.'}
             </Text>
           </Stack>
         </Paper>
@@ -263,21 +263,6 @@ export function CategoryPanel({ category }: { category: Category }) {
             </Table>
           </Table.ScrollContainer>
         )}
-
-        <Paper
-          p="md"
-          radius="lg"
-          style={getMutedSurfaceStyle(theme)}
-        >
-          <Group gap="sm" align="flex-start" wrap="wrap">
-            <Button variant="default" disabled={hasPlayedMatch} title={hasPlayedMatch ? 'Los cruces no se pueden regenerar después de cargar resultados' : undefined} onClick={() => regeneratePairings(category.id)}>
-              Regenerar cruces de esta categoría
-            </Button>
-            <Text c="dimmed" size="sm" style={{ flex: '1 1 18rem' }}>
-              Los horarios se asignan con el botón "Generar fixture" de más abajo (todas las categorías).
-            </Text>
-          </Group>
-        </Paper>
 
         <EditPairDrawer
           pair={pairBeingEdited}

@@ -1,3 +1,4 @@
+import { v2StructureBlocked } from '../domain/v2Membership'
 import { useState } from 'react'
 import { Alert, Button, Group, NumberInput, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
@@ -12,7 +13,7 @@ export function GroupsPage() {
 
   // TournamentLayout already guarantees current is loaded before rendering children
   if (!current) return null
-  const hasPlayedMatch = current.categories.some((category) => category.matches.some((match) => match.result != null))
+  const hasPlayedMatch = !!v2StructureBlocked(current)
 
   return (
     <Stack gap="md">
@@ -46,7 +47,7 @@ export function GroupsPage() {
           />
           <Button
             disabled={hasPlayedMatch || !catName.trim()}
-            title={hasPlayedMatch ? 'No se pueden agregar categorías después de cargar resultados' : undefined}
+            title={hasPlayedMatch ? 'No se pueden agregar categorías cuando hay horarios o resultados' : undefined}
             onClick={() => {
               addCategory(catName.trim(), numGroups)
               setCatName('')
@@ -56,7 +57,7 @@ export function GroupsPage() {
             Agregar categoría
           </Button>
           </Group>
-          {hasPlayedMatch && <Text c="dimmed" size="sm">No se pueden agregar categorías después de cargar resultados.</Text>}
+          {hasPlayedMatch && <Text c="dimmed" size="sm">No se pueden agregar categorías cuando hay horarios o resultados.</Text>}
         </Stack>
       </Paper>
 

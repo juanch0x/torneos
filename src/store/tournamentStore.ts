@@ -1,3 +1,4 @@
+import { v2StructureBlocked } from '../domain/v2Membership'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import {
@@ -23,16 +24,23 @@ import type { Category, ID, MatchResult, PairUnavailableWindow, Tournament, Tour
 import { repo } from '../persistence/repo'
 import type { TournamentMeta } from '../domain/types'
 
-export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'not-found'
+export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'not-found' | 'error'
 
 export interface TournamentState {
+  revision: number
+  editsEnabled: boolean
+  savePending: boolean
+  saveError: string
+  loadError: string
   current: Tournament | null
   status: LoadStatus
   list: TournamentMeta[]
+  listError: string
 
   // carga / navegación
+  invalidatePreparation: () => void
   loadList: () => Promise<void>
-  loadTournament: (id: ID) => Promise<void>
+  loadTournament: (id: ID, force?: boolean) => Promise<void>
   newTournament: (name: string, date: string) => Promise<void>
   newMockTournament: () => Promise<void> // "Torneo FMP" con datos de mock_players.json
 
@@ -73,11 +81,13 @@ export const useTournamentStore = create<TournamentState>()(
      * Toda mutación del documento pasa por acá → un único lugar que garantiza
      * inmutabilidad y timestamp consistente. No persiste (eso es el autosave).
      */
+    let loadRevision = 0
     function mutate(fn: (t: Tournament) => Tournament): void {
       const current = get().current
-      if (!current) return
+      if (!current || !get().editsEnabled) return
       const next = fn(current)
-      set({ current: { ...next, updatedAt: nowISO() } })
+      if (next === current) return
+      set({ current: { ...next, updatedAt: nowISO() }, revision: get().revision + 1 })
     }
 
     // Aplica una transformación a una categoría puntual, dejando el resto igual.
@@ -89,7 +99,7 @@ export const useTournamentStore = create<TournamentState>()(
     }
 
     function hasPlayedMatch(tournament: Tournament): boolean {
-      return tournament.categories.some((category) => category.matches.some((match) => match.result != null))
+      return !!v2StructureBlocked(tournament)
     }
 
     function mutateCategoryUnlessPlayed(categoryId: ID, fn: (c: Category) => Category): void {
@@ -114,25 +124,27 @@ export const useTournamentStore = create<TournamentState>()(
     }
 
     return {
+      revision: 0, editsEnabled: true, savePending: false, saveError: '', loadError: '',
       current: null,
       status: 'idle',
-      list: [],
+      list: [], listError: '',
+
+      invalidatePreparation() { loadRevision++; set({ current: null, status: 'idle' }) },
 
       async loadList() {
-        set({ list: await repo.list() })
+        try { set({ list: await repo.list(), listError: '' }) }
+        catch { set({ listError: 'No se pudo leer la lista de torneos. Reintenta; no se eliminaron datos.' }) }
       },
 
-      async loadTournament(id) {
-        // Idempotent: already loaded (e.g. just created, or navigating groups↔fixture)
-        if (get().current?.id === id) {
-          set({ status: 'loaded' })
-          return
-        }
-        set({ status: 'loading', current: null })
-        const loaded = await repo.load(id)
-        set(loaded
-          ? { current: loaded, status: 'loaded' }
-          : { current: null, status: 'not-found' })
+      async loadTournament(id, force = false) {
+        if (!force && get().current?.id === id) { set({ status: 'loaded' }); return }
+        const token = ++loadRevision
+        set({ status: 'loading', current: null, loadError: '' })
+        try {
+          const loaded = await repo.load(id)
+          if (token !== loadRevision) return
+          set(loaded ? { current: loaded, status: 'loaded' } : { current: null, status: 'not-found' })
+        } catch { if (token === loadRevision) set({ current: null, status: 'error', loadError: 'No se pudo leer el torneo. Reintenta sin cambiar los datos guardados.' }) }
       },
 
       async newTournament(name, date) {
@@ -236,10 +248,10 @@ export const useTournamentStore = create<TournamentState>()(
 
       moveMatchToSlot(matchId, slotId) {
         const current = get().current
-        if (!current) return undefined
+        if (!current || !get().editsEnabled) return undefined
         const outcome = reorderMatchInSlots(current, matchId, slotId)
         if (outcome.status === 'moved') {
-          set({ current: { ...outcome.tournament, updatedAt: nowISO() } })
+          set({ current: { ...outcome.tournament, updatedAt: nowISO() }, revision: get().revision + 1 })
         }
         return outcome
       },

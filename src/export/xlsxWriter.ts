@@ -1,3 +1,4 @@
+import type { Tournament } from '../domain/types'
 import writeXlsxFile, { type Cell, type Sheet, type SheetData } from 'write-excel-file/browser'
 import type { FixtureSheetRow, GroupsSheetSection, GroupsSheetRow } from './viewModel'
 
@@ -172,4 +173,37 @@ function titleCell(value: string, fontSize: number, highContrast = false): Cell 
 
 function safeSpreadsheetText(value: string): string {
   return FORMULA_PREFIX_PATTERN.test(value) ? `'${value}` : value
+}
+
+// Excel has no timezone. The writer serializes UTC epoch components, so encode
+// browser-local civil components as UTC coordinates for planning presentation only.
+// This Date is not an instant and must never replace the original source timestamp.
+function planningCivilDate(instant: Date): Date {
+  const civil = new Date(0)
+  civil.setUTCFullYear(instant.getFullYear(), instant.getMonth(), instant.getDate())
+  civil.setUTCHours(instant.getHours(), instant.getMinutes(), instant.getSeconds(), instant.getMilliseconds())
+  return civil
+}
+
+export function buildPlanningWorkbookSheets(source: Tournament, groups: GroupsSheetSection[], fixture: FixtureSheetRow[]): Sheet<Blob>[] {
+  const schedule = buildFixtureWorkbookSheet(fixture.map(row => ({
+    ...row, scheduledAt: row.scheduledAt ? planningCivilDate(row.scheduledAt) : undefined,
+  })))
+  schedule.sheet = 'Planificación'
+  schedule.data = schedule.data.map(row => row.slice(0,7))
+  schedule.columns = schedule.columns?.slice(0,7)
+  return [
+    { sheet: 'Snapshot', data: [
+      [headerCell('Torneo'), safeSpreadsheetText(source.name)],
+      [headerCell('ID'), safeSpreadsheetText(source.id)],
+      [headerCell('Versión confirmada'), safeSpreadsheetText(source.updatedAt)],
+      [headerCell('Zona horaria'), safeSpreadsheetText(Intl.DateTimeFormat().resolvedOptions().timeZone)],
+      [headerCell('Interpretación'), 'Fechas y horas locales del navegador. Timestamps originales en la hoja de referencia.'],
+      ...source.categories.flatMap(c => c.matches.map(m => [safeSpreadsheetText(m.id), safeSpreadsheetText(m.scheduledAt ?? '')])),
+    ] },
+    buildGroupsWorkbookSheet(groups), schedule,
+  ]
+}
+export async function writePlanningWorkbook(source: Tournament, groups: GroupsSheetSection[], fixture: FixtureSheetRow[]): Promise<void> {
+  await writeXlsxFile(buildPlanningWorkbookSheets(source, groups, fixture)).toFile(buildExportFilename(source.name))
 }
