@@ -26,7 +26,7 @@ import { useTournamentStore } from '../store/tournamentStore'
 import { RouterLink } from './RouterLink'
 import { EditPairDrawer } from './EditPairDrawer'
 import { getMutedSurfaceStyle } from './surfaceStyles'
-import { plural } from './plural'
+import { plural } from '../domain/text'
 
 function pairLabel(pair: Pair): string {
   return `${pair.player1} / ${pair.player2}`

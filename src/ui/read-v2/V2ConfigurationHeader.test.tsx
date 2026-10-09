@@ -21,7 +21,7 @@ describe('compact configuration header server markup', () => {
     const source = sample(); delete source.fixtureSettings
     v2SessionStore.getState().acceptSource(source, 't')
     expect(markup()).toContain('Necesita configuración'); expect(markup()).toContain('Completa y guarda fechas')
-    expect(markup()).toContain('registro requiere revisión')
+    expect(markup()).toContain('1 registro requiere revisión')
   })
   it('never displays a different prior tournament identity while the selected source loads', () => {
     v2SessionStore.getState().acceptSource({ ...sample(), id: 'old', name: 'Previous source' }, 'old')

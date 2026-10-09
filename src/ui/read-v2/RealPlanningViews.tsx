@@ -22,7 +22,7 @@ import { ReadCalendar } from './ReadOnlyV2Page'
 import type { V2ReadSnapshot } from '../../router/v2ReadService'
 import '../calendar-v2/calendarMock.css'
 import { formatDateRange, formatDateTime, formatTimeRange } from '../format'
-import { plural } from '../plural'
+import { plural } from '../../domain/text'
 
 export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   const state = useStore(v2SessionStore)
@@ -67,7 +67,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
               return <Paper key={pi} withBorder p="sm" radius="md"><Stack gap={3}><Text fw={600} size="sm">{pair.label}</Text><Text size="xs" c="dimmed">ID: {pair.id}</Text><Menu withinPortal loop><Menu.Target><Button variant="default" size="sm" aria-label={`Mover ${pair.label} a grupo`} disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)}>Mover a grupo…</Button></Menu.Target><Menu.Dropdown>{state.working!.categories[ci].groups.map(target => <Menu.Item key={target.id} disabled={target.id === group.id} onClick={() => {
                 const request = { categoryId: state.working!.categories[ci].id, pairId: pair.id, groupId: target.id }
                 void submitMembership({ request, epoch: state.epoch })
-              }}>{target.name}{target.id === group.id ? ' · Actual' : ''}</Menu.Item>)}</Menu.Dropdown></Menu><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${plural(count, 'restricción', 'restricciones')} · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{plural(conflicts.length, 'conflicto', 'conflictos')} de disponibilidad</Text>}{!!pending.length && <Text size="xs" c="orange.8">{pending.length} partidos sin validación completa</Text>}</Stack></Paper>
+              }}>{target.name}{target.id === group.id ? ' · Actual' : ''}</Menu.Item>)}</Menu.Dropdown></Menu><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${plural(count, 'restricción', 'restricciones')} · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{plural(conflicts.length, 'conflicto', 'conflictos')} de disponibilidad</Text>}{!!pending.length && <Text size="xs" c="orange.8">{plural(pending.length, 'partido', 'partidos')} sin validación completa</Text>}</Stack></Paper>
             })}
           </Stack></Paper>)}
         </SimpleGrid></Stack></Tabs.Panel>)}

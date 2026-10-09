@@ -6,7 +6,7 @@ import { Badge, Button, Group, Menu, Modal, NativeSelect, Paper, SimpleGrid, Sta
 import { RestrictionModal } from './RestrictionModal'
 import { type RestrictionWindow } from './restrictionWindows'
 import './preparationMock.css'
-import { plural } from '../plural'
+import { plural } from '../../domain/text'
 
 interface DemoPair { id: string; categoryId: string; groupId: string | null; first: string; second: string; windows: RestrictionWindow[] }
 const categories = [

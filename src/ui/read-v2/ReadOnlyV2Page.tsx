@@ -17,7 +17,7 @@ import { isV2Date, v2CourtDay, v2DisplayBounds, pairLabel, type V2DisplayMatch }
 import type { TournamentMeta } from '../../domain/types'
 import '../preparation-v2/preparationMock.css'
 import { formatDate, formatDateRange, formatDateTime } from '../format'
-import { plural } from '../plural'
+import { plural } from '../../domain/text'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const toolbar = { start: 'prev,next', center: 'title', end: '' }

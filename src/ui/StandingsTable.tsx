@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Badge, Group as MantineGroup, Paper, Stack, Table, Text, Title, useMantineTheme } from '@mantine/core'
 import type { Group, Match, Pair } from '../domain/types'
 import { computeGroupStandings } from '../domain/standings'
-import { plural } from './plural'
+import { plural } from '../domain/text'
 
 interface StandingsTableProps {
   group: Group

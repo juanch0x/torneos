@@ -13,7 +13,7 @@ import type { V2RestrictionConfig } from '../../domain/v2Restrictions'
 import { formatDateRange, formatDateTime } from '../format'
 import { formatWeekRange } from '../calendar-v2/formatWeekRange'
 import { DEMO_START, DEMO_END, DEMO_VISIBLE_HOURS, retainRestrictionWeek, isRestrictionDraftDirty, deleteRestriction, restoreRestriction, validateInteraction, hasOutsideVisibleTimedWindows, localDateTime, normalizeWindows, parseLocalDateTime, validateWindow, type RestrictionDeletion, type RestrictionWindow } from './restrictionWindows'
-import { plural } from '../plural'
+import { plural } from '../../domain/text'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const label = (value: string) => {

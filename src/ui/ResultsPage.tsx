@@ -5,7 +5,7 @@ import { useTournamentStore } from '../store/tournamentStore'
 import { GroupResultsBlock } from './GroupResultsBlock'
 import { RouterLink } from './RouterLink'
 import { getMutedSurfaceStyle } from './surfaceStyles'
-import { plural } from './plural'
+import { plural } from '../domain/text'
 
 interface CategorySectionProps {
   category: Category

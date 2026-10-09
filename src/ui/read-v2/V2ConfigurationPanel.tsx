@@ -5,7 +5,7 @@ import { ActionIcon, Alert, Badge, Button, Fieldset, Group, Modal, SimpleGrid, S
 import { applyV2Configuration, getV2ConfigurationDraft, hasCompleteV2Configuration, v2ConfigurationIssues, type V2ConfigurationDraft } from '../../domain/v2Configuration'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
-import { plural } from '../plural'
+import { plural } from '../../domain/text'
 
 export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }) {
   const state = useStore(v2SessionStore)

@@ -2,7 +2,7 @@ import { Badge, Group as MantineGroup, Paper, Stack, Text, Title, useMantineThem
 import type { Category, Group } from '../domain/types'
 import { StandingsTable } from './StandingsTable'
 import { MatchTable } from './MatchTable'
-import { plural } from './plural'
+import { plural } from '../domain/text'
 
 interface GroupResultsBlockProps {
   category: Category
