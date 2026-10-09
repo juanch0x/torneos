@@ -17,7 +17,6 @@ function today(): string {
 }
 
 const columnHelper = createColumnHelper<TournamentMeta>()
-const showMockTournamentButton = import.meta.env.DEV
 
 export function TournamentList() {
   const list = useTournamentStore((s) => s.list)
@@ -27,7 +26,6 @@ export function TournamentList() {
   const [creating, setCreating] = useState(false)
   const creatingRef = useRef(false)
   const newTournament = useTournamentStore((s) => s.newTournament)
-  const newMockTournament = useTournamentStore((s) => s.newMockTournament)
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
@@ -86,16 +84,6 @@ export function TournamentList() {
         >
           Nuevo torneo
         </Button>
-        {showMockTournamentButton ? (
-          <Button
-            variant="default"
-            disabled={creating}
-            onClick={() => { if (creatingRef.current) return; creatingRef.current = true; setCreating(true); void newMockTournament().catch(() => setCreationError('No se pudo confirmar el torneo de ejemplo. Relee la lista.')).finally(() => { creatingRef.current = false; setCreating(false) }) }}
-            title="Crea 'Torneo FMP' con los datos de mock_players.json"
-          >
-            Crear torneo mock
-          </Button>
-        ) : null}
       </Group>
 
       {list.length === 0 ? (

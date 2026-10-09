@@ -51,6 +51,15 @@ describe('explicit isolated real group-match moves', () => {
     t.slots[0].startsAt = at('18:30'); expect(applyV2Move(t,request('16:00')).ok).toBe(false)
     expect(applyV2Move(t,{ ...request('16:00'), to: '2026-02-30T18:00Z' }).ok).toBe(false)
   })
+  it('gives organizer-safe recovery guidance when stored slots block movement', () => {
+    const t = movable()
+    t.slots = []
+    const result = validateV2Move(t, request('15:00'))
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error).toContain('franjas')
+    expect(result.error).not.toMatch(/diagnóstico técnico|original-slot|slots\[/)
+  })
   it('reuses target free slot and undo restores original raw time/slot but revalidates later availability', () => {
     const t = movable(); t.slots.push({ id: 'target-free', startsAt: at('15:00') }); const moved = applyV2Move(t,request('15:00')); expect(moved.ok).toBe(true); if (!moved.ok) return
     expect(moved.document.slots).toHaveLength(2); expect(moved.document.slots[1]).toMatchObject({ id: 'target-free', matchId: 'm' })

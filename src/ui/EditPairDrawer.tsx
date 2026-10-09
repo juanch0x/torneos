@@ -50,7 +50,7 @@ export function EditPairDrawer({ pair, opened, onClose, onSubmit }: EditPairDraw
       >
         <Stack gap="md" p="md">
           <Text c="dimmed" size="sm">
-            Se conservarán el grupo, los partidos y los resultados de esta pareja.
+            Se conservarán el grupo y los partidos de esta pareja.
           </Text>
           <TextInput
             label="Jugador 1"

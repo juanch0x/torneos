@@ -24,7 +24,7 @@ export function applyV2Configuration(source: Tournament, draft: V2ConfigurationD
   const played = source.categories.some(category => category.matches.some(match => match.result) || category.playoffs?.rounds.some(round => round.slots.some(slot => slot.result)))
   if (played && duration !== source.fixtureSettings?.matchDurationMinutes) return { ok: false, error: 'No se puede cambiar ni inferir la duración con resultados existentes: no conocemos la duración histórica de cada partido. Se conserva el historial.' }
   const document = { ...source, calendar: { ...source.calendar, startDate: draft.startDate, endDate: draft.endDate, defaultWindow: { ...source.calendar?.defaultWindow, startsAt: draft.opensAt, endsAt: draft.closesAt }, overrides }, fixtureSettings: { ...source.fixtureSettings, automaticWeekdays: [...draft.automaticWeekdays].sort((a,b) => a-b), matchDurationMinutes: duration, automaticWindow: { ...source.fixtureSettings?.automaticWindow, startsAt: draft.tournamentOpensAt, endsAt: draft.tournamentClosesAt } } }
-  if (!hasCompleteV2Configuration(document)) return { ok: false, error: 'Hay fechas o excepciones importadas inválidas. Revisa el diagnóstico técnico; esta pantalla no elimina ni modifica excepciones.' }
+  if (!hasCompleteV2Configuration(document)) return { ok: false, error: 'Hay fechas o excepciones de cancha inválidas. Revisa la configuración; esta pantalla no elimina ni modifica excepciones.' }
   return { ok: true, document }
 }
 export interface V2ConfigurationIssue { kind: 'restriction-period' | 'restriction-hours' | 'invalid-restriction' | 'match-hours' | 'invalid-match' | 'automatic-hours' | 'automatic-weekdays'; id: string; message: string }

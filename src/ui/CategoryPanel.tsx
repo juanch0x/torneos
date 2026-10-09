@@ -20,10 +20,8 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core'
-import { useParams } from '@tanstack/react-router'
 import type { Category, Pair } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
-import { RouterLink } from './RouterLink'
 import { EditPairDrawer } from './EditPairDrawer'
 import { getMutedSurfaceStyle } from './surfaceStyles'
 import { plural } from '../domain/text'
@@ -40,12 +38,10 @@ function groupOf(category: Category, pairId: string): string | undefined {
 const columnHelper = createColumnHelper<Pair>()
 
 export function CategoryPanel({ category }: { category: Category }) {
-  const { id } = useParams({ from: '/tournaments/$id' })
   const theme = useMantineTheme()
   const addPair = useTournamentStore((s) => s.addPair)
   const updatePair = useTournamentStore((s) => s.updatePair)
   const setCategoryGroupCount = useTournamentStore((s) => s.setCategoryGroupCount)
-  const shuffleGroups = useTournamentStore((s) => s.shuffleGroups)
   const assignPairToGroup = useTournamentStore((s) => s.assignPairToGroup)
   const movePairToGroup = useTournamentStore((s) => s.movePairToGroup)
   const hasPlayedMatch = useTournamentStore((s) => s.current ? !!v2StructureBlocked(s.current) : false)
@@ -143,14 +139,6 @@ export function CategoryPanel({ category }: { category: Category }) {
             </Stack>
           </Group>
 
-          <RouterLink
-            to="/tournaments/$id/results"
-            params={{ id }}
-            search={{ categoryId: category.id }}
-            size="sm"
-          >
-            Ver resultados →
-          </RouterLink>
         </Group>
 
         <Paper
@@ -170,12 +158,9 @@ export function CategoryPanel({ category }: { category: Category }) {
                   setCategoryGroupCount(category.id, typeof val === 'number' ? val || 1 : 1)
                 }
               />
-              <Button variant="default" disabled={hasPlayedMatch} title={hasPlayedMatch ? 'Los grupos no se pueden modificar cuando hay horarios o resultados' : undefined} onClick={() => shuffleGroups(category.id)}>
-                🎲 Mezclar grupos
-              </Button>
             </Group>
             <Text c="dimmed" size="sm">
-              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger horarios y resultados.' : 'Cambiar la cantidad de grupos o mezclar reparte las parejas al azar y limpia los cruces.'}
+              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger horarios y resultados.' : 'Cambiar la cantidad de grupos reparte las parejas al azar y limpia los cruces.'}
             </Text>
           </Stack>
         </Paper>
