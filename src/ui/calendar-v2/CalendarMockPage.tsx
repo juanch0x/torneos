@@ -14,10 +14,11 @@ import { CATEGORIES, COURT_HOURS, DEMO_DATE, DEMO_MATCHES, MATCH_MINUTES, checkD
 import { getPreviewSlot } from './previewSlot'
 import { formatWeekRange } from './formatWeekRange'
 import './calendarMock.css'
+import { formatDate, formatDateTime } from '../format'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const clock = (date: Date) => date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
-const dateLabel = (date: Date) => date.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'short' })
+const dateLabel = (date: Date) => formatDate(date)
 const hours = COURT_HOURS.map(([opens, closes], day) => ({
   daysOfWeek: [day], startTime: `${Math.floor(opens / 60)}:${String(opens % 60).padStart(2, '0')}`,
   endTime: `${Math.floor(closes / 60)}:${String(closes % 60).padStart(2, '0')}`,
@@ -139,7 +140,7 @@ function DemoCalendarPage() {
             <Stack gap={3} className="calendar-v2-move-card-copy">
               <Text size="xs" fw={600}>Partido en movimiento · {CATEGORIES[movingMatch.category].name}</Text>
               <Text size="sm" fw={600}>{movingMatch.title}</Text>
-              <Text size="xs">Horario actual: {movingMatch.start.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} · {clock(movingMatch.start)}</Text><Text size="xs">Elige una casilla de destino.</Text>
+              <Text size="xs">Horario actual: {formatDateTime(movingMatch.start)}</Text><Text size="xs">Elige una casilla de destino.</Text>
             </Stack>
             <Button variant="default" h={44} onClick={cancelMove}>Cancelar</Button>
           </Group>

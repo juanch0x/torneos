@@ -1,12 +1,68 @@
-import { format, parseISO } from 'date-fns'
+// One local date/time format for everything the organizer reads (es-AR, 24h):
+//   date-time  lun, 12 oct 2026, 20:15
+//   date       lun, 12 oct 2026
+//   range      12 oct → 23 oct 2026
+// Instants are rendered in the browser's zone unless a timeZone is passed
+// (tests pass one explicitly so they do not depend on the machine).
 
-// Formatos de visualización pedidos: fechas MM/DD/YY y fecha/hora MM/DD/YY hh:mm (24hs).
-// parseISO maneja tanto fechas "YYYY-MM-DD" como datetimes ISO completos.
+const LOCALE = 'es-AR'
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
 
-export function formatDate(iso: string): string {
-  return format(parseISO(iso), 'MM/dd/yy')
+type Input = string | number | Date
+
+interface Resolved { date: Date; timeZone: string | undefined }
+
+// A bare "YYYY-MM-DD" is a calendar day, not an instant: pin it to UTC so no zone can shift it.
+function resolve(value: Input, timeZone?: string): Resolved | null {
+  const dateOnly = typeof value === 'string' && DATE_ONLY.test(value)
+  const date = dateOnly ? new Date(`${value}T00:00:00Z`) : new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return { date, timeZone: dateOnly ? 'UTC' : timeZone }
 }
 
-export function formatDateTime(iso: string): string {
-  return format(parseISO(iso), 'MM/dd/yy HH:mm')
+const fmt = (date: Date, timeZone: string | undefined, options: Intl.DateTimeFormatOptions) =>
+  new Intl.DateTimeFormat(LOCALE, { ...options, timeZone }).format(date)
+
+const DAY = { day: 'numeric', month: 'short' } as const
+const FULL_DAY = { weekday: 'short', ...DAY, year: 'numeric' } as const
+const CLOCK = { hour: '2-digit', minute: '2-digit', hour12: false } as const
+
+const dayKey = (date: Date, timeZone: string | undefined) => fmt(date, timeZone, { year: 'numeric', month: 'numeric', day: 'numeric' })
+const raw = (value: Input) => String(value)
+
+export function formatDate(value: Input, timeZone?: string): string {
+  const r = resolve(value, timeZone)
+  return r ? fmt(r.date, r.timeZone, FULL_DAY) : raw(value)
+}
+
+export function formatDateTime(value: Input, timeZone?: string): string {
+  const r = resolve(value, timeZone)
+  return r ? fmt(r.date, r.timeZone, { ...FULL_DAY, ...CLOCK }) : raw(value)
+}
+
+export function formatTime(value: Input, timeZone?: string): string {
+  const r = resolve(value, timeZone)
+  return r ? fmt(r.date, r.timeZone, CLOCK) : raw(value)
+}
+
+// "12 oct → 23 oct 2026"; the year is repeated only when the ends fall in different years.
+export function formatDateRange(from: Input, to: Input, timeZone?: string): string {
+  const a = resolve(from, timeZone)
+  const b = resolve(to, timeZone)
+  if (!a || !b) return `${raw(from)} → ${raw(to)}`
+  if (dayKey(a.date, a.timeZone) === dayKey(b.date, b.timeZone)) return fmt(a.date, a.timeZone, FULL_DAY)
+  const year = (r: Resolved) => fmt(r.date, r.timeZone, { year: 'numeric' })
+  const day = (r: Resolved) => fmt(r.date, r.timeZone, DAY)
+  // Day and month are formatted apart from the year: combined, es-AR inserts "de".
+  return year(a) === year(b) ? `${day(a)} → ${day(b)} ${year(b)}` : `${day(a)} ${year(a)} → ${day(b)} ${year(b)}`
+}
+
+// Two instants: "lun, 12 oct 2026, 18:00 → 19:00", or both date-times when the span crosses local midnight.
+export function formatTimeRange(from: Input, to: Input, timeZone?: string): string {
+  const a = resolve(from, timeZone)
+  const b = resolve(to, timeZone)
+  if (!a || !b) return `${raw(from)} → ${raw(to)}`
+  return dayKey(a.date, a.timeZone) === dayKey(b.date, b.timeZone)
+    ? `${formatDateTime(a.date, timeZone)} → ${formatTime(b.date, timeZone)}`
+    : `${formatDateTime(a.date, timeZone)} → ${formatDateTime(b.date, timeZone)}`
 }
