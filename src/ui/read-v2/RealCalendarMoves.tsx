@@ -1,3 +1,4 @@
+import { planningIssueText } from './planningIssueText'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type { CalendarRef } from '@fullcalendar/react'
 import { Button, Group, Menu, Modal, Paper, Popover, Portal, Stack, Text } from '@mantine/core'
@@ -31,7 +32,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
   const movingMatch = display?.matches.find(match => match.id === moving?.id)
   const previewDate = hover ?? cursor
   const previewResult = moving && previewDate && state.working ? validateV2Move(state.working,{ matchId: moving.id,from: moving.from,to: previewDate.toISOString(),grid: court ? 'court' : 'automatic' }) : null
-  const previewError = previewResult && !previewResult.ok && !previewResult.noop ? previewResult.error : null
+  const previewError = previewResult && !previewResult.ok && !previewResult.noop ? planningIssueText(previewResult.error) : null
   const cancel = useCallback(() => { if (v2SessionStore.getState().saving) return; setMoving(null); setProposal(null); setCursor(null); setHover(null); setContext(null); setFeedback(null); calendar.current?.getApi().unselect() },[calendar])
   useEffect(() => { cancel(); setUndo(null) },[tournamentId,state.draftDiscardRevision,cancel])
   useEffect(() => { if (state.status !== 'loaded') { cancel(); setUndo(null) } },[state.status,cancel])
@@ -58,7 +59,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
     const request: V2MoveRequest = { matchId: id,from: moving?.from ?? match.scheduledAt,to: date.toISOString(),grid: court ? 'court' : 'automatic' }
     const result = validateV2Move(current.working,request); setFeedback(null); setHover(null)
     if (!result.ok) {
-      if (!result.noop) { setNotice(result.error); const rect = card.current?.getBoundingClientRect(); setFeedback({ text: result.error,x: point?.x ?? rect?.left ?? 20,y: point?.y ?? rect?.bottom ?? 100 }) }
+      if (!result.noop) { setNotice(planningIssueText(result.error)); const rect = card.current?.getBoundingClientRect(); setFeedback({ text: planningIssueText(result.error),x: point?.x ?? rect?.left ?? 20,y: point?.y ?? rect?.bottom ?? 100 }) }
       return
     }
     closeDetails(); setContext(null); setMoving(moving ?? { id,from: match.scheduledAt,epoch: current.epoch }); setProposal(request)

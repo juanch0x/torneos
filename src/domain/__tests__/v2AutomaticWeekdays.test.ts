@@ -29,10 +29,10 @@ describe('weekly automatic generation days, never physical court closures', () =
   it('generates only selected recurring weekdays, never falls back to spare weekend capacity, and reports no eligible days', () => {
     const t = source(); t.calendar!.startDate = '2026-10-09'; t.calendar!.endDate = '2026-10-12'; t.fixtureSettings!.automaticWindow = { startsAt: '18:00',endsAt: '18:30' }
     t.categories[0].pairs.push({ id: 'free', player1: 'X', player2: 'Y' }); t.categories[0].groups[0].pairIds.push('free'); const before = structuredClone(t)
-    const failed = generateV2Calendar(t); expect(failed.ok).toBe(false); if (!failed.ok) expect(failed.error).toContain('lunes'); expect(t).toEqual(before)
+    const failed = generateV2Calendar(t); expect(failed.ok).toBe(false); if (!failed.ok) expect(failed.error).toMatchObject({ code: 'insufficient-capacity', weekdays: [1,2,3,4,5] }); expect(t).toEqual(before)
     t.fixtureSettings!.automaticWeekdays = [1,2,3,4,5,6,7]; const all = generateV2Calendar(t); expect(all.ok).toBe(true)
     t.calendar!.startDate = '2026-10-10'; t.calendar!.endDate = '2026-10-11'; t.fixtureSettings!.automaticWeekdays = [1,2,3,4,5]
-    expect(hasCompleteV2Configuration(t)).toBe(true); const none = generateV2Calendar(t); expect(none.ok).toBe(false); if (!none.ok) expect(none.error).toContain('No hay días del torneo')
+    expect(hasCompleteV2Configuration(t)).toBe(true); const none = generateV2Calendar(t); expect(none.ok).toBe(false); if (!none.ok) expect(none.error).toMatchObject({ code: 'no-eligible-days', weekdays: [1,2,3,4,5] })
     t.categories[0].groups[0].pairIds = ['a','b']; t.categories[0].pairs = t.categories[0].pairs.filter(pair => pair.id !== 'free'); t.fixtureSettings!.automaticWeekdays = [6]; const saturday = generateV2Calendar(t); expect(saturday.ok).toBe(true); if (saturday.ok) expect(new Date(saturday.document.categories[0].matches[0].scheduledAt!).getDay()).toBe(6)
   })
   it('intersects custom physical weekend hours only when that weekday is selected, without false hour-mismatch warnings', () => {
