@@ -21,8 +21,8 @@ export function buildMockTournament(date: string): Tournament {
   const data = mockData as unknown as MockData
   const tournament = createTournament('Torneo FMP', date)
 
-  tournament.categories = data.category.map((mockCategory) => {
-    const category = createCategory(mockCategory.name, 2)
+  tournament.categories = data.category.map((mockCategory, catIndex) => {
+    const category = createCategory(mockCategory.name, 2, catIndex)
     mockCategory.teams.forEach(([player1, player2], index) => {
       const pair = createPair(player1, player2)
       category.pairs.push(pair)

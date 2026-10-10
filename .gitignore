@@ -10,3 +10,4 @@ dist-ssr
 
 # Agent tooling (local, no es código de la app)
 .atl/
+tmp/

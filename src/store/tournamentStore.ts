@@ -8,6 +8,7 @@ import {
   createSlot,
   createTournament,
 } from '../domain/factories'
+import { pickUnusedCategoryColor } from '../domain/categoryPalette'
 import { distributePairs } from '../domain/groups'
 import { reconcilePairings, regenerateSchedule } from '../domain/reconcile'
 import {
@@ -257,7 +258,15 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       addCategory(name, numGroups) {
-        mutate((t) => hasPlayedMatch(t) ? t : { ...t, categories: [...t.categories, createCategory(name, numGroups)] })
+        mutate((t) => {
+          if (hasPlayedMatch(t)) return t
+          const existingColors = t.categories.map((c) => c.color)
+          const color = pickUnusedCategoryColor(existingColors)
+          return {
+            ...t,
+            categories: [...t.categories, createCategory(name, numGroups, color)],
+          }
+        })
       },
 
       // Cambia la cantidad de grupos (mínimo 1) y RE-REPARTE las parejas al azar
