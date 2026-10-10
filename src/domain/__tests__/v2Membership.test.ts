@@ -28,7 +28,7 @@ describe('generation readiness',()=> {
 
 describe('fresh capture membership before configuration', () => {
   function fresh() {
-    const source = createTournament('Fresh capture', '2026-10-05')
+    const source = createTournament('Fresh capture')
     const category = createCategory('Category', 2)
     category.pairs = [createPair('Ada', 'Luz'), createPair('Leo', 'Sol'), createPair('X', 'Y')]
     category.groups[0].pairIds = category.pairs.slice(0,2).map(pair => pair.id)

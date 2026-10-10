@@ -4,7 +4,7 @@ import { isFixtureDurationLocked } from '../SchedulePanel'
 
 function tournament(fixtureSettings: Tournament['fixtureSettings']): Tournament {
   return {
-    id: 't1', name: 'Torneo', date: '2026-01-01', slots: [], fixtureSettings, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    id: 't1', name: 'Torneo', slots: [], fixtureSettings, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
     categories: [{ id: 'c1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' }, pairs: [], groups: [], matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 4 } }] }],
   }
 }

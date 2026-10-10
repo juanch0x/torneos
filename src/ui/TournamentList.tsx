@@ -9,12 +9,7 @@ import { useMemo, useState, useRef } from 'react'
 import { Alert, Button, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { TournamentMeta } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
-import { formatFullDate, localDateInput } from './format'
-
-// Today's date as ISO "YYYY-MM-DD" for the default date input value.
-function today(): string {
-  return localDateInput()
-}
+import { formatTournamentPeriod } from './tournamentPeriod'
 
 const columnHelper = createColumnHelper<TournamentMeta>()
 
@@ -29,12 +24,11 @@ export function TournamentList() {
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
-  const [date, setDate] = useState(today())
 
   const columns = useMemo(
     () => [
       columnHelper.accessor('name', { header: 'Nombre' }),
-      columnHelper.accessor('date', { header: 'Fecha', cell: (ctx) => formatFullDate(ctx.getValue()) }),
+      columnHelper.display({ id: 'period', header: 'Fecha', cell: ({ row }) => formatTournamentPeriod(row.original.periodStart, row.original.periodEnd) }),
       columnHelper.accessor('categoryCount', { header: 'Categorías' }),
       columnHelper.display({
         id: 'acciones',
@@ -63,11 +57,6 @@ export function TournamentList() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <TextInput
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
         <Button
           disabled={creating || !name.trim()}
           loading={creating}
@@ -75,7 +64,7 @@ export function TournamentList() {
             if (creatingRef.current) return
             creatingRef.current = true; setCreating(true); setCreationError('')
             const trimmed = name.trim()
-            void newTournament(trimmed, date).then(() => {
+            void newTournament(trimmed).then(() => {
               setName('')
               const id = useTournamentStore.getState().current!.id
               return navigate({ to: '/tournaments/$id/groups', params: { id } })

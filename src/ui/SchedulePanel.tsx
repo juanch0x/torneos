@@ -216,8 +216,8 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const setMatchResult = useTournamentStore((s) => s.setMatchResult)
 
   const persistedCalendar = tournament.calendar ?? {
-    startDate: tournament.date,
-    endDate: tournament.date,
+    startDate: '',
+    endDate: '',
     defaultWindow: { startsAt: '09:00', endsAt: '22:00' },
     overrides: [],
   }

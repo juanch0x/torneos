@@ -5,18 +5,11 @@ function now(): string {
   return new Date().toISOString()
 }
 
-export function createTournament(name: string, date: string): Tournament {
+export function createTournament(name: string): Tournament {
   const timestamp = now()
   return {
     id: crypto.randomUUID(),
     name,
-    date,
-    calendar: {
-      startDate: date,
-      endDate: date,
-      defaultWindow: { startsAt: '09:00', endsAt: '22:00' },
-      overrides: [],
-    },
     slots: [],
     categories: [],
     createdAt: timestamp,
