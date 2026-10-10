@@ -31,13 +31,6 @@ export function createSlot(startsAt: string): Slot {
   }
 }
 
-/**
- * @deprecated Use getCategoryColor from categoryPalette instead.
- */
-export function randomLightColor(): string {
-  return getCategoryColor(0)
-}
-
 // Etiqueta alfabética para grupos: A, B, ... Z. Más allá de 26 cae a un número
 // para no romper (caso extremo, poco realista en un club).
 function groupLabel(index: number): string {
@@ -53,14 +46,20 @@ export function createGroup(index: number): Group {
   }
 }
 
-export function createCategory(name: string, numGroups: number, index: number = 0): Category {
+export function createCategory(
+  name: string,
+  numGroups: number,
+  colorOrIndex: string | number = 0,
+): Category {
+  const color =
+    typeof colorOrIndex === 'string' ? colorOrIndex : getCategoryColor(colorOrIndex)
   const groups: Group[] = Array.from({ length: Math.max(0, numGroups) }, (_, i) =>
     createGroup(i),
   )
   return {
     id: crypto.randomUUID(),
     name,
-    color: getCategoryColor(index),
+    color,
     config: { numGroups, format: 'round-robin' },
     pairs: [],
     groups,

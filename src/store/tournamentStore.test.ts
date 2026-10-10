@@ -390,6 +390,50 @@ describe('tournamentStore — closeTournament removed', () => {
   })
 })
 
+describe('tournamentStore — addCategory colors', () => {
+  it('assigns 6 distinct colors when adding 6 categories sequentially', () => {
+    const current = makeTournament('t-colors')
+    useTournamentStore.setState({ current, status: 'loaded' } as any)
+    const actions = useTournamentStore.getState()
+
+    for (let i = 1; i <= 6; i++) {
+      actions.addCategory(`Category ${i}`, 1)
+    }
+
+    const categories = useTournamentStore.getState().current?.categories ?? []
+    expect(categories).toHaveLength(6)
+
+    const colors = categories.map((c) => c.color)
+    const uniqueColors = new Set(colors)
+    expect(uniqueColors.size).toBe(6)
+  })
+
+  it('reclaims an unused color when a category color is freed', () => {
+    const current = makeTournament('t-reclaim')
+    useTournamentStore.setState({ current, status: 'loaded' } as any)
+    const actions = useTournamentStore.getState()
+
+    actions.addCategory('Cat 1', 1)
+    actions.addCategory('Cat 2', 1)
+    const cat1Color = useTournamentStore.getState().current?.categories[0].color
+    const cat2Color = useTournamentStore.getState().current?.categories[1].color
+
+    // Simulate removing Cat 1
+    useTournamentStore.setState({
+      current: {
+        ...useTournamentStore.getState().current!,
+        categories: [useTournamentStore.getState().current!.categories[1]],
+      },
+    })
+
+    // Adding a new category reclaims Cat 1's freed color instead of colliding with Cat 2
+    actions.addCategory('Cat 3', 1)
+    const newCatColor = useTournamentStore.getState().current?.categories[1].color
+    expect(newCatColor).toBe(cat1Color)
+    expect(newCatColor).not.toBe(cat2Color)
+  })
+})
+
 describe('fresh ownership reread', () => {
   it('invalidates pending loads and the same-ID cache before returning from V2', async () => {
     let finish!: (document: Tournament) => void
