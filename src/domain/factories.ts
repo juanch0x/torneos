@@ -1,3 +1,4 @@
+import { getCategoryColor } from './categoryPalette'
 import type { Category, Group, Pair, Slot, Tournament } from './types'
 
 function now(): string {
@@ -30,11 +31,11 @@ export function createSlot(startsAt: string): Slot {
   }
 }
 
-// Color claro y sutil al azar (pastel) para identificar la categoría a simple
-// vista en el fixture. Lightness alto → tono suave que no molesta.
+/**
+ * @deprecated Use getCategoryColor from categoryPalette instead.
+ */
 export function randomLightColor(): string {
-  const hue = Math.floor(Math.random() * 360)
-  return `hsl(${hue}, 70%, 90%)`
+  return getCategoryColor(0)
 }
 
 // Etiqueta alfabética para grupos: A, B, ... Z. Más allá de 26 cae a un número
@@ -52,14 +53,14 @@ export function createGroup(index: number): Group {
   }
 }
 
-export function createCategory(name: string, numGroups: number): Category {
+export function createCategory(name: string, numGroups: number, index: number = 0): Category {
   const groups: Group[] = Array.from({ length: Math.max(0, numGroups) }, (_, i) =>
     createGroup(i),
   )
   return {
     id: crypto.randomUUID(),
     name,
-    color: randomLightColor(),
+    color: getCategoryColor(index),
     config: { numGroups, format: 'round-robin' },
     pairs: [],
     groups,

@@ -257,7 +257,7 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       addCategory(name, numGroups) {
-        mutate((t) => hasPlayedMatch(t) ? t : { ...t, categories: [...t.categories, createCategory(name, numGroups)] })
+        mutate((t) => hasPlayedMatch(t) ? t : { ...t, categories: [...t.categories, createCategory(name, numGroups, t.categories.length)] })
       },
 
       // Cambia la cantidad de grupos (mínimo 1) y RE-REPARTE las parejas al azar
