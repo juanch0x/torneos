@@ -24,8 +24,8 @@ const hours = COURT_HOURS.map(([opens, closes], day) => ({
 }))
 const messages = {
   occupied: 'Ese espacio ya tiene un partido. En esta primera prueba no desplazamos otros partidos ni calculamos alternativas.',
-  closed: 'La cancha está cerrada en ese horario. Elige una casilla dentro de la franja disponible.',
-  unaligned: 'Elige una casilla completa de 45 minutos.',
+  closed: 'La cancha está cerrada en ese horario. Elegí una casilla dentro de la franja disponible.',
+  unaligned: 'Elegí una casilla completa de 45 minutos.',
 }
 
 export function CalendarMockPage() {
@@ -48,7 +48,7 @@ function DemoCalendarPage() {
   const [contextId, setContextId] = useState<string | null>(null)
   const [movingId, setMovingId] = useState<string | null>(null)
   const [cursor, setCursor] = useState<Date | null>(null)
-  const [notice, setNotice] = useState('Arrastra un partido a una casilla libre, o utiliza Mover partido.')
+  const [notice, setNotice] = useState('Arrastrá un partido a una casilla libre, o utilizá Mover partido.')
   const [feedback, setFeedback] = useState<{ message: string; x: number; y: number; title?: string } | null>(null)
   const [proposal, setProposal] = useState<{ id: string; start: Date } | null>(null)
   const events = useMemo(() => matches.map((match) => ({
@@ -74,7 +74,7 @@ function DemoCalendarPage() {
     const match = matches.find((entry) => entry.id === id)!
     calendar.current?.getApi().gotoDate(match.start)
     setSelectedId(id); setMovingId(id); setCursor(match.start)
-    setNotice('Elige una casilla en la grilla. Puedes cambiar de semana sin mover el partido.')
+    setNotice('Elegí una casilla en la grilla. Podés cambiar de semana sin mover el partido.')
   }
 
   useEffect(() => {
@@ -102,7 +102,7 @@ function DemoCalendarPage() {
     if (failure) {
       const card = moveCard.current?.getBoundingClientRect()
       setNotice(messages[failure])
-      setFeedback({ message: failure === 'occupied' ? 'Casilla ocupada. Elige otra.' : failure === 'closed' ? 'Cancha cerrada. Prueba otra franja.' : messages.unaligned,
+      setFeedback({ message: failure === 'occupied' ? 'Casilla ocupada. Elegí otra.' : failure === 'closed' ? 'Cancha cerrada. Probá otra franja.' : messages.unaligned,
         x: point?.x || card?.left || 24, y: point?.y || card?.bottom || 120 })
       return
     }
@@ -139,7 +139,7 @@ function DemoCalendarPage() {
             <Stack gap={3} className="calendar-v2-move-card-copy">
               <Text size="xs" fw={600}>Partido en movimiento · {CATEGORIES[movingMatch.category].name}</Text>
               <Text size="sm" fw={600}>{movingMatch.title}</Text>
-              <Text size="xs">Horario actual: {formatDayDateTime(movingMatch.start)}</Text><Text size="xs">Elige una casilla de destino.</Text>
+              <Text size="xs">Horario actual: {formatDayDateTime(movingMatch.start)}</Text><Text size="xs">Elegí una casilla de destino.</Text>
             </Stack>
             <Button variant="default" h={44} onClick={cancelMove}>Cancelar</Button>
           </Group>
@@ -178,7 +178,7 @@ function DemoCalendarPage() {
             setHoverDate((current) => current?.getTime() === next?.getTime() ? current : next)
           }}
           onMouseLeave={() => setHoverDate(null)} onScrollCapture={() => setHoverDate(null)}
-          aria-label="Calendario semanal. Para elegir destino usa flechas y Enter; Escape cancela."
+          aria-label="Calendario semanal. Para elegir destino usá flechas y Enter; Escape cancela."
           onKeyDown={(event) => {
             if (!movingId || !previewDate || proposal || event.target !== event.currentTarget) return
             if (event.key === 'Enter') { event.preventDefault(); setCursor(previewDate); propose(movingId, previewDate); return }
@@ -279,7 +279,7 @@ function DemoCalendarPage() {
           <Text size="sm">De: {formatDayDateTime(proposedMatch.start)}</Text>
           <Text size="sm">A: {formatDayDateTime(proposal.start)}</Text>
           <Paper p="sm" bg="gray.0"><Text size="sm">1 partido cambia · Ningún otro se mueve.</Text></Paper>
-          <Text size="sm" c="dimmed">Confirma la disponibilidad con ambas parejas. Este ejemplo no conoce sus restricciones.</Text>
+          <Text size="sm" c="dimmed">Confirmá que ambas parejas puedan jugar en ese horario. Este ejemplo no conoce sus restricciones.</Text>
           <Group justify="flex-end"><Button onClick={() => {
             setPrevious(matches); setMatches(matches.map((match) => match.id === proposal.id ? { ...match, start: proposal.start } : match));
             calendar.current?.getApi().gotoDate(proposal.start);

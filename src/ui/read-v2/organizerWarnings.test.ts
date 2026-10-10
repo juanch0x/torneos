@@ -63,7 +63,7 @@ describe('organizer warnings', () => {
     expect(warning).toContain('franjas')
     expect(warning).not.toContain('slots[')
     const readiness = organizerReadinessIssues(adaptV2Tournament(source), v2ReadinessIssues(source))
-    expect(readiness.some(issue => issue.includes('asigna la pareja'))).toBe(true)
+    expect(readiness.some(issue => issue.includes('asigná la pareja'))).toBe(true)
     expect(readiness.join(' ')).not.toContain('categories[')
     expect(organizerExportIssue(adaptV2Tournament(source), planningExportIssues(source))).not.toContain('categories[')
   })

@@ -33,8 +33,8 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 2h4l.7 3 2.1 1.2 2.9-.9 2 3.4-2.2 2.1v2.4l2.2 2.1-2 3.4-2.9-.9-2.1 1.2-.7 3h-4l-.7-3-2.1-1.2-2.9.9-2-3.4 2.2-2.1v-2.4l-2.2-2.1 2-3.4 2.9.9L9.3 5Z" /><circle cx="12" cy="12" r="3" /></svg>
       </ActionIcon></Tooltip>
     </Group>
-    {source && !ready && <Text size="sm" c="orange.8">Completa y guarda fechas, Disponibilidad de la cancha, Horario del torneo, Días del torneo y duración desde el engranaje para editar restricciones o abrir el calendario.</Text>}
-    {(state.saving || notice || !source) && <Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando…' : notice || (state.status === 'loading' ? 'Leyendo el torneo seleccionado…' : state.status === 'not-found' ? 'No se encontró esta fuente.' : state.status === 'error' ? 'No se pudo cargar esta fuente.' : 'Selecciona o carga este torneo para configurarlo.')}</Text>}
+    {source && !ready && <Text size="sm" c="orange.8">Completá y guardá fechas, Disponibilidad de la cancha, Horario del torneo, Días del torneo y duración desde el engranaje para editar restricciones o abrir el calendario.</Text>}
+    {(state.saving || notice || !source) && <Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando…' : notice || (state.status === 'loading' ? 'Leyendo el torneo seleccionado…' : state.status === 'not-found' ? 'No se encontró esta fuente.' : state.status === 'error' ? 'No se pudo cargar esta fuente.' : 'Seleccioná o cargá este torneo para configurarlo.')}</Text>}
     {!!issues.length && <details><summary>{plural(issues.length, 'registro requiere', 'registros requieren')} revisión · Horarios intactos</summary><Stack mt="xs" gap={4} style={{ maxHeight: 180, overflowY: 'auto' }}>{issues.map((issue, index) => <Text size="xs" key={index} c="orange.8">{configurationIssueText(source!, issue)}</Text>)}</Stack></details>}
     {editing && <ConfigurationModal initial={editing.initial} epoch={editing.epoch} tournamentId={tournamentId} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); setNotice('Configuración guardada. Restricciones y horarios intactos.') }} />}
   </Stack>
@@ -60,13 +60,13 @@ function ConfigurationModal({ initial, epoch, tournamentId, onClose, onSaved }: 
       const result = await v2SessionController.saveConfiguration(draft, { sourceId: tournamentId, epoch })
       if (result.ok) onSaved(); else setError(result.error)
     }}><Stack gap="md">
-      <Text size="sm">Define el período, la disponibilidad física y el horario de generación. Guardar no genera ni reprograma partidos y no elimina restricciones.</Text>
+      <Text size="sm">Definí el período, la disponibilidad física y el horario de generación. Guardar no genera ni reprograma partidos y no elimina restricciones.</Text>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>{field('startDate', 'Primer día del período', 'date')}{field('endDate', 'Último día del período', 'date')}</SimpleGrid>
       <V2HourWindowsFields draft={draft} disabled={state.saving} legacy={!!state.working && state.working.fixtureSettings?.automaticWindow === undefined && hasLegacyPlanningData(state.working)} legacyWeekdays={!!state.working && state.working.fixtureSettings?.automaticWeekdays === undefined && hasLegacyPlanningData(state.working)} onWeekdaysChange={value => { setDraft(current => ({ ...current,automaticWeekdays: value })); setError('') }} onChange={(key, value) => { setDraft(current => ({ ...current, [key]: value })); setError('') }} />
       {field('duration', 'Duración de cada partido (minutos)', 'number')}
       <Text size="xs" c="dimmed">Las excepciones de cancha existentes se preservan, sin editor en esta etapa. Con resultados existentes no se permite cambiar ni inferir una duración histórica.</Text>
       {!validation.ok && <Text c="orange.8" size="sm">{validation.error}</Text>}
-      {!!impacts.length && <Alert color="orange">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisa el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
+      {!!impacts.length && <Alert color="orange">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisá el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
       {error && <Text role="alert" c="red" size="sm">{error}</Text>}
       <Group justify="space-between"><Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando configuración…' : 'Solo se guarda al confirmar.'}</Text><Group><Button disabled={state.saving} variant="default" onClick={close}>Cancelar</Button><Button type="submit" loading={state.saving} disabled={state.saving || !validation.ok}>Guardar configuración</Button></Group></Group>
     </Stack></form>
@@ -90,8 +90,8 @@ export function V2HourWindowsFields({ draft, disabled, legacy, legacyWeekdays, o
         <HourEntryInput label="Hasta" value={draft.tournamentClosesAt} allow24 disabled={disabled} onChange={value => onChange('tournamentClosesAt', value)} />
       </SimpleGrid>
       <V2AutomaticWeekdaysField value={draft.automaticWeekdays} disabled={disabled} onChange={onWeekdaysChange} />
-      {legacyWeekdays && <Text size="xs" c="dimmed">Sin días guardados se usan lunes a viernes. Los partidos existentes en fin de semana se conservan; puedes incluir sábado y domingo para nuevas generaciones.</Text>}
-      {legacy && <Text size="xs" c="dimmed">Torneo importado sin un horario de generación separado: por compatibilidad se usa la disponibilidad de la cancha. Confirma o ajusta estos horarios al guardar.</Text>}
+      {legacyWeekdays && <Text size="xs" c="dimmed">Sin días guardados se usan lunes a viernes. Los partidos existentes en fin de semana se conservan; podés incluir sábado y domingo para nuevas generaciones.</Text>}
+      {legacy && <Text size="xs" c="dimmed">Torneo importado sin un horario de generación separado: por compatibilidad se usa la disponibilidad de la cancha. Confirmá o ajustá estos horarios al guardar.</Text>}
     </Stack></Fieldset>
   </Stack>
 }
@@ -105,6 +105,6 @@ const weekdayChoices = [
 export function V2AutomaticWeekdaysField({ value,disabled,onChange }: { value: number[]; disabled: boolean; onChange: (days: number[]) => void }) {
   return <Stack gap={4}><Text fw={500} size="sm">Días del torneo</Text><Group gap={4} role="group" aria-label="Días del torneo">{weekdayChoices.map(day => <Tooltip key={day.value} label={day.label} withArrow><Button type="button" w={44} h={44} px={0} variant={value.includes(day.value) ? 'filled' : 'default'} disabled={disabled} aria-label={day.label} aria-pressed={value.includes(day.value)} onClick={() => onChange(value.includes(day.value) ? value.filter(selected => selected !== day.value) : [...value,day.value].sort((a,b) => a-b))}>{day.short}</Button></Tooltip>)}</Group>
     <Text size="xs" c="dimmed">Se aplican cada semana del período. Sábado y domingo son opcionales.</Text>
-    {!value.length && <Text size="xs" c="orange.8" role="alert">Selecciona al menos un día del torneo.</Text>}
+    {!value.length && <Text size="xs" c="orange.8" role="alert">Seleccioná al menos un día del torneo.</Text>}
   </Stack>
 }

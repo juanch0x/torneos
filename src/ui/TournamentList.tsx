@@ -79,7 +79,7 @@ export function TournamentList() {
               setName('')
               const id = useTournamentStore.getState().current!.id
               return navigate({ to: '/tournaments/$id/groups', params: { id } })
-            }).catch(() => setCreationError('No se pudo confirmar la creación. Relee la lista antes de reintentar: el documento puede haberse guardado parcialmente.')).finally(() => { creatingRef.current = false; setCreating(false) })
+            }).catch(() => setCreationError('No se pudo confirmar la creación. Releé la lista antes de reintentar: el documento puede haberse guardado parcialmente.')).finally(() => { creatingRef.current = false; setCreating(false) })
           }}
         >
           Nuevo torneo

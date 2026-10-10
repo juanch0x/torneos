@@ -35,7 +35,7 @@ export function createV2SessionStore() {
     },
     movePair(request, expected) {
       const state = get()
-      if (state.saving || state.draftDirty || !state.working || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch) return { ok: false, error: 'La copia cambió. Relee el torneo antes de mover la pareja.' }
+      if (state.saving || state.draftDirty || !state.working || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch) return { ok: false, error: 'La copia cambió. Releé el torneo antes de mover la pareja.' }
       const result = applyV2Membership(state.working, request)
       if (!result.ok) return result
       if (result.document !== state.working) state.replaceWorking(result.document)
@@ -43,7 +43,7 @@ export function createV2SessionStore() {
     },
     savePairRestrictions(pairId, drafts, expected) {
       const state = get(); const source = state.working
-      if (state.saving || !source || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch) return { ok: false, error: 'La copia cambió. Cierra y vuelve a abrir las restricciones antes de guardar.' }
+      if (state.saving || !source || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch) return { ok: false, error: 'La copia cambió. Cerrá y volvé a abrir las restricciones antes de guardar.' }
       const pairs = source.categories.flatMap(category => category.pairs).filter(pair => pair.id === pairId)
       const config = getV2RestrictionConfig(source)
       if (pairs.length !== 1 || !config) return { ok: false, error: 'La pareja o el calendario no tienen una configuración válida.' }

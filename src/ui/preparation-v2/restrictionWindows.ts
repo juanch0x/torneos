@@ -18,7 +18,7 @@ export function validateWindow(window: Pick<RestrictionWindow, 'start' | 'end'>,
   if (config) return validateV2DraftBounds(window, config)
   const start = parseLocalDateTime(window.start)
   const end = parseLocalDateTime(window.end)
-  if (!start || !end) return 'Completa fechas y horarios válidos.'
+  if (!start || !end) return 'Completá fechas y horarios válidos.'
   if (end <= start) return 'El final debe ser posterior al inicio.'
   if (start < parseLocalDateTime(DEMO_START)! || end > parseLocalDateTime(DEMO_END)!) return 'La restricción debe estar entre el 5 y el 18 de octubre.'
   return null
@@ -67,7 +67,7 @@ export function validateInteraction(window: Pick<RestrictionWindow, 'start' | 'e
     const [closesHours, closesMinutes] = DEMO_VISIBLE_HOURS.end.split(':').map(Number)
     lower.setHours(opensHours, opensMinutes, 0, 0); upper.setHours(closesHours, closesMinutes, 0, 0)
   }
-  return start >= lower && end <= upper ? null : 'El bloque debe quedar dentro del rango visible del mismo día.'
+  return start >= lower && end <= upper ? null : 'La restricción debe quedar dentro del rango visible del mismo día.'
 }
 
 // Compare editable content, not render identity/order; only Save normalizes ranges.

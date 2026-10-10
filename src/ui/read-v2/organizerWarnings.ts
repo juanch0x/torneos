@@ -39,7 +39,7 @@ export function operationalPlanningWarning(display: V2Display): string | null {
   const expectedBeforeConfiguration = new Set(['invalid-duration', 'missing-calendar', 'invalid-calendar'])
   const blocking = display.diagnostics.some(issue => issue.code !== 'timezone-ambiguity' && (hasScheduledMatch || !expectedBeforeConfiguration.has(issue.code)))
   if (!blocking) return null
-  const nextStep = 'Revisa grupos, restricciones y configuración; si el problema persiste, solicita una revisión de los datos de este torneo.'
+  const nextStep = 'Revisá grupos, restricciones y configuración; si el problema persiste, solicitá una revisión de los datos de este torneo.'
   return hasScheduledMatch
     ? `El calendario tiene datos o franjas inconsistentes. No se pueden mover ni exportar partidos hasta revisarlos. ${nextStep} Los horarios y resultados se conservan.`
     : `El torneo tiene datos inconsistentes. No se puede generar ni exportar hasta revisarlos. ${nextStep} No se cambió ningún registro.`
@@ -56,7 +56,7 @@ export function organizerReadinessIssues(display: V2Display, issues: string[]): 
 
 export function organizerExportIssue(display: V2Display, issues: string[]): string {
   const technical = technicalMessages(display)
-  return issues.find(issue => !technical.has(issue)) ?? 'Revisa los datos del torneo antes de exportar.'
+  return issues.find(issue => !technical.has(issue)) ?? 'Revisá los datos del torneo antes de exportar.'
 }
 
 // Unscheduled pairings are expected before generation, not organizer-facing failures.
@@ -81,12 +81,12 @@ export function configurationIssueText(source: Tournament, issue: V2Configuratio
   const match = source.categories.flatMap(category => category.matches.map(entry => ({ entry, category }))).find(({ entry }) => entry.id === issue.id)
   const matchName = match ? `${match.category.pairs.find(pair => pair.id === match.entry.pairAId)?.player1 ?? 'Una pareja'} vs. ${match.category.pairs.find(pair => pair.id === match.entry.pairBId)?.player1 ?? 'otra pareja'}` : 'un partido'
   switch (issue.kind) {
-    case 'invalid-restriction': return `La restricción de ${name} tiene un horario inválido. El registro se conserva; revisa sus datos antes de editarlo.`
-    case 'restriction-period': return `La restricción de ${name} queda fuera del período. Amplía el período para volver a editarla; no se borró.`
-    case 'restriction-hours': return `La restricción de ${name} queda fuera del horario de cancha. Revisa la configuración de la cancha; el registro se conserva en solo lectura.`
-    case 'automatic-hours': return `La cancha no cubre el horario del torneo el ${formatFullDate(issue.id)}. Ajusta la configuración para generar partidos ese día.`
-    case 'automatic-weekdays': return `${matchName} está programado en fin de semana. Se conserva; habilita ese día si quieres incluirlo en futuras generaciones.`
-    case 'invalid-match': return `El horario de ${matchName} no se puede validar. Revisa el partido en el calendario; no se modificó.`
-    case 'match-hours': return `${matchName} está fuera del período u horario de cancha. Revisa el calendario; su horario se conserva${match?.entry.result ? ' y el resultado queda protegido' : ''}.`
+    case 'invalid-restriction': return `La restricción de ${name} tiene un horario inválido. El registro se conserva; revisá sus datos antes de editarlo.`
+    case 'restriction-period': return `La restricción de ${name} queda fuera del período. Ampliá el período para volver a editarla; no se borró.`
+    case 'restriction-hours': return `La restricción de ${name} queda fuera del horario de cancha. Revisá la configuración de la cancha; el registro se conserva en solo lectura.`
+    case 'automatic-hours': return `La cancha no cubre el horario del torneo el ${formatFullDate(issue.id)}. Ajustá la configuración para generar partidos ese día.`
+    case 'automatic-weekdays': return `${matchName} está programado en fin de semana. Se conserva; habilitá ese día si querés incluirlo en futuras generaciones.`
+    case 'invalid-match': return `El horario de ${matchName} no se puede validar. Revisá el partido en el calendario; no se modificó.`
+    case 'match-hours': return `${matchName} está fuera del período u horario de cancha. Revisá el calendario; su horario se conserva${match?.entry.result ? ' y el resultado queda protegido' : ''}.`
   }
 }

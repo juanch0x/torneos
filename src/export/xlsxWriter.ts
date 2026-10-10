@@ -61,7 +61,7 @@ export function buildGroupsWorkbookSheet(groups: GroupsSheetSection[]): Sheet<Bl
 
 export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blob> {
   return {
-    sheet: 'Fixture',
+    sheet: 'Calendario',
     data: [
       [
         headerCell('Partido #'),
@@ -189,7 +189,7 @@ export function buildPlanningWorkbookSheets(source: Tournament, groups: GroupsSh
   const schedule = buildFixtureWorkbookSheet(fixture.map(row => ({
     ...row, scheduledAt: row.scheduledAt ? planningCivilDate(row.scheduledAt) : undefined,
   })))
-  schedule.sheet = 'Planificación'
+  schedule.sheet = 'Calendario'
   schedule.data = schedule.data.map(row => row.slice(0,7))
   schedule.columns = schedule.columns?.slice(0,7)
   return [

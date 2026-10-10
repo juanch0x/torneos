@@ -81,7 +81,7 @@ describe('deriveCockpitGuidance', () => {
     expect(guidance.stage).toBe('fixture')
     expect(guidance.scheduledMatchCount).toBe(0)
     expect(guidance.primaryAction).toEqual({
-      label: 'Generar el fixture',
+      label: 'Generar el calendario',
       to: '/tournaments/$id/fixture',
       params: { id: 't-1' },
     })
@@ -101,7 +101,7 @@ describe('deriveCockpitGuidance', () => {
     expect(guidance.playedScheduledCount).toBe(0)
     expect(guidance.pendingScheduledCount).toBe(1)
     expect(guidance.primaryAction.label).toBe('Cargar el primer resultado')
-    expect(guidance.secondaryAction?.label).toBe('Abrir fixture para exportar XLSX')
+    expect(guidance.secondaryAction?.label).toBe('Abrir calendario para exportar XLSX')
   })
 
   it('shows partial progress when some scheduled matches are played and others remain pending', () => {
@@ -151,7 +151,7 @@ describe('deriveCockpitGuidance', () => {
       params: { id: 't-1' },
       search: { categoryId: undefined },
     })
-    expect(guidance.secondaryAction?.label).toBe('Abrir fixture para exportar XLSX')
+    expect(guidance.secondaryAction?.label).toBe('Abrir calendario para exportar XLSX')
   })
 
   it('falls back to scheduledAt matches when legacy data has no slot references', () => {

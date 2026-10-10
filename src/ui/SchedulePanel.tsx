@@ -144,12 +144,12 @@ function FixtureOutcomeSummary({
                 {hasExceptions ? 'Revisión puntual' : 'Listo para revisar'}
               </Badge>
               <Title order={3}>
-                {hasExceptions ? 'Fixture generado' : 'Fixture listo'}
+                {hasExceptions ? 'Calendario generado' : 'Calendario listo'}
               </Title>
             </Group>
             <Text c="dimmed" size="sm">
               {hasExceptions
-                ? 'La mayor parte del fixture ya está lista. Revisá solo los pendientes si hace falta.'
+                ? 'La mayor parte del calendario ya está listo. Revisá solo los pendientes si hace falta.'
                 : 'Los partidos agendados ya están listos para revisar, mover y exportar.'}
             </Text>
           </Stack>
@@ -305,7 +305,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       'missing-match-or-slot': 'No se encontró el partido o la franja de destino.',
       'match-is-unscheduled': 'Solo se pueden reordenar partidos que ya tienen horario.',
       'played-match': 'No se puede mover ni cruzar un partido que ya tiene resultado.',
-      'availability-conflict': 'El movimiento entra en conflicto con la disponibilidad de una pareja.',
+      'availability-conflict': 'El movimiento entra en conflicto con una restricción de una pareja.',
     }
     setReorderFeedback({ color: 'red', message: messages[outcome.reason ?? 'missing-match-or-slot'] })
   }
@@ -428,7 +428,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
     const error = validateTournamentCalendar(calendar)
     if (error) { setCalendarError(error); return }
     if (!hasScheduleableMatches(tournament)) {
-      setCalendarError('No hay partidos para agendar. Cargá al menos dos parejas en un grupo antes de generar el fixture.')
+      setCalendarError('No hay partidos para agendar. Cargá al menos dos parejas en un grupo antes de generar el calendario.')
       return
     }
     if (buildCalendarSlots(calendar, duration).length === 0) {
@@ -520,9 +520,9 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
             <Badge color="courtTeal">Una sola cancha</Badge>
             <Badge color="gray">Todas las categorías</Badge>
           </Group>
-          <Title order={2}>Fixture y horarios</Title>
+          <Title order={2}>Calendario y horarios</Title>
           <Text c="dimmed" size="sm">
-            Generá la grilla base, reordená partidos con las flechas y usá disponibilidades para reacomodar sin tocar la lógica del torneo.
+            Generá la grilla base, reordená partidos con las flechas y usá restricciones para reacomodar sin tocar la lógica del torneo.
           </Text>
         </Stack>
 
@@ -538,7 +538,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               <TextInput label="Horario habitual desde" type="time" value={calendar.defaultWindow.startsAt} onInput={(e) => persistCalendar({ ...currentCalendar(), defaultWindow: { ...currentCalendar().defaultWindow, startsAt: e.currentTarget.value } })} />
               <TextInput label="Hasta" type="time" value={calendar.defaultWindow.endsAt} onInput={(e) => persistCalendar({ ...currentCalendar(), defaultWindow: { ...currentCalendar().defaultWindow, endsAt: e.currentTarget.value } })} />
               <NumberInput label="Duración (min)" min={1} disabled={durationLocked} style={{ width: '7rem' }} value={duration} onChange={(value) => setDuration(Math.max(1, typeof value === 'number' ? value || 1 : 1))} />
-              <Button onClick={handleGenerate}>⚡ Generar fixture</Button>
+              <Button onClick={handleGenerate}>⚡ Generar calendario</Button>
               <Button type="button" variant="default" onClick={() => void handleExportXlsx()} disabled={exportState.isExporting} loading={exportState.isExporting}>Export XLSX</Button>
             </Group>
             <Text c="dimmed" size="sm">{durationLocked ? 'La duración queda fija porque ya hay resultados cargados. Podés seguir ajustando días y horarios.' : 'Elegí un rango y un horario habitual. Solo cargá excepciones cuando un día sea distinto.'}</Text>
@@ -562,7 +562,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
             {calendarError && (
               <Alert
                 color="red"
-                title={calendarError.startsWith('No hay partidos') ? 'Faltan partidos para generar el fixture' : 'Revisá el calendario'}
+                title={calendarError.startsWith('No hay partidos') ? 'Faltan partidos para generar el calendario' : 'Revisá el calendario'}
               >
                 {calendarError}
               </Alert>
@@ -571,7 +571,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         </Paper>
 
         {reorderFeedback && (
-          <Alert color={reorderFeedback.color} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del fixture'}>
+          <Alert color={reorderFeedback.color} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del calendario'}>
             <Text size="sm">{reorderFeedback.message}</Text>
           </Alert>
         )}
@@ -599,11 +599,11 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
             <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
               <Stack gap={4}>
                 <Group gap="xs" wrap="wrap">
-                  <Title order={3}>Disponibilidad de parejas</Title>
+                  <Title order={3}>Restricciones de parejas</Title>
                   <Badge color="blue">Reacomodo guiado</Badge>
                 </Group>
                 <Text c="dimmed" size="sm">
-                  Registrá excepciones puntuales para una pareja y el fixture reubica lo necesario sin cambiar las reglas de agenda.
+                  Registrá excepciones puntuales para una pareja y el calendario reubica lo necesario sin cambiar las reglas de agenda.
                 </Text>
               </Stack>
 
@@ -645,7 +645,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
             {(tournament.pairUnavailableWindows ?? []).length === 0 ? (
               <Paper p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
                 <Text size="sm" c="dimmed">
-                  Todavía no hay excepciones cargadas. Si aparece un conflicto puntual, agregalo acá y el fixture se reacomoda.
+                  Todavía no hay excepciones cargadas. Si aparece un conflicto puntual, agregalo acá y el calendario se reacomoda.
                 </Text>
               </Paper>
             ) : (
@@ -689,10 +689,10 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                 {!calendarError && <Badge color="courtTeal">Paso siguiente</Badge>}
               </Group>
               <Text fw={700}>
-                {!hasScheduleableMatches(tournament) ? 'Faltan parejas o grupos con partidos' : calendarError ? 'No se pudo generar el fixture' : 'Todavía no hay horarios generados'}
+                {!hasScheduleableMatches(tournament) ? 'Faltan parejas o grupos con partidos' : calendarError ? 'No se pudo generar el calendario' : 'Todavía no hay horarios generados'}
               </Text>
               <Text c="dimmed" size="sm">
-                {calendarError ?? 'Definí categorías, grupos y parejas; después tocá "Generar fixture" para crear cruces, franjas y el primer orden de juego.'}
+                {calendarError ?? 'Definí categorías, grupos y parejas; después tocá "Generar calendario" para crear partidos, franjas y el primer orden de juego.'}
               </Text>
             </Stack>
           </Paper>

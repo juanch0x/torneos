@@ -5,7 +5,7 @@ import { generateRoundRobin } from './roundRobin'
 export interface V2MembershipRequest { categoryId: string; pairId: string; groupId: string }
 export function v2StructureBlocked(source: Tournament): string | null {
   return source.slots.some(slot => slot.matchId !== undefined) || source.categories.some(category => category.matches.some(match => match.scheduledAt !== undefined || match.result !== undefined) || category.playoffs?.rounds.some(round => round.slots.some(slot => slot.result !== undefined)))
-    ? 'Los grupos y las parejas están protegidos porque hay horarios, franjas asignadas o resultados. Puedes corregir nombres; cambiar la estructura requiere una política explícita de revisión del calendario, todavía no disponible.' : null
+    ? 'Los grupos y las parejas están protegidos porque hay horarios, franjas asignadas o resultados. Podés corregir nombres; cambiar la estructura requiere una política explícita de revisión del calendario, todavía no disponible.' : null
 }
 const semantic = (match: Pick<Match, 'groupId' | 'pairAId' | 'pairBId'>) => JSON.stringify([match.groupId, ...[match.pairAId, match.pairBId].sort()])
 /** Reconcile ONLY an eligible history-free category, without repairing ambiguous imports. */
@@ -20,9 +20,9 @@ export function applyV2Membership(source: Tournament, request: V2MembershipReque
     if (issue.code === 'missing-calendar' && source.calendar === undefined) return false
     return true
   })
-  if (diagnostics.length) return fail(`${diagnostics[0].path}: ${diagnostics[0].message} Revisa el original; no se reparan registros automáticamente.`)
+  if (diagnostics.length) return fail(`${diagnostics[0].path}: ${diagnostics[0].message} Revisá el original; no se reparan registros automáticamente.`)
   const category = source.categories.find(category => category.id === request.categoryId)
-  if (!category || !category.pairs.some(pair => pair.id === request.pairId) || !category.groups.some(group => group.id === request.groupId)) return fail('La categoría, pareja o grupo ya no existe. Relee el torneo.')
+  if (!category || !category.pairs.some(pair => pair.id === request.pairId) || !category.groups.some(group => group.id === request.groupId)) return fail('La categoría, pareja o grupo ya no existe. Releé el torneo.')
   const expected = new Map<string, Match>()
   for (const group of category.groups) for (const pairing of generateRoundRobin(group.pairIds)) {
     const record = { ...pairing, id: '', groupId: group.id }; expected.set(semantic(record), record)
@@ -30,7 +30,7 @@ export function applyV2Membership(source: Tournament, request: V2MembershipReque
   const seen = new Set<string>()
   for (const match of category.matches) {
     const key = semantic(match)
-    if (seen.has(key) || !expected.has(key)) return fail(`Cruce ${match.id} duplicado o ajeno a los grupos actuales. No se elimina ni repara automáticamente.`)
+    if (seen.has(key) || !expected.has(key)) return fail(`Partido ${match.id} duplicado o ajeno a los grupos actuales. No se elimina ni repara automáticamente.`)
     seen.add(key)
   }
   if (category.groups.find(group => group.id === request.groupId)!.pairIds.includes(request.pairId)) return { ok: true, document: source }

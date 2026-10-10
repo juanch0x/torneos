@@ -24,13 +24,13 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
     const state = store.getState()
     const fail = (error: string, issues?: string[]) => { store.setState({ saveError: error }); return { ok: false as const, error, issues } }
     if (state.saving) return { ok: false, error: 'Espera a que termine el guardado.' }
-    if (!repository || !state.baseline || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch || state.dirty) return fail('La copia cambió. Relee el torneo y vuelve a abrir el editor antes de guardar.')
+    if (!repository || !state.baseline || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch || state.dirty) return fail('La copia cambió. Releé el torneo y volvé a abrir el editor antes de guardar.')
     const token = revision; const baseline = state.baseline
     store.setState({ saving: true, saveError: '' })
     try {
       const latest = await repository.load(expected.sourceId)
       if (token !== revision || store.getState().sourceId !== expected.sourceId || store.getState().epoch !== expected.epoch) return fail('La fuente cambió; no se guardaron los cambios.')
-      if (!latest || latest.id !== expected.sourceId || (JSON.stringify(latest) !== JSON.stringify(baseline) && JSON.stringify(latest) !== JSON.stringify(uncertainAttempt))) return fail('El torneo cambió fuera de esta vista. Conserva tu borrador; relee el original y revisa los cambios antes de reintentar.')
+      if (!latest || latest.id !== expected.sourceId || (JSON.stringify(latest) !== JSON.stringify(baseline) && JSON.stringify(latest) !== JSON.stringify(uncertainAttempt))) return fail('El torneo cambió fuera de esta vista. Conservá tu borrador; releé el original y revisá los cambios antes de reintentar.')
       const completingAttempt = (kind === 'generation' || kind === 'regeneration' || kind.startsWith('move:') || kind.startsWith('membership:')) && uncertainKind === kind && JSON.stringify(latest) === JSON.stringify(uncertainAttempt)
       const result: Prepared = completingAttempt
         ? { ok: true, document: latest, merges: [] } : prepare(latest)
@@ -39,20 +39,20 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       const document = completingAttempt ? structuredClone(result.document) : { ...structuredClone(result.document), updatedAt: new Date().toISOString() }
       uncertainAttempt = document; uncertainKind = kind
       await repository.save(document)
-      if (token !== revision || store.getState().sourceId !== expected.sourceId || store.getState().epoch !== expected.epoch) return fail('El guardado terminó, pero esta vista cambió. Relee el torneo para confirmar su estado.')
+      if (token !== revision || store.getState().sourceId !== expected.sourceId || store.getState().epoch !== expected.epoch) return fail('El guardado terminó, pero esta vista cambió. Releé el torneo para confirmar su estado.')
       store.getState().acceptSource(document, expected.sourceId)
       store.setState({ saveError: '', sources: store.getState().sources.map(source => source.id === document.id ? { ...source, updatedAt: document.updatedAt } : source) })
       uncertainAttempt = null
       return { ok: true, merges: result.merges }
     } catch {
       if (uncertainAttempt) store.setState({ writeUncertain: true })
-      return fail('No se pudo confirmar el guardado. El documento podría haberse actualizado parcialmente; conserva el borrador y reintenta para completar el guardado.')
+      return fail('No se pudo confirmar el guardado. El documento podría haberse actualizado parcialmente; conservá el borrador y reintentá para completar el guardado.')
     } finally { store.setState({ saving: false }) }
   }
   return {
     movePair(request: V2MembershipRequest, expected: { sourceId: string; epoch: number }) {
       const snapshot = { ...request }
-      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const, error: 'Guarda o cancela la edición antes de mover parejas.' })
+      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const, error: 'Guardá o cancelá la edición antes de mover parejas.' })
       return persistConfirmed(expected, latest => {
         const staged = createV2SessionStore(); staged.getState().acceptSource(latest, expected.sourceId)
         const result = staged.getState().movePair(snapshot, { sourceId: expected.sourceId, epoch: staged.getState().epoch })
@@ -67,14 +67,14 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       }, `move:${JSON.stringify(snapshot)}`)
     },
     regenerateCalendar(expected: { sourceId: string; epoch: number }) {
-      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const,error: 'Guarda o cancela la edición antes de regenerar.',issues: undefined })
+      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const,error: 'Guardá o cancelá la edición antes de regenerar.',issues: undefined })
       return persistConfirmed(expected,latest => {
         const result = regenerateV2Calendar(latest)
         return result.ok ? { ...result,merges: [] } : result
       },'regeneration')
     },
     generateCalendar(expected: { sourceId: string; epoch: number }) {
-      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const, error: 'Guarda o cancela la edición antes de generar.', issues: undefined })
+      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const, error: 'Guardá o cancelá la edición antes de generar.', issues: undefined })
       return persistConfirmed(expected, latest => {
         const result = generateV2Calendar(latest)
         return result.ok ? { ...result, merges: [] } : result
@@ -90,7 +90,7 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
     savePairRestrictions(pairId: string, drafts: V2RestrictionDraft[], expected: { sourceId: string; epoch: number }) {
       const snapshot = structuredClone(drafts)
       return persistConfirmed(expected, latest => {
-        if (!hasCompleteV2Configuration(latest)) return { ok: false, error: 'Completa y guarda la configuración del torneo antes de editar restricciones.' }
+        if (!hasCompleteV2Configuration(latest)) return { ok: false, error: 'Completá y guardá la configuración del torneo antes de editar restricciones.' }
         const staged = createV2SessionStore(); staged.getState().acceptSource(latest, expected.sourceId)
         const result = staged.getState().savePairRestrictions(pairId, snapshot, { sourceId: expected.sourceId, epoch: staged.getState().epoch })
         return result.ok ? { ...result, document: staged.getState().working! } : result

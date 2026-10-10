@@ -23,7 +23,7 @@ export function createPreparationAutosave(store: StoreApi<TournamentState>, repo
         }
         store.setState({ saveError: '' })
       } catch (error) {
-        store.setState({ saveError: 'No se pudo confirmar el guardado. Conserva esta vista y reintenta; el documento puede haberse actualizado parcialmente.' })
+        store.setState({ saveError: 'No se pudo confirmar el guardado. Conservá esta vista y reintentá; el documento puede haberse actualizado parcialmente.' })
         throw error
       } finally { store.setState({ savePending: false }); inFlight = null }
     })()

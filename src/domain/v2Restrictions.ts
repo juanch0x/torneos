@@ -24,7 +24,7 @@ export function getV2RestrictionConfig(source: Tournament): V2RestrictionConfig 
 }
 export function validateV2DraftBounds(window: Pick<V2RestrictionDraft, 'start' | 'end'>, config: V2RestrictionConfig): string | null {
   const start = parseV2Timestamp(window.start); const end = parseV2Timestamp(window.end)
-  if (!start || !end || end.instant <= start.instant) return 'Completa un rango de fechas y horarios válido.'
+  if (!start || !end || end.instant <= start.instant) return 'Completá un rango de fechas y horarios válido.'
   if (start.instant < parseV2Timestamp(config.start)!.instant || end.instant > parseV2Timestamp(config.end)!.instant) return 'La restricción debe quedar dentro del período del torneo.'
   return null
 }
@@ -39,7 +39,7 @@ export function validateV2RestrictionGesture(window: Pick<V2RestrictionDraft, 's
   const lower = new Date(`${day}T${expanded ? '00:00' : hours.startsAt}`)
   const upper = new Date(`${day}T${expanded || hours.endsAt === '24:00' ? '00:00' : hours.endsAt}`)
   if (expanded || hours.endsAt === '24:00') upper.setDate(upper.getDate() + 1)
-  return start >= lower && end <= upper ? null : 'El bloque debe quedar dentro del horario visible de ese día. Amplía la vista para registrar otros horarios.'
+  return start >= lower && end <= upper ? null : 'La restricción debe quedar dentro del horario visible de ese día. Ampliá la vista para registrar otros horarios.'
 }
 export function toV2RestrictionDraft(window: PairUnavailableWindow): V2RestrictionDraft | null {
   const start = parseV2Timestamp(window.startsAt); const end = parseV2Timestamp(window.endsAt)

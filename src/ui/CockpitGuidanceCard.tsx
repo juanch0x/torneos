@@ -21,18 +21,18 @@ function getGuidanceCopy(guidance: CockpitGuidance): GuidanceCopy {
         description:
           guidance.unassignedPairCount > 0 || guidance.undersizedGroupCount > 0
             ? `Hay ${guidance.unassignedPairCount} pareja(s) sin grupo y ${guidance.undersizedGroupCount} grupo(s) con menos de dos parejas.`
-            : 'Definí categorías, grupos y parejas antes de operar el fixture.',
+            : 'Definí categorías, grupos y parejas antes de operar el calendario.',
       }
     case 'fixture':
       return {
         badge: 'Siguiente paso',
-        title: 'La configuración ya permite generar el fixture',
-        description: 'Abrí Fixture para crear los cruces y horarios iniciales del torneo.',
+        title: 'La configuración ya permite generar el calendario',
+        description: 'Abrí Calendario para crear los partidos y horarios iniciales del torneo.',
       }
     case 'no-results':
       return {
         badge: 'Resultados pendientes',
-        title: 'El fixture ya está listo para empezar a cargar resultados',
+        title: 'El calendario ya está listo para empezar a cargar resultados',
         description: `Hay ${guidance.scheduledMatchCount} partido(s) con horario y todavía ninguno tiene resultado cargado en la app.`,
       }
     case 'partial-results':
@@ -153,7 +153,7 @@ export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
           >
             <Group justify="space-between" gap="xs" wrap="wrap">
               <Text size="sm" c="dimmed" style={{ flex: '1 1 18rem' }}>
-                La exportación XLSX sigue disponible desde Fixture como apoyo para compartir o respaldar.
+                La exportación XLSX sigue disponible desde Calendario como apoyo para compartir o respaldar.
               </Text>
               <Button variant="subtle" size="sm" onClick={() => goToAction(secondaryAction)}>
                 {secondaryAction.label}

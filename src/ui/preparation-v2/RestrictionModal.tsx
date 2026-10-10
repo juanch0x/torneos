@@ -39,7 +39,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
   const actionElement = useRef<HTMLElement | null>(null)
   const listeners = useRef(new Map<HTMLElement, (event: MouseEvent) => void>())
   const ignoreClickUntil = useRef(0)
-  const [notice, setNotice] = useState('Fuera de los bloques marcados, la pareja se considera disponible.')
+  const [notice, setNotice] = useState('Fuera de las restricciones marcadas, la pareja se considera disponible.')
   const actionWindow = draft.find((window) => window.id === actions?.id)
   const invalid = draft.map(window => validateWindow(window, config)).find(Boolean)
   const dirty = isRestrictionDraftDirty(initialWindows, draft)
@@ -75,7 +75,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
     // FullCalendar can notify the same range again after options updates or StrictMode.
     setWeek(current => retainRestrictionWeek(current, { start: info.start, end: info.end }))
     setActions(null)
-    setNotice(`Semana: ${formatWeekRange(info.start, info.end)}. Selecciona en «Día completo» para bloquear un día.`)
+    setNotice(`Semana: ${formatWeekRange(info.start, info.end)}. Seleccioná en «Día completo» para restringir un día.`)
   }, [])
   function add(start: Date, end: Date, allDay: boolean) {
     if (savingRef.current) return
@@ -84,7 +84,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
     const error = validateInteraction(window, allDay, expandedHours, config)
     if (error) { setNotice(error); return }
     setDraft((current) => [...current, window]); setSelectedId(window.id)
-    setNotice('Bloque agregado al borrador. Puedes ajustar los horarios o agregar un motivo.')
+    setNotice('Restricción agregada al borrador. Podés ajustar los horarios o agregar un motivo.')
   }
   function changeDates(id: string, start: Date | null, end: Date | null, allDay: boolean) {
     if (savingRef.current || !start || !end) return
@@ -119,14 +119,14 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
   return <><Modal opened onClose={requestClose} closeOnEscape={!saving && !actions && !discardOpen && !suspendFocus} closeOnClickOutside={!saving && !discardOpen} trapFocus={!discardOpen && !suspendFocus} title={`Restricciones · ${pairName}`} size="min(1400px, 96vw)" centered yOffset={16}
     closeButtonProps={{ 'aria-label': 'Cancelar edición de restricciones', disabled: saving }} classNames={{ content: `preparation-v2-modal-content${modalScroll ? ' preparation-v2-modal-scroll' : ''}`, header: 'preparation-v2-modal-header', body: 'preparation-v2-modal-body' }}>
     <Stack gap="sm" className="preparation-v2-modal-layout">
-      <Group justify="space-between"><Text size="sm">Arrastra para marcar cuándo NO puede jugar (cada 15 minutos). Clic o clic derecho sobre un bloque para editarlo o eliminarlo.</Text><Badge color="grape" variant="light">Borrador · {plural(draft.length, 'bloque', 'bloques')} · {formatDateRange(parseLocalDateTime(start) ?? start, new Date((parseLocalDateTime(end) ?? new Date(end)).getTime() - 1))}</Badge></Group>
+      <Group justify="space-between"><Text size="sm">Arrastrá para marcar cuándo NO puede jugar (cada 15 minutos). Clic o clic derecho sobre una restricción para editarla o eliminarla.</Text><Badge color="grape" variant="light">Borrador · {plural(draft.length, 'restricción', 'restricciones')} · {formatDateRange(parseLocalDateTime(start) ?? start, new Date((parseLocalDateTime(end) ?? new Date(end)).getTime() - 1))}</Badge></Group>
       {(outsideVisible || expandedHours) && <Group justify="space-between" gap="sm">
-        <Text size="sm" c="orange.8">{expandedHours ? 'Vista de 24 horas: los bloques fuera del rango siguen conservados.' : `Hay restricciones fuera de ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}. Amplía la vista para editarlas o eliminarlas.`}</Text>
+        <Text size="sm" c="orange.8">{expandedHours ? 'Vista de 24 horas: las restricciones fuera del rango siguen conservadas.' : `Hay restricciones fuera de ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}. Ampliá la vista para editarlas o eliminarlas.`}</Text>
         <Button disabled={saving} variant="light" size="xs" onClick={() => { setActions(null); setExpandedHours((value) => !value) }}>
           {expandedHours ? `Volver a ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}` : 'Mostrar horarios fuera del rango'}
         </Button>
       </Group>}
-      <Text size="sm" c="dimmed">{config ? 'Guardar actualiza solo estas restricciones y sus conflictos; NUNCA mueve partidos. Los días de cancha cerrada también permiten registrar indisponibilidad.' : 'El resto se considera disponible. Guardar no mueve partidos; esta prueba no está conectada al calendario.'}</Text>
+      <Text size="sm" c="dimmed">{config ? 'Guardar actualiza solo estas restricciones y sus conflictos; NUNCA mueve partidos. Los días de cancha cerrada también permiten registrar restricciones.' : 'El resto se considera disponible. Guardar no mueve partidos; esta prueba no está conectada al calendario.'}</Text>
         <Paper withBorder radius="md" p="sm" className="preparation-v2-calendar">
           <FullCalendar ref={calendar} plugins={plugins} locale={esLocale} initialView="timeGridWeek" initialDate={start}
             firstDay={1} validRange={validRange} headerToolbar={{ start: 'prev,next', center: 'title', end: '' }}
@@ -157,7 +157,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
         position="right-start" offset={8} floatingStrategy="fixed" withinPortal zIndex={400} trapFocus returnFocus
         middlewares={{ flip: true, shift: { padding: 8 } }} transitionProps={{ duration: 0 }}>
         <Popover.Target><span aria-hidden="true" className="preparation-v2-actions-anchor" style={{ left: actions?.rect.left ?? 0, top: actions?.rect.top ?? 0, width: actions?.rect.width ?? 0, height: actions?.rect.height ?? 0 }} /></Popover.Target>
-        <Popover.Dropdown aria-label="Acciones del bloque no disponible">
+        <Popover.Dropdown aria-label="Acciones de la restricción">
           {actionWindow && <Stack gap="sm">
             <Text fw={600} size="sm">No disponible</Text>
             <Text size="xs">{blockLabel(actionWindow.start, actionWindow.end)}</Text>
@@ -166,15 +166,15 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
             }} />
             <Group justify="space-between"><Button disabled={saving} variant="subtle" onClick={() => setActions(null)}>Cerrar</Button><Button disabled={saving} color="red" variant="light" onClick={() => {
               const result = deleteRestriction(draft, actionWindow.id)
-              setDraft(result.windows); setDeleted(result.undo); setActions(null); setSelectedId(null); setNotice('Bloque eliminado del borrador.')
-            }}>Eliminar bloque</Button></Group>
+              setDraft(result.windows); setDeleted(result.undo); setActions(null); setSelectedId(null); setNotice('Restricción eliminada del borrador.')
+            }}>Eliminar restricción</Button></Group>
           </Stack>}
         </Popover.Dropdown>
       </Popover></Portal>
       <Group justify="space-between" gap="xs" mih={30}><Text role="status" aria-live="polite" size="sm">{saving ? 'Guardando restricciones…' : notice}</Text>{deleted && <Button disabled={saving} variant="subtle" size="xs" onClick={() => {
         setDraft((current) => restoreRestriction(current, deleted)); setSelectedId(deleted.window.id)
         calendar.current?.getApi().gotoDate(deleted.window.start)
-        setDeleted(null); setNotice(`Bloque restaurado: ${blockLabel(deleted.window.start, deleted.window.end)}.`)
+        setDeleted(null); setNotice(`Restricción restaurada: ${blockLabel(deleted.window.start, deleted.window.end)}.`)
       }}>Deshacer eliminación</Button>}</Group>
       {saveError && <Text role="alert" size="sm" c="red">{saveError}</Text>}
       {invalid && <Text role="alert" size="sm" c="red">Corrige el borrador antes de guardar: {invalid}</Text>}
@@ -182,7 +182,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
         if (savingRef.current) return
         savingRef.current = true; setSaving(true); setSaveError(''); setActions(null)
         try { const error = await onSave(config ? draft : normalizeWindows(draft)); if (error) setSaveError(error) }
-        catch { setSaveError('No se pudo confirmar el guardado. Conserva el borrador y reintenta.') }
+        catch { setSaveError('No se pudo confirmar el guardado. Conservá el borrador y reintentá.') }
         finally { savingRef.current = false; setSaving(false) }
       }}>{saving ? 'Guardando…' : 'Guardar restricciones'}</Button></Group></Group>
     </Stack>

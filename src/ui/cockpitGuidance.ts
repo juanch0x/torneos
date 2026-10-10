@@ -108,7 +108,7 @@ export function deriveCockpitGuidance(tournament: Tournament): CockpitGuidance {
       scheduledMatchCount,
       playedScheduledCount,
       pendingScheduledCount,
-      primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Generar el fixture'),
+      primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Generar el calendario'),
     }
   }
 
@@ -124,7 +124,7 @@ export function deriveCockpitGuidance(tournament: Tournament): CockpitGuidance {
       playedScheduledCount,
       pendingScheduledCount,
       primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Cargar el primer resultado'),
-      secondaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Abrir fixture para exportar XLSX'),
+      secondaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Abrir calendario para exportar XLSX'),
     }
   }
 
@@ -140,7 +140,7 @@ export function deriveCockpitGuidance(tournament: Tournament): CockpitGuidance {
       playedScheduledCount,
       pendingScheduledCount,
       primaryAction: makeAction(tournament.id, '/tournaments/$id/results', 'Revisar resultados y posiciones'),
-      secondaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Abrir fixture para exportar XLSX'),
+      secondaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Abrir calendario para exportar XLSX'),
     }
   }
 
