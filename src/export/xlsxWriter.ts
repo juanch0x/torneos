@@ -186,13 +186,31 @@ function planningCivilDate(instant: Date): Date {
 }
 
 export function buildPlanningWorkbookSheets(source: Tournament, groups: GroupsSheetSection[], fixture: FixtureSheetRow[]): Sheet<Blob>[] {
-  const schedule = buildFixtureWorkbookSheet(fixture.map(row => ({
-    ...row, scheduledAt: row.scheduledAt ? planningCivilDate(row.scheduledAt) : undefined,
-  })))
-  schedule.sheet = 'Calendario'
-  schedule.data = schedule.data.map(row => row.slice(0,7))
-  schedule.columns = schedule.columns?.slice(0,7)
+  const weekday = new Intl.DateTimeFormat('es-AR', { weekday: 'long' })
+  const schedule: Sheet<Blob> = {
+    sheet: 'Planificación',
+    data: [
+      ['Día', 'Fecha', 'Hora', 'Categoría', 'Grupo', 'Pareja A', 'Pareja B'].map(headerCell),
+      ...fixture.map(row => {
+        const civilDate = row.scheduledAt ? planningCivilDate(row.scheduledAt) : undefined
+        return [
+          row.scheduledAt ? weekday.format(row.scheduledAt) : undefined,
+          civilDate ? { value: civilDate, type: Date, format: DATE_FORMAT } : undefined,
+          civilDate ? { value: civilDate, type: Date, format: TIME_FORMAT } : undefined,
+          safeSpreadsheetText(row.category),
+          safeSpreadsheetText(row.group),
+          safeSpreadsheetText(row.pairA),
+          safeSpreadsheetText(row.pairB),
+        ]
+      }),
+    ],
+    columns: [14, 14, 10, 18, 16, 24, 24].map(width => ({ width })),
+    stickyRowsCount: 1,
+    dateFormat: DATE_FORMAT,
+  }
   return [
+    schedule,
+    buildGroupsWorkbookSheet(groups),
     { sheet: 'Snapshot', data: [
       [headerCell('Torneo'), safeSpreadsheetText(source.name)],
       [headerCell('ID'), safeSpreadsheetText(source.id)],
@@ -201,7 +219,6 @@ export function buildPlanningWorkbookSheets(source: Tournament, groups: GroupsSh
       [headerCell('Interpretación'), 'Fechas y horas locales del navegador. Timestamps originales en la hoja de referencia.'],
       ...source.categories.flatMap(c => c.matches.map(m => [safeSpreadsheetText(m.id), safeSpreadsheetText(m.scheduledAt ?? '')])),
     ] },
-    buildGroupsWorkbookSheet(groups), schedule,
   ]
 }
 export async function writePlanningWorkbook(source: Tournament, groups: GroupsSheetSection[], fixture: FixtureSheetRow[]): Promise<void> {

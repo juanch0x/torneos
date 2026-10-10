@@ -1,13 +1,17 @@
 export interface ExportXlsxState {
   isExporting: boolean
   errorMessage: string | null
+  successMessage: string | null
 }
+
+export const EXPORT_XLSX_SUCCESS_MESSAGE = 'Calendario exportado. Revisá la descarga del archivo XLSX.'
 
 export const EXPORT_XLSX_ERROR_MESSAGE = 'No se pudo exportar el XLSX. Intentá nuevamente.'
 
 export const initialExportXlsxState: ExportXlsxState = {
   isExporting: false,
   errorMessage: null,
+  successMessage: null,
 }
 
 export function createExportXlsxController(
@@ -31,6 +35,7 @@ export function createExportXlsxController(
       updateState({
         isExporting: true,
         errorMessage: null,
+        successMessage: null,
       })
 
       try {
@@ -38,6 +43,7 @@ export function createExportXlsxController(
         updateState({
           isExporting: false,
           errorMessage: null,
+          successMessage: EXPORT_XLSX_SUCCESS_MESSAGE,
         })
         return true
       } catch (error) {
@@ -45,6 +51,7 @@ export function createExportXlsxController(
         updateState({
           isExporting: false,
           errorMessage: EXPORT_XLSX_ERROR_MESSAGE,
+          successMessage: null,
         })
         return false
       }

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createExportXlsxController,
   EXPORT_XLSX_ERROR_MESSAGE,
-  initialExportXlsxState,
+  EXPORT_XLSX_SUCCESS_MESSAGE,
   type ExportXlsxState,
 } from '../exportXlsxController'
 
@@ -27,16 +27,16 @@ describe('createExportXlsxController', () => {
 
     expect(secondRun).toBe(false)
     expect(exporter).toHaveBeenCalledTimes(1)
-    expect(controller.getState()).toEqual({ isExporting: true, errorMessage: null })
-    expect(states).toEqual([{ isExporting: true, errorMessage: null }])
+    expect(controller.getState()).toEqual({ isExporting: true, errorMessage: null, successMessage: null })
+    expect(states).toEqual([{ isExporting: true, errorMessage: null, successMessage: null }])
 
     firstExport.resolve()
     await firstRun
 
-    expect(controller.getState()).toEqual(initialExportXlsxState)
+    expect(controller.getState()).toEqual({ isExporting: false, errorMessage: null, successMessage: EXPORT_XLSX_SUCCESS_MESSAGE })
     expect(states).toEqual([
-      { isExporting: true, errorMessage: null },
-      { isExporting: false, errorMessage: null },
+      { isExporting: true, errorMessage: null, successMessage: null },
+      { isExporting: false, errorMessage: null, successMessage: EXPORT_XLSX_SUCCESS_MESSAGE },
     ])
   })
 
@@ -54,11 +54,12 @@ describe('createExportXlsxController', () => {
     expect(controller.getState()).toEqual({
       isExporting: false,
       errorMessage: EXPORT_XLSX_ERROR_MESSAGE,
+      successMessage: null,
     })
 
     await expect(controller.run(successfulExporter)).resolves.toBe(true)
     expect(successfulExporter).toHaveBeenCalledTimes(1)
-    expect(controller.getState()).toEqual(initialExportXlsxState)
+    expect(controller.getState()).toEqual({ isExporting: false, errorMessage: null, successMessage: EXPORT_XLSX_SUCCESS_MESSAGE })
 
     consoleError.mockRestore()
   })

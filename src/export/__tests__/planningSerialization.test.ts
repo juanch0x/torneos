@@ -51,7 +51,7 @@ describe('serialized planning civil date/time', () => {
     const sheets = buildPlanningWorkbookSheets(source,projection.groups,projection.fixture)
     const bytes = await writeXlsxFile(sheets).toBuffer()
     const archive = unzipSync(bytes)
-    const worksheet = strFromU8(archive['xl/worksheets/sheet3.xml'])
+    const worksheet = strFromU8(archive['xl/worksheets/sheet1.xml'])
     const styles = strFromU8(archive['xl/styles.xml'])
     const date = numericCell(worksheet,'B2'); const time = numericCell(worksheet,'C2')
     expect(date.value).toBeCloseTo(excelSerial(civil),8)
