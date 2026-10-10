@@ -13,7 +13,6 @@ function makeTournament(): Tournament {
   return {
     id: 'tournament-1',
     name: 'Winter Cup',
-    date: '2026-07-01',
     startDate: '2026-07-01',
     endDate: '2026-07-05',
     slots: [],

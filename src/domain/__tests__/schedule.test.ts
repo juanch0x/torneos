@@ -31,7 +31,6 @@ function tournament(slots: Slot[], categories: Category[]): Tournament {
   return {
     id: 't1',
     name: 'Torneo',
-    date: '2026-06-20',
     startDate: '2026-06-20',
     endDate: '2026-06-21',
     slots,

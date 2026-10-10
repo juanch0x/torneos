@@ -16,7 +16,7 @@ describe('durable membership',()=>{
 
 describe('durable unconfigured factory capture', () => {
   function capture() {
-    const source = createTournament('Fresh', '2026-10-05')
+    const source = createTournament('Fresh')
     delete source.calendar
     const category = createCategory('Category', 2)
     category.pairs = [createPair('Ada','Luz'),createPair('Leo','Sol'),createPair('X','Y')]

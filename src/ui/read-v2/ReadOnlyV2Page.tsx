@@ -1,3 +1,4 @@
+import { formatTournamentPeriod } from '../tournamentPeriod'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Alert, Badge, Button, Group, NativeSelect, Paper, SimpleGrid, Stack, Table, Tabs, Text, Title } from '@mantine/core'
@@ -73,7 +74,7 @@ export function ReadOnlyV2Page() {
       } catch { setError('No se pudo confirmar el torneo de prueba. Releé la lista antes de reintentar.') }
       finally { setCreatingMock(false) }
     }}>Crear torneo mock</Button></Group></Paper>
-    <NativeSelect label="Seleccioná explícitamente el torneo a inspeccionar" value={selected} onChange={event => void selectSource(event.currentTarget.value)} data={[{ value: '', label: sources.length ? 'Seleccionar torneo…' : 'No hay torneos en el repositorio actual' }, ...sources.map(source => ({ value: source.id, label: `${source.name} · ${source.date}` }))]} />
+    <NativeSelect label="Seleccioná explícitamente el torneo a inspeccionar" value={selected} onChange={event => void selectSource(event.currentTarget.value)} data={[{ value: '', label: sources.length ? 'Seleccionar torneo…' : 'No hay torneos en el repositorio actual' }, ...sources.map(source => ({ value: source.id, label: `${source.name} · ${formatTournamentPeriod(source.periodStart, source.periodEnd)}` }))]} />
     {busy && <Text role="status">Leyendo…</Text>}{error && <Alert color="red" role="alert">{error}</Alert>}
     {snapshot && display && <>
       <Paper withBorder p="md"><Stack gap="xs"><Group justify="space-between"><Title order={3}>{display.name}</Title><Group><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: snapshot.sourceId }} />} size="xs" variant="light">Abrir grupos en sandbox</Button><Button renderRoot={props => <Link {...props} to="/v2/calendar" search={{ tournamentId: snapshot.sourceId }} />} size="xs" variant="light">Abrir calendario en sandbox</Button></Group></Group><Text size="sm">Fuente: {snapshot.sourceId} · Versión: {snapshot.sourceVersion}</Text><Text size="sm">{plural(display.categories.length, 'categoría', 'categorías')} · {plural(display.matches.length, 'partido', 'partidos')} · {plural(snapshot.baseline.slots.length, 'franja', 'franjas')}</Text>

@@ -42,7 +42,7 @@ export interface TournamentState {
   invalidatePreparation: () => void
   loadList: () => Promise<void>
   loadTournament: (id: ID, force?: boolean) => Promise<void>
-  newTournament: (name: string, date: string) => Promise<void>
+  newTournament: (name: string) => Promise<void>
   newMockTournament: () => Promise<void> // "Torneo FMP" con datos de mock_players.json
 
   // calendario GLOBAL (cross-categoría, una sola cancha)
@@ -148,15 +148,15 @@ export const useTournamentStore = create<TournamentState>()(
         } catch { if (token === loadRevision) set({ current: null, status: 'error', loadError: 'No se pudo leer el torneo. Reintentá sin cambiar los datos guardados.' }) }
       },
 
-      async newTournament(name, date) {
-        const tournament = createTournament(name, date)
+      async newTournament(name) {
+        const tournament = createTournament(name)
         await repo.save(tournament)
         set({ current: tournament, status: 'loaded' })
         await get().loadList()
       },
 
       async newMockTournament() {
-        const tournament = buildMockTournament(nowISO().slice(0, 10))
+        const tournament = buildMockTournament()
         await repo.save(tournament)
         set({ current: tournament, status: 'loaded' })
         await get().loadList()

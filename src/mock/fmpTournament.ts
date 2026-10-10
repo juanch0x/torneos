@@ -17,9 +17,9 @@ interface MockData {
  * listo para tocar "Generar fixture" sin carga manual. Así el fixture muestra el
  * intercalado de grupos. Pensado para testing.
  */
-export function buildMockTournament(date: string): Tournament {
+export function buildMockTournament(): Tournament {
   const data = mockData as unknown as MockData
-  const tournament = createTournament('Torneo FMP', date)
+  const tournament = createTournament('Torneo FMP')
 
   tournament.categories = data.category.map((mockCategory, catIndex) => {
     const category = createCategory(mockCategory.name, 2, catIndex)

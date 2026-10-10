@@ -38,7 +38,6 @@ function makeTournament(category: Category): Tournament {
   return {
     id: 't-1',
     name: 'Torneo',
-    date: '2026-07-07',
     startDate: '2026-07-07',
     endDate: '2026-07-08',
     slots: [],

@@ -10,7 +10,7 @@ import { createTournament } from '../../domain/factories'
 beforeEach(() => { vi.spyOn(v2SessionStore, 'getInitialState').mockImplementation(v2SessionStore.getState) })
 afterEach(() => { vi.restoreAllMocks() })
 it('does not call a newly created tournament imported just because it has default court hours', () => {
-  expect(hasLegacyPlanningData(createTournament('New', '2026-10-12'))).toBe(false)
+  expect(hasLegacyPlanningData(createTournament('New'))).toBe(false)
   expect(hasLegacyPlanningData(sample())).toBe(true)
 })
 const markup = () => renderToStaticMarkup(<MantineProvider><V2ConfigurationHeader tournamentId="t" /></MantineProvider>)
