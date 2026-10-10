@@ -1,3 +1,5 @@
+import { planningIssueText } from '../ui/read-v2/planningIssueText'
+import type { V2PlanningIssue } from '../domain/v2PlanningIssues'
 import { type V2MembershipRequest } from '../domain/v2Membership'
 import type { StoreApi } from 'zustand/vanilla'
 import { createV2SessionStore, emptyV2Session, v2SessionStore, type V2SessionState } from '../store/v2Session'
@@ -19,7 +21,7 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
   let listed = false
   let listing: Promise<void> | null = null
   type SaveResult = { ok: true; merges: V2WindowMerge[] } | { ok: false; error: string; issues?: string[] }
-  type Prepared = { ok: true; document: Tournament; merges: V2WindowMerge[] } | { ok: false; error: string; issues?: string[] }
+  type Prepared = { ok: true; document: Tournament; merges: V2WindowMerge[] } | { ok: false; error: string | V2PlanningIssue; issues?: string[] | V2PlanningIssue[] }
   async function persistConfirmed(expected: { sourceId: string; epoch: number }, prepare: (source: Tournament) => Prepared, kind = 'editing'): Promise<SaveResult> {
     const state = store.getState()
     const fail = (error: string, issues?: string[]) => { store.setState({ saveError: error }); return { ok: false as const, error, issues } }
@@ -34,7 +36,7 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       const completingAttempt = (kind === 'generation' || kind === 'regeneration' || kind.startsWith('move:') || kind.startsWith('membership:')) && uncertainKind === kind && JSON.stringify(latest) === JSON.stringify(uncertainAttempt)
       const result: Prepared = completingAttempt
         ? { ok: true, document: latest, merges: [] } : prepare(latest)
-      if (!result.ok) return fail(result.error, result.issues)
+      if (!result.ok) return fail(typeof result.error === 'string' ? result.error : planningIssueText(result.error), result.issues?.map(issue => typeof issue === 'string' ? issue : planningIssueText(issue)))
       if (!completingAttempt && JSON.stringify(result.document) === JSON.stringify(latest) && !store.getState().writeUncertain) return { ok: true, merges: result.merges }
       const document = completingAttempt ? structuredClone(result.document) : { ...structuredClone(result.document), updatedAt: new Date().toISOString() }
       uncertainAttempt = document; uncertainKind = kind

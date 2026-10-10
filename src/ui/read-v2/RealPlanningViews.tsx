@@ -1,3 +1,4 @@
+import { planningIssueText } from './planningIssueText'
 import { v2StructureBlocked } from '../../domain/v2Membership'
 import { v2ReadinessIssues } from '../../domain/v2Readiness'
 import { exportPlanningXlsx } from '../../export'
@@ -108,7 +109,8 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
   const organizerReadiness = display ? organizerReadinessIssues(display, readiness) : []
   const operationalWarning = display ? operationalPlanningWarning(display) : null
   const exportIssues = state.baseline ? planningExportIssues(state.baseline) : ['No hay un calendario confirmado.']
-  const regenerationBlocked = state.working ? v2RegenerationBlocked(state.working) : null
+  const regenerationIssue = state.working ? v2RegenerationBlocked(state.working) : null
+  const regenerationBlocked = regenerationIssue ? planningIssueText(regenerationIssue) : null
   if (display && !hasCompleteV2Configuration(state.working)) return <Stack><V2SessionStatus tournamentId={tournamentId} /><Alert color="orange">Completá la configuración del torneo antes de abrir el calendario.</Alert><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Ir a configuración y grupos</Button></Stack>
   const snapshot: V2ReadSnapshot | null = state.working && display ? { baseline: state.working, display, sourceId: tournamentId, sourceVersion: state.sourceVersion! } : null
   return <Stack className="calendar-v2" gap="lg"><Group justify="space-between" className="calendar-v2-real-header"><Stack gap={6}><Title order={1} size="h2">Planificar la fase de grupos</Title><Text c="dimmed">Una cancha. Generá el calendario inicial y revisá cada movimiento antes de guardar.</Text></Stack>{moves.floating}</Group><V2SessionStatus tournamentId={tournamentId} />
