@@ -7,6 +7,3 @@ enabled = false
 
 [mcp_servers.railway]
 enabled = false
-
-[mcp_servers.computer-use]
-enabled = false
