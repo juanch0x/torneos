@@ -50,7 +50,10 @@ export class LocalRepository implements TournamentRepository {
           periodStart: meta.periodStart,
           periodEnd: meta.periodEnd,
         }
-        if (meta.periodStart !== undefined) {
+        // Only legacy index entries (which stored `date` instead of periodStart/periodEnd)
+        // need to load the full document to derive the calendar period.
+        const isLegacy = 'date' in meta && meta.periodStart === undefined
+        if (!isLegacy) {
           return fallback
         }
         try {

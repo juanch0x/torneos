@@ -4,8 +4,6 @@ export interface Tournament {
   id: ID
   name: string
   calendar?: TournamentCalendar
-  startDate?: string // legacy display metadata; persistence v2 writes calendar instead
-  endDate?: string
   slots: Slot[] // calendario GLOBAL cross-categoría (una sola cancha)
   categories: Category[]
   pairUnavailableWindows?: PairUnavailableWindow[]

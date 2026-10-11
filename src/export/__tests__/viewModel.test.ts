@@ -34,8 +34,12 @@ function makeTournament(categories: Category[]): Tournament {
   return {
     id: 'tournament-1',
     name: 'Winter Cup',
-    startDate: '2026-07-01',
-    endDate: '2026-07-05',
+    calendar: {
+      startDate: '2026-07-01',
+      endDate: '2026-07-05',
+      defaultWindow: { startsAt: '09:00', endsAt: '18:00' },
+      overrides: [],
+    },
     slots: [],
     categories,
     createdAt: '2026-07-01T00:00:00.000Z',
