@@ -49,7 +49,6 @@ export function adaptV2Tournament(source: Tournament) {
     return parsed?.instant ?? null
   }
   id(source.id, 'tournament.id')
-  if (!isV2Date(source.date)) issue('invalid-date', 'tournament.date', 'Fecha de referencia inválida.')
   const duration = source.fixtureSettings?.matchDurationMinutes
   const validDuration = typeof duration === 'number' && Number.isFinite(duration) && duration > 0
   if (!validDuration) issue('invalid-duration', 'fixtureSettings', 'Duración global ausente o inválida. No se asume 45 minutos.')

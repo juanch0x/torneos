@@ -8,7 +8,6 @@ import {
   formatTime,
   formatTimeRange,
   formatTimestamp,
-  localDateInput,
   tryFormatDayDateTime,
 } from '../format'
 
@@ -150,12 +149,5 @@ describe('formatTime', () => {
 
   it('returns the raw value when invalid', () => {
     expect(formatTime('nope', MENDOZA)).toBe('nope')
-  })
-})
-
-describe('localDateInput', () => {
-  it('builds YYYY-MM-DD from local fields, not the UTC day', () => {
-    expect(localDateInput(new Date(2026, 9, 9, 23, 30))).toBe('2026-10-09')
-    expect(localDateInput(new Date(2026, 0, 5, 0, 5))).toBe('2026-01-05')
   })
 })

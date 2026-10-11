@@ -4,7 +4,7 @@ import { isFixtureDurationLocked } from '../SchedulePanel'
 
 function tournament(fixtureSettings: Tournament['fixtureSettings']): Tournament {
   return {
-    id: 't1', name: 'Torneo', date: '2026-01-01', slots: [], fixtureSettings, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    id: 't1', name: 'Torneo', slots: [], fixtureSettings, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
     categories: [{ id: 'c1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' }, pairs: [], groups: [], matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 4 } }] }],
   }
 }
@@ -38,10 +38,41 @@ describe('calendar draft composition', () => {
   })
 })
 
-import { CALENDAR_DISCLOSURE_BUTTON_TYPE } from '../SchedulePanel'
+import { CALENDAR_DISCLOSURE_BUTTON_TYPE, persistCalendarDraft } from '../SchedulePanel'
+import { useTournamentStore } from '../../store/tournamentStore'
+import type { TournamentCalendar } from '../../domain/types'
 
 describe('calendar disclosure interaction', () => {
   it('uses a non-submit button so opening disclosure cannot submit a surrounding form', () => {
     expect(CALENDAR_DISCLOSURE_BUTTON_TYPE).toBe('button')
+  })
+})
+
+describe('calendar persistence', () => {
+  it('does not persist partial dates to the store tournament calendar', () => {
+    useTournamentStore.setState({ current: tournament(undefined) } as any)
+    const setFixtureCalendar = useTournamentStore.getState().setFixtureCalendar
+
+    const partialCalendar: TournamentCalendar = {
+      startDate: '2026-10-12',
+      endDate: '',
+      defaultWindow: { startsAt: '09:00', endsAt: '22:00' },
+      overrides: [],
+    }
+
+    const persistedPartial = persistCalendarDraft(partialCalendar, setFixtureCalendar)
+    expect(persistedPartial).toBe(false)
+    expect(useTournamentStore.getState().current?.calendar).toBeUndefined()
+
+    const completeCalendar: TournamentCalendar = {
+      startDate: '2026-10-12',
+      endDate: '2026-10-26',
+      defaultWindow: { startsAt: '09:00', endsAt: '22:00' },
+      overrides: [],
+    }
+
+    const persistedComplete = persistCalendarDraft(completeCalendar, setFixtureCalendar)
+    expect(persistedComplete).toBe(true)
+    expect(useTournamentStore.getState().current?.calendar).toEqual(completeCalendar)
   })
 })

@@ -17,7 +17,7 @@ function toMeta(t: Tournament): TournamentMeta {
   return {
     id: t.id,
     name: t.name,
-    date: t.date,
+    ...(t.calendar ? { periodStart: t.calendar.startDate, periodEnd: t.calendar.endDate } : {}),
     categoryCount: t.categories.length,
     updatedAt: t.updatedAt,
   }
@@ -39,7 +39,31 @@ export class LocalRepository implements TournamentRepository {
   }
 
   async list(): Promise<TournamentMeta[]> {
-    return (await get<TournamentMeta[]>(INDEX_KEY)) ?? []
+    const index = (await get<TournamentMeta[]>(INDEX_KEY)) ?? []
+    return Promise.all(
+      index.map(async (meta) => {
+        const fallback: TournamentMeta = {
+          id: meta.id,
+          name: meta.name,
+          categoryCount: meta.categoryCount,
+          updatedAt: meta.updatedAt,
+          periodStart: meta.periodStart,
+          periodEnd: meta.periodEnd,
+        }
+        // Only legacy index entries (which stored `date` instead of periodStart/periodEnd)
+        // need to load the full document to derive the calendar period.
+        const isLegacy = 'date' in meta && meta.periodStart === undefined
+        if (!isLegacy) {
+          return fallback
+        }
+        try {
+          const tournament = await this.load(meta.id)
+          return tournament ? toMeta(tournament) : fallback
+        } catch {
+          return fallback
+        }
+      }),
+    )
   }
 
   async remove(id: ID): Promise<void> {

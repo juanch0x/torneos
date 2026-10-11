@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Category, Match, Slot, Tournament } from '../types'
+import type { Category, Match, Slot, Tournament, TournamentCalendar } from '../types'
 import {
   fillSchedule,
   generateFixture,
@@ -31,13 +31,24 @@ function tournament(slots: Slot[], categories: Category[]): Tournament {
   return {
     id: 't1',
     name: 'Torneo',
-    date: '2026-06-20',
-    startDate: '2026-06-20',
-    endDate: '2026-06-21',
     slots,
     categories,
     createdAt: '2026-06-19T00:00:00.000Z',
     updatedAt: '2026-06-19T00:00:00.000Z',
+  }
+}
+
+function calendarFromLegacy(startsAtIso: string, matchDurationMinutes: number, matchesPerDay = 100, endDate?: string): TournamentCalendar {
+  const date = startsAtIso.slice(0, 10)
+  const start = new Date(startsAtIso)
+  const startsAt = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`
+  const endsAt = new Date(start.getTime() + Math.max(1, Math.floor(matchesPerDay)) * matchDurationMinutes * 60_000)
+  const endTime = `${String(endsAt.getHours()).padStart(2, '0')}:${String(endsAt.getMinutes()).padStart(2, '0')}`
+  return {
+    startDate: date,
+    endDate: endDate ?? new Date(start.getTime() + 7 * 86_400_000).toISOString().slice(0, 10),
+    defaultWindow: { startsAt, endsAt: endTime },
+    overrides: [],
   }
 }
 
@@ -235,13 +246,12 @@ describe('generateFixture', () => {
     // 3 parejas → C(3,2)=3 partidos, en secuencia cada 45 min.
     const t = tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2', 'p3'])])
     const after = generateFixture(t, {
-      startsAt: START,
+      calendar: calendarFromLegacy(START, 45, 100),
       matchDurationMinutes: 45,
-      matchesPerDay: 100,
     })
 
     expect(after.categories[0].matches).toHaveLength(3)
-    expect(after.slots).toHaveLength(3)
+    expect(after.slots.filter((s) => s.matchId)).toHaveLength(3)
     // Todos los partidos quedaron agendados, cada uno con su franja.
     for (const m of after.categories[0].matches) expect(m.scheduledAt).toBeDefined()
     // Arranca desde la fecha pedida y deja todos los partidos dentro del fixture generado.
@@ -258,22 +268,21 @@ describe('generateFixture', () => {
       ],
     )
     const after = generateFixture(t, {
-      startsAt: START,
+      calendar: calendarFromLegacy(START, 45, 1),
       matchDurationMinutes: 45,
-      matchesPerDay: 1,
     })
 
-    expect(after.slots).toHaveLength(2)
+    const assigned = after.slots.filter((s) => s.matchId)
+    expect(assigned).toHaveLength(2)
     // Segundo partido arranca +24h (mismo horario, día siguiente).
-    expect(sortedSlotTimes(after)).toEqual([isoAt(0), isoAt(DAY)])
+    expect(assigned.map((s) => s.startsAt)).toEqual([isoAt(0), isoAt(DAY)])
   })
 
   it('conserva el resultado ya cargado al regenerar', () => {
     const t = tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2'])])
     const first = generateFixture(t, {
-      startsAt: START,
+      calendar: calendarFromLegacy(START, 45, 100),
       matchDurationMinutes: 45,
-      matchesPerDay: 100,
     })
     // Cargamos resultado en el único partido.
     const withResult: Tournament = {
@@ -284,9 +293,8 @@ describe('generateFixture', () => {
       })),
     }
     const regenerated = generateFixture(withResult, {
-      startsAt: '2026-06-21T15:00:00.000Z',
+      calendar: calendarFromLegacy('2026-06-21T15:00:00.000Z', 30, 100),
       matchDurationMinutes: 30,
-      matchesPerDay: 100,
     })
     // El resultado sobrevive y el horario queda como hard lock.
     const m = regenerated.categories[0].matches[0]
@@ -297,13 +305,12 @@ describe('generateFixture', () => {
   it('asigna número de partido 1..N en orden de juego', () => {
     const t = tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2', 'p3'])])
     const after = generateFixture(t, {
-      startsAt: START,
+      calendar: calendarFromLegacy(START, 45, 100),
       matchDurationMinutes: 45,
-      matchesPerDay: 100,
     })
     // El partido en la franja más temprana es el #1, y así sucesivamente.
-    const sorted = [...after.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-    sorted.forEach((slot, i) => {
+    const assigned = [...after.slots].filter((s) => s.matchId != null).sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+    assigned.forEach((slot, i) => {
       const m = after.categories[0].matches.find((x) => x.id === slot.matchId)!
       expect(m.number).toBe(i + 1)
     })
@@ -332,9 +339,8 @@ describe('generateFixture', () => {
       matches: [],
     }
     const after = generateFixture(tournament([], [cat]), {
-      startsAt: START,
+      calendar: calendarFromLegacy(START, 45, 100),
       matchDurationMinutes: 45,
-      matchesPerDay: 100,
     })
 
     // groupId por número de partido (orden de juego), solo ronda 1.
@@ -365,7 +371,7 @@ describe('generateFixture', () => {
     })
     const after = generateFixture(
       tournament([], [cat('Cuarta', 'X'), cat('Primera', 'Y'), cat('Segunda', 'Z')]),
-      { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 },
+      { calendar: calendarFromLegacy(START, 45, 100), matchDurationMinutes: 45 },
     )
 
     // categoryName por número de partido (orden de juego), solo ronda 1.
@@ -385,9 +391,8 @@ describe('generateFixture', () => {
   it('torneo sin parejas → sin slots ni partidos', () => {
     const t = tournament([], [categoryWithPairs('cat1', 'Núcleo', [])])
     const after = generateFixture(t, {
-      startsAt: START,
+      calendar: calendarFromLegacy(START, 45, 100),
       matchDurationMinutes: 45,
-      matchesPerDay: 100,
     })
     expect(after.slots).toHaveLength(0)
     expect(after.categories[0].matches).toHaveLength(0)
@@ -418,7 +423,7 @@ describe('generateFixture', () => {
       }],
     }
 
-    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 100), matchDurationMinutes: 45 })
     const p1Match = after.categories[0].matches.find((m) => m.pairAId === 'p1' || m.pairBId === 'p1')!
     const otherMatch = after.categories[1].matches[0]
 
@@ -432,7 +437,6 @@ describe('generateFixture', () => {
   it('schedules later within the tournament end date after several early generated slots are blocked', () => {
     const t: Tournament = {
       ...tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2'])]),
-      endDate: '2026-06-20',
       pairUnavailableWindows: [{
         id: 'w1',
         pairId: 'p1',
@@ -441,17 +445,17 @@ describe('generateFixture', () => {
       }],
     }
 
-    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 6 })
+    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 6, '2026-06-20'), matchDurationMinutes: 45 })
 
-    expect(after.slots).toHaveLength(1)
-    expect(after.slots[0].startsAt).toBe(isoAt(225 * MIN))
+    const assigned = after.slots.filter((s) => s.matchId)
+    expect(assigned).toHaveLength(1)
+    expect(assigned[0].startsAt).toBe(isoAt(225 * MIN))
     expect(after.categories[0].matches[0].scheduledAt).toBe(isoAt(225 * MIN))
   })
 
   it('keeps a generated match unscheduled when availability blocks every slot inside the tournament window', () => {
     const t: Tournament = {
       ...tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2'])]),
-      endDate: '2026-06-20',
       pairUnavailableWindows: [{
         id: 'w1',
         pairId: 'p1',
@@ -460,9 +464,9 @@ describe('generateFixture', () => {
       }],
     }
 
-    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 4 })
+    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 4, '2026-06-20'), matchDurationMinutes: 45 })
 
-    expect(after.slots).toHaveLength(0)
+    expect(after.slots.filter((s) => s.matchId)).toHaveLength(0)
     expect(after.categories[0].matches[0].scheduledAt).toBeUndefined()
   })
 
@@ -489,7 +493,7 @@ describe('generateFixture', () => {
       }],
     }
 
-    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 100), matchDurationMinutes: 45 })
 
     expect(findMatch(after, 'flexible')?.scheduledAt).toBe(isoAt(90 * MIN))
     expect(after.slots.some((s) => s.startsAt === isoAt(45 * MIN) && s.matchId === 'flexible')).toBe(false)
@@ -523,7 +527,7 @@ describe('generateFixture', () => {
       }],
     }
 
-    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 100), matchDurationMinutes: 45 })
 
     expect(findMatch(after, 'fallback')?.scheduledAt).toBe(isoAt(45 * MIN))
     expect(after.slots.find((s) => s.startsAt === isoAt(45 * MIN))?.matchId).toBe('fallback')
@@ -540,16 +544,16 @@ describe('generateFixture', () => {
       }],
     }
 
-    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 1 })
+    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 1), matchDurationMinutes: 45 })
 
-    expect(after.slots).toHaveLength(0)
+    expect(after.slots.filter((s) => s.matchId)).toHaveLength(0)
     expect(after.categories[0].matches[0].scheduledAt).toBeUndefined()
   })
 
   it('preserves result matches as hard locks during regeneration', () => {
     const first = generateFixture(
       tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2', 'p3'])]),
-      { startsAt: '2026-06-20T11:00:00.000Z', matchDurationMinutes: 45, matchesPerDay: 100 },
+      { calendar: calendarFromLegacy('2026-06-20T11:00:00.000Z', 45, 100), matchDurationMinutes: 45 },
     )
     const playedId = first.slots[0].matchId!
     const t = {
@@ -561,7 +565,7 @@ describe('generateFixture', () => {
       })),
     }
 
-    const after = generateFixture(t, { startsAt: START, matchDurationMinutes: 45, matchesPerDay: 100 })
+    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 100), matchDurationMinutes: 45 })
 
     expect(after.slots.find((s) => s.id === 'locked-slot')).toEqual({ id: 'locked-slot', startsAt: '2026-06-20T11:00:00.000Z', matchId: playedId })
     expect(findMatch(after, playedId)?.scheduledAt).toBe('2026-06-20T11:00:00.000Z')
@@ -920,5 +924,11 @@ describe('empty fixture generation', () => {
 
     expect(after.slots).toEqual([])
     expect(after.fixtureSettings).toBeUndefined()
+  })
+
+  it('returns tournament unchanged when no calendar is configured', () => {
+    const t = tournament([], [categoryWithPairs('cat1', 'Núcleo', ['a', 'b'])])
+    const after = generateFixture(t, { matchDurationMinutes: 45 })
+    expect(after).toEqual(t)
   })
 })

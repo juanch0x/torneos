@@ -14,12 +14,12 @@ interface MockData {
 /**
  * Arma un torneo de prueba a partir de mock_players.json. Cada categoría queda
  * con DOS grupos (A y B) y sus parejas repartidas alternadamente entre ambos,
- * listo para tocar "Generar fixture" sin carga manual. Así el fixture muestra el
- * intercalado de grupos. Pensado para testing.
+ * para testing sin carga manual. No incluye un calendario preconfigurado, por
+ * lo que requiere configurar el período antes de generar el fixture.
  */
-export function buildMockTournament(date: string): Tournament {
+export function buildMockTournament(): Tournament {
   const data = mockData as unknown as MockData
-  const tournament = createTournament('Torneo FMP', date)
+  const tournament = createTournament('Torneo FMP')
 
   tournament.categories = data.category.map((mockCategory, catIndex) => {
     const category = createCategory(mockCategory.name, 2, catIndex)

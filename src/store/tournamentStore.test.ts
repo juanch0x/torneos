@@ -15,11 +15,8 @@ vi.mock('../mock/fmpTournament', () => ({
   buildMockTournament: vi.fn(() => ({
     id: 'mock-id',
     name: 'Torneo FMP',
-    date: '2024-01-01',
     categories: [],
     slots: [],
-    startDate: '2024-01-01',
-    endDate: '2024-01-01',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   })),
@@ -32,11 +29,8 @@ function makeTournament(id: string): Tournament {
   return {
     id,
     name: 'Test',
-    date: '2024-01-01',
     categories: [],
     slots: [],
-    startDate: '2024-01-01',
-    endDate: '2024-01-01',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   }
@@ -119,12 +113,20 @@ describe('fixture calendar draft', () => {
 
 describe('tournamentStore — availability reflow actions', () => {
   it('persists fixture duration when generating a fixture', () => {
-    useTournamentStore.setState({ current: makeTournament('t1'), status: 'loaded' } as any)
+    const tWithPairs = {
+      ...makeTournament('t1'),
+      categories: [{
+        id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' },
+        pairs: [{ id: 'a', player1: 'A', player2: 'A2' }, { id: 'b', player1: 'B', player2: 'B2' }],
+        groups: [{ id: 'g1', name: 'Grupo A', pairIds: ['a', 'b'] }],
+        matches: [],
+      }],
+    }
+    useTournamentStore.setState({ current: tWithPairs, status: 'loaded' } as any)
 
     useTournamentStore.getState().generateFixture({
-      startsAt: '2024-01-01T09:00:00.000Z',
+      calendar: { startDate: '2024-01-01', endDate: '2024-01-02', defaultWindow: { startsAt: '09:00', endsAt: '18:00' }, overrides: [] },
       matchDurationMinutes: 30,
-      matchesPerDay: 8,
     })
 
     expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 30 })
@@ -189,15 +191,30 @@ describe('tournamentStore — availability reflow actions', () => {
       }, status: 'loaded',
     } as any)
 
-    useTournamentStore.getState().generateFixture({ startsAt: '2024-01-01T09:00:00.000Z', matchDurationMinutes: 30, matchesPerDay: 8 })
+    useTournamentStore.getState().generateFixture({
+      calendar: { startDate: '2024-01-01', endDate: '2024-01-02', defaultWindow: { startsAt: '09:00', endsAt: '18:00' }, overrides: [] },
+      matchDurationMinutes: 30,
+    })
 
     expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 45 })
   })
 
   it('allows a duration change before any result exists', () => {
-    useTournamentStore.setState({ current: makeTournament('t1'), status: 'loaded' } as any)
+    const tWithPairs = {
+      ...makeTournament('t1'),
+      categories: [{
+        id: 'cat1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' },
+        pairs: [{ id: 'a', player1: 'A', player2: 'A2' }, { id: 'b', player1: 'B', player2: 'B2' }],
+        groups: [{ id: 'g1', name: 'Grupo A', pairIds: ['a', 'b'] }],
+        matches: [],
+      }],
+    }
+    useTournamentStore.setState({ current: tWithPairs, status: 'loaded' } as any)
 
-    useTournamentStore.getState().generateFixture({ startsAt: '2024-01-01T09:00:00.000Z', matchDurationMinutes: 30, matchesPerDay: 8 })
+    useTournamentStore.getState().generateFixture({
+      calendar: { startDate: '2024-01-01', endDate: '2024-01-02', defaultWindow: { startsAt: '09:00', endsAt: '18:00' }, overrides: [] },
+      matchDurationMinutes: 30,
+    })
 
     expect(useTournamentStore.getState().current?.fixtureSettings).toEqual({ matchDurationMinutes: 30 })
   })
@@ -368,10 +385,12 @@ describe('tournamentStore — pair editing', () => {
 
 describe('tournamentStore — newTournament', () => {
   it('sets status to loaded after creation', async () => {
-    await useTournamentStore.getState().newTournament('Liga 2024', '2024-01-01')
+    await useTournamentStore.getState().newTournament('Liga 2024')
 
     expect((useTournamentStore.getState() as any).status).toBe('loaded')
     expect(useTournamentStore.getState().current).not.toBeNull()
+    expect(useTournamentStore.getState().current?.calendar).toBeUndefined()
+    expect(useTournamentStore.getState().current).not.toHaveProperty('date')
   })
 })
 

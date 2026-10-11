@@ -3,10 +3,7 @@ export type ID = string
 export interface Tournament {
   id: ID
   name: string
-  date: string // ISO date "YYYY-MM-DD" — fecha de referencia (legacy / display)
   calendar?: TournamentCalendar
-  startDate?: string // legacy display metadata; persistence v2 writes calendar instead
-  endDate?: string
   slots: Slot[] // calendario GLOBAL cross-categoría (una sola cancha)
   categories: Category[]
   pairUnavailableWindows?: PairUnavailableWindow[]
@@ -137,7 +134,8 @@ export interface Standing {
 export interface TournamentMeta {
   id: ID
   name: string
-  date: string
+  periodStart?: string
+  periodEnd?: string
   categoryCount: number
   updatedAt: string
 }

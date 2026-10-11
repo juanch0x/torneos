@@ -14,10 +14,6 @@ export interface TimeInterval { startsAt: string; endsAt: string }
 export interface FixtureOptions {
   calendar?: TournamentCalendar
   matchDurationMinutes: number
-  /** @deprecated only retained for domain-test callers; UI/persistence use calendar. */
-  startsAt?: string
-  /** @deprecated only retained for domain-test callers; UI/persistence use calendar. */
-  matchesPerDay?: number
 }
 
 function seqByGroup(matches: Match[]): Map<ID, number> {
@@ -222,19 +218,8 @@ export function hasScheduleableMatches(tournament: Tournament): boolean {
   return tournament.categories.some((category) => category.groups.some((group) => group.pairIds.length >= 2))
 }
 
-function legacyCalendar(options: FixtureOptions, endDate?: string): TournamentCalendar | undefined {
-  if (!options.startsAt || !options.matchesPerDay) return undefined
-  const date = options.startsAt.slice(0, 10)
-  const start = new Date(options.startsAt)
-  const startsAt = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`
-  const endsAt = new Date(start.getTime() + Math.max(1, Math.floor(options.matchesPerDay)) * options.matchDurationMinutes * 60_000)
-  const endTime = `${String(endsAt.getHours()).padStart(2, '0')}:${String(endsAt.getMinutes()).padStart(2, '0')}`
-  // Old test callers can span days only by a fixed count. Keep that adapter out of persistence/UI.
-  return { startDate: date, endDate: endDate ?? new Date(start.getTime() + 7 * 86_400_000).toISOString().slice(0, 10), defaultWindow: { startsAt, endsAt: endTime }, overrides: [] }
-}
-
 export function generateFixture(tournament: Tournament, options: FixtureOptions): Tournament {
-  const calendar = options.calendar ?? legacyCalendar(options, tournament.endDate)
+  const calendar = options.calendar ?? tournament.calendar
   const calendarError = !calendar ? 'Configurá el calendario del torneo.' : validateTournamentCalendar(calendar)
   if (calendarError || !Number.isFinite(options.matchDurationMinutes) || options.matchDurationMinutes <= 0) return tournament
   const hasPlayedMatch = allMatches(tournament).some((match) => match.result != null)

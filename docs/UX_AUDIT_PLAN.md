@@ -39,7 +39,7 @@ Screens referenced below: **S1** tournament list (`/`), **S2** capture
 |----|----------|-------|
 | D-01 (#18) | Is deleting a pair or a category **before scheduling** in scope? | Today there is no delete at all; a mistyped or duplicate pair cannot be removed. PRODUCT.md does not mention it. |
 | D-02 (#19) | Glossary and voice | **Decided 2026-10-09:** *calendario* (not cronograma/programa/fixture/planificación), *partido* (not cruce), *restricción* (not disponibilidad/indisponibilidad/bloque). Voice: *vos* (the audience is Argentine). Applies to user-visible copy only; code identifiers and routes are unchanged. |
-| D-03 (#20) | Tournament date field | Saving configuration overwrites it with the period start (UX-08). Keep it as an independent field, derive it from the period, or remove it. |
+| D-03 (#20) | Tournament date field | Decided 2026-10-10: remove the field; the calendar period is the only tournament date; no period until configured |
 | D-04 (#21) | Developer tools (`/v2/read`, diagnostics, mock tournament) | Decided: hide them from organizer screens, keep `/v2/read` reachable by URL in all builds, and move mock creation there. Local-first browser data cannot be inspected from a separate localhost origin. |
 
 ## Phase 1 — Cleanup without behavior change
@@ -89,11 +89,11 @@ Screens referenced below: **S1** tournament list (`/`), **S2** capture
 
 ## Phase 2 — Correctness of what the organizer sees
 
-- [ ] **UX-08 (#34) Configuration must not silently overwrite the tournament date.** *Model: Sonnet + TDD. Blocked by D-03.*
+- [ ] **UX-08 (#34) Configuration must not silently overwrite the tournament date.** *Model: Sonnet + TDD. Unblocked: D-03 decided.*
   - Evidence: after saving configuration, S2 header changed from `10/09/26` to `10/12/26`
     (period start) without notice; S1 list then disagrees with what the organizer entered.
-    Root cause not yet confirmed in code.
-  - Done when: the tournament date follows D-03 and no save changes it implicitly.
+    Confirmed root cause: the list read the creation date while the header preferred the calendar start.
+  - Done when: list and header show the same calendar period, or "Sin fechas" until configured; the redundant creation date is removed.
 - [ ] **UX-09 (#35) One coherent count of invalid/out-of-period matches, flagged in the grid.** *Model: Sonnet + TDD + fresh review.*
   - Evidence: after shrinking the period, S4 shows "Horarios inválidos (0)" and no marker on
     the affected matches, while the export block says "Hay partidos fuera del período…".
