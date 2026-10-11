@@ -57,6 +57,17 @@ export function withCalendarOverride(calendar: TournamentCalendar, override: Cal
   }
 }
 
+export function persistCalendarDraft(
+  nextCalendar: TournamentCalendar,
+  setFixtureCalendar: (calendar: TournamentCalendar) => void,
+): boolean {
+  if (validateTournamentCalendar(nextCalendar) === null) {
+    setFixtureCalendar(nextCalendar)
+    return true
+  }
+  return false
+}
+
 // Collects ALL tournament matches with human-readable labels and their category id.
 function collectMatches(tournament: Tournament): Map<ID, MatchInfo> {
   const result = new Map<ID, MatchInfo>()
@@ -216,8 +227,8 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const setMatchResult = useTournamentStore((s) => s.setMatchResult)
 
   const persistedCalendar = tournament.calendar ?? {
-    startDate: tournament.date,
-    endDate: tournament.date,
+    startDate: '',
+    endDate: '',
     defaultWindow: { startsAt: '09:00', endsAt: '22:00' },
     overrides: [],
   }
@@ -416,7 +427,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
 
   function persistCalendar(nextCalendar: TournamentCalendar): void {
     setCalendar(nextCalendar)
-    setFixtureCalendar(nextCalendar)
+    persistCalendarDraft(nextCalendar, setFixtureCalendar)
   }
 
   function handleGenerate() {

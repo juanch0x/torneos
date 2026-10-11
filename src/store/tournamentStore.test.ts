@@ -15,7 +15,6 @@ vi.mock('../mock/fmpTournament', () => ({
   buildMockTournament: vi.fn(() => ({
     id: 'mock-id',
     name: 'Torneo FMP',
-    date: '2024-01-01',
     categories: [],
     slots: [],
     startDate: '2024-01-01',
@@ -32,7 +31,6 @@ function makeTournament(id: string): Tournament {
   return {
     id,
     name: 'Test',
-    date: '2024-01-01',
     categories: [],
     slots: [],
     startDate: '2024-01-01',
@@ -368,10 +366,12 @@ describe('tournamentStore — pair editing', () => {
 
 describe('tournamentStore — newTournament', () => {
   it('sets status to loaded after creation', async () => {
-    await useTournamentStore.getState().newTournament('Liga 2024', '2024-01-01')
+    await useTournamentStore.getState().newTournament('Liga 2024')
 
     expect((useTournamentStore.getState() as any).status).toBe('loaded')
     expect(useTournamentStore.getState().current).not.toBeNull()
+    expect(useTournamentStore.getState().current?.calendar).toBeUndefined()
+    expect(useTournamentStore.getState().current).not.toHaveProperty('date')
   })
 })
 
