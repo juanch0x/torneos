@@ -57,8 +57,7 @@ describe('explicit isolated real group-match moves', () => {
     const result = validateV2Move(t, request('15:00'))
     expect(result.ok).toBe(false)
     if (result.ok) return
-    expect(result.error).toContain('franjas')
-    expect(result.error).not.toMatch(/diagnóstico técnico|original-slot|slots\[/)
+    expect(result.error).toEqual({ code: 'move-inconsistent' })
   })
   it('reuses target free slot and undo restores original raw time/slot but revalidates later availability', () => {
     const t = movable(); t.slots.push({ id: 'target-free', startsAt: at('15:00') }); const moved = applyV2Move(t,request('15:00')); expect(moved.ok).toBe(true); if (!moved.ok) return

@@ -26,7 +26,7 @@ describe('explicit complete-first regeneration without played history', () => {
   })
   it('blocks the whole replacement when any group or playoff result exists, preserving history exactly', () => {
     const t = scheduled(); t.categories[0].matches[0].result = { scoreA: 7,scoreB: 2 }; const before = structuredClone(t)
-    expect(v2RegenerationBlocked(t)).toContain('resultados'); expect(regenerateV2Calendar(t).ok).toBe(false); expect(t).toEqual(before)
+    expect(v2RegenerationBlocked(t)).toEqual({ code: 'regeneration-blocked' }); expect(regenerateV2Calendar(t).ok).toBe(false); expect(t).toEqual(before)
     delete t.categories[0].matches[0].result; t.categories[0].playoffs = { rounds: [{ id: 'r',name: 'Final',slots: [{ id: 'p',result: { scoreA: 1,scoreB: 0 } }] }] }
     expect(regenerateV2Calendar(t).ok).toBe(false)
   })

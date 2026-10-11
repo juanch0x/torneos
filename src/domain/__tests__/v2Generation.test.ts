@@ -24,7 +24,7 @@ describe('initial complete-first V2 calendar', () => {
   it('reports both pairs and exact restrictions when there are no full-duration candidates', () => {
     const t = emptySchedule(); const at = (clock: string) => new Date(`2026-10-05T${clock}`).toISOString()
     t.pairUnavailableWindows = ['a','b'].map((pairId, i) => ({ id: `w${i}`, pairId, startsAt: at('09:00'), endsAt: at('16:00'), reason: `Reason${i}` }))
-    const r = generateV2Calendar(t); expect(r.ok).toBe(false); if (!r.ok) expect(r.issues.join(' ')).toMatch(/Ada.*Luz.*Leo.*Sol.*Reason0.*Reason1/)
+    const r = generateV2Calendar(t); expect(r.ok).toBe(false); if (!r.ok) expect(r.error).toMatchObject({ code: 'no-match-slots', label: expect.stringMatching(/Ada.*Luz.*Leo.*Sol/), restrictions: t.pairUnavailableWindows })
     expect(t.categories[0].matches).toEqual([])
   })
   it('honors closed/custom days, exact adjacent offset intervals and rejects insufficient capacity atomically', () => {
@@ -56,19 +56,19 @@ describe('initial complete-first V2 calendar', () => {
     t.pairUnavailableWindows = [{ id: 'a-window', pairId: 'a', startsAt: at('09:29'), endsAt: at('09:30') }]
     const r = generateV2Calendar(t); expect(r.ok).toBe(true); if (r.ok) expect(Date.parse(r.document.categories[0].matches[0].scheduledAt!)).toBe(Date.parse(at('09:30')))
     t.pairUnavailableWindows.push({ id: 'b-window', pairId: 'b', startsAt: at('09:59'), endsAt: at('10:00') })
-    const failed = generateV2Calendar(t); expect(failed.ok).toBe(false); if (!failed.ok) expect(failed.issues.join(' ')).toContain(at('09:59'))
+    const failed = generateV2Calendar(t); expect(failed.ok).toBe(false); if (!failed.ok) expect(failed.error).toMatchObject({ code: 'no-match-slots', restrictions: expect.arrayContaining([expect.objectContaining({ startsAt: at('09:59') })]) })
   })
   it('reports collective fixed-slot infeasibility even when every match passes individual preflight', () => {
     const t = emptySchedule(); t.calendar!.defaultWindow = { startsAt: '09:00', endsAt: '10:30' }
     t.categories[0].pairs.push({ id: 'free', player1: 'X', player2: 'Y' }); t.categories[0].groups[0].pairIds.push('free')
     t.pairUnavailableWindows = t.categories[0].pairs.map(pair => ({ id: `w-${pair.id}`, pairId: pair.id, startsAt: new Date('2026-10-05T10:00').toISOString(), endsAt: new Date('2026-10-05T10:30').toISOString() }))
-    const r = generateV2Calendar(t); expect(r.ok).toBe(false); if (!r.ok) { expect(r.error).toContain('compiten'); expect(r.issues).toHaveLength(4); expect(r.issues.join(' ')).toContain('Ada / Luz') }
+    const r = generateV2Calendar(t); expect(r.ok).toBe(false); if (!r.ok) { expect(r.error).toMatchObject({ code: 'competing-matches', matchCount: 3 }); expect(r.issues).toHaveLength(4); expect(r.issues.slice(1)).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'match-restrictions', label: expect.stringContaining('Ada / Luz') })])) }
     expect(t.slots).toEqual([])
   })
   it('accounts for four categories of13 pairs, bounded search and all pairings exactly once', () => {
     const t = emptySchedule(); t.calendar!.endDate = '2026-11-05'; t.calendar!.defaultWindow = { startsAt: '09:00', endsAt: '22:00' }; t.calendar!.overrides = []
     t.categories = Array.from({ length: 4 }, (_, ci) => ({ ...t.categories[0], id: `c${ci}`, pairs: Array.from({ length: 13 }, (_, pi) => ({ id: `p${ci}-${pi}`, player1: 'A', player2: 'B' })), groups: [{ id: `g${ci}`, name: 'G', pairIds: Array.from({ length: 13 }, (_, pi) => `p${ci}-${pi}`) }], matches: [] }))
     const r = generateV2Calendar(t); expect(r.ok).toBe(true); if (r.ok) { expect(r.document.categories.flatMap(c => c.matches)).toHaveLength(312); expect(r.document.slots).toHaveLength(312); const firstFour = r.document.categories.flatMap((c,ci) => c.matches.map(m => ({ ci, at: Date.parse(m.scheduledAt!) }))).sort((a,b) => a.at-b.at).slice(0,4); expect(new Set(firstFour.map(m => m.ci)).size).toBe(4) }
-    t.calendar!.endDate = '2030-10-05'; const limit = generateV2Calendar(t); expect(limit.ok).toBe(false); if (!limit.ok) expect(limit.error).toContain('límite')
+    t.calendar!.endDate = '2030-10-05'; const limit = generateV2Calendar(t); expect(limit.ok).toBe(false); if (!limit.ok) expect(limit.error).toEqual({ code: 'generation-limit' })
   })
 })

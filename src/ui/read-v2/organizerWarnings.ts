@@ -1,6 +1,7 @@
 import type { Tournament } from '../../domain/types'
 import type { V2ConfigurationIssue } from '../../domain/v2Configuration'
 import type { V2Display, V2DisplayMatch } from '../../domain/v2Display'
+import type { V2ReadinessIssue } from '../../domain/v2Readiness'
 import type { deriveV2Conflicts } from '../../domain/v2Restrictions'
 import { formatFullDate } from '../format'
 
@@ -49,9 +50,8 @@ function technicalMessages(display: V2Display): Set<string> {
   return new Set(display.diagnostics.filter(issue => issue.code !== 'timezone-ambiguity').map(issue => `${issue.path}: ${issue.message}`))
 }
 
-export function organizerReadinessIssues(display: V2Display, issues: string[]): string[] {
-  const technical = technicalMessages(display)
-  return issues.filter(issue => !technical.has(issue))
+export function organizerReadinessIssues(_display: V2Display, issues: V2ReadinessIssue[]): V2ReadinessIssue[] {
+  return issues.filter(issue => issue.code !== 'source-diagnostic')
 }
 
 export function organizerExportIssue(display: V2Display, issues: string[]): string {

@@ -1,3 +1,4 @@
+import { planningIssueText } from './planningIssueText'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type { CalendarRef } from '@fullcalendar/react'
 import { Button, Group, Menu, Modal, Paper, Popover, Portal, Stack, Text } from '@mantine/core'
@@ -31,7 +32,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
   const movingMatch = display?.matches.find(match => match.id === moving?.id)
   const previewDate = hover ?? cursor
   const previewResult = moving && previewDate && state.working ? validateV2Move(state.working,{ matchId: moving.id,from: moving.from,to: previewDate.toISOString(),grid: court ? 'court' : 'automatic' }) : null
-  const previewError = previewResult && !previewResult.ok && !previewResult.noop ? previewResult.error : null
+  const previewError = previewResult && !previewResult.ok && !previewResult.noop ? planningIssueText(previewResult.error) : null
   const cancel = useCallback(() => { if (v2SessionStore.getState().saving) return; setMoving(null); setProposal(null); setCursor(null); setHover(null); setContext(null); setFeedback(null); calendar.current?.getApi().unselect() },[calendar])
   useEffect(() => { cancel(); setUndo(null) },[tournamentId,state.draftDiscardRevision,cancel])
   useEffect(() => { if (state.status !== 'loaded') { cancel(); setUndo(null) } },[state.status,cancel])
@@ -58,7 +59,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
     const request: V2MoveRequest = { matchId: id,from: moving?.from ?? match.scheduledAt,to: date.toISOString(),grid: court ? 'court' : 'automatic' }
     const result = validateV2Move(current.working,request); setFeedback(null); setHover(null)
     if (!result.ok) {
-      if (!result.noop) { setNotice(result.error); const rect = card.current?.getBoundingClientRect(); setFeedback({ text: result.error,x: point?.x ?? rect?.left ?? 20,y: point?.y ?? rect?.bottom ?? 100 }) }
+      if (!result.noop) { setNotice(planningIssueText(result.error)); const rect = card.current?.getBoundingClientRect(); setFeedback({ text: planningIssueText(result.error),x: point?.x ?? rect?.left ?? 20,y: point?.y ?? rect?.bottom ?? 100 }) }
       return
     }
     closeDetails(); setContext(null); setMoving(moving ?? { id,from: match.scheduledAt,epoch: current.epoch }); setProposal(request)
@@ -67,7 +68,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
     const current = v2SessionStore.getState(); if (current.saving) return
     const originalSlot = current.working?.slots.find(slot => slot.matchId === request.matchId)
     const result = await v2SessionController.moveMatch(request,{ sourceId: tournamentId,epoch: isUndo ? current.epoch : moving?.epoch ?? current.epoch })
-    if (!result.ok) { setNotice(result.error); return }
+    if (!result.ok) { setNotice(result.issue ? planningIssueText(result.issue) : result.error); return }
     setUndo(isUndo ? null : { matchId: request.matchId,from: request.to,to: request.from,grid: request.grid,restore: true,targetSlotId: originalSlot?.id })
     cancel(); calendar.current?.getApi().gotoDate(new Date(request.to)); setNotice(`${isUndo ? 'Horario restaurado' : 'Movimiento guardado'}: ${display?.matches.find(m => m.id === request.matchId)?.pairA} vs. ${display?.matches.find(m => m.id === request.matchId)?.pairB} · ${label(request.to)}.`)
   }
@@ -87,7 +88,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
     </Menu></Portal>}
     <Portal><Popover opened={!!feedback} width={280} position="top-start" withinPortal floatingStrategy="fixed" trapFocus={false} returnFocus={false} middlewares={{ flip: true,shift: { padding: 8 } }}><Popover.Target><span aria-hidden className="calendar-v2-feedback-anchor" style={{ left: feedback?.x ?? 0,top: feedback?.y ?? 0 }} /></Popover.Target><Popover.Dropdown className="calendar-v2-feedback" role="status"><Text size="sm">{feedback?.text}</Text></Popover.Dropdown></Popover></Portal>
     <Modal opened={!!proposal} onClose={() => { if (!v2SessionStore.getState().saving) { setProposal(null); setNotice('Propuesta descartada. Podés elegir otra casilla.') } }} closeOnEscape={!state.saving && !state.navigationBlocked} closeOnClickOutside={!state.saving} trapFocus={!state.navigationBlocked} centered title="Revisar movimiento" closeButtonProps={{ disabled: state.saving,'aria-label': 'Descartar propuesta y volver a elegir destino' }}>
-      {proposal && movingMatch && <Stack><Text fw={600}>{movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="sm">De: {label(proposal.from)}</Text><Text size="sm">A: {label(proposal.to)} · {state.display?.duration} minutos</Text><Text size="sm">Solo cambia este partido. Se revisarán nuevamente cancha, ocupación y ambas parejas al aplicar.</Text>{state.saveError && <Text c="red" role="alert" size="sm">{state.saveError}</Text>}<Group justify="flex-end"><Button loading={state.saving} disabled={state.saving} onClick={() => void commit(proposal)}>Aplicar y guardar</Button></Group></Stack>}
+      {proposal && movingMatch && <Stack><Text fw={600}>{movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="sm">De: {label(proposal.from)}</Text><Text size="sm">A: {label(proposal.to)} · {state.display?.duration} minutos</Text><Text size="sm">Solo cambia este partido. Se revisarán nuevamente cancha, ocupación y ambas parejas al aplicar.</Text>{(state.saveIssue ? planningIssueText(state.saveIssue) : state.saveError) && <Text c="red" role="alert" size="sm">{state.saveIssue ? planningIssueText(state.saveIssue) : state.saveError}</Text>}<Group justify="flex-end"><Button loading={state.saving} disabled={state.saving} onClick={() => void commit(proposal)}>Aplicar y guardar</Button></Group></Stack>}
     </Modal>
   </>
   return { interaction,controls,overlays,floating,start,cancel,clearHistory: () => { setUndo(null); setNotice('Los ajustes manuales anteriores se reemplazaron. Podés proponer nuevos movimientos.') } }
