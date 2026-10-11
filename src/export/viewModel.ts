@@ -1,5 +1,5 @@
 import { v2ReadinessData } from '../domain/v2Readiness'
-import { planningIssueText } from '../ui/read-v2/planningIssueText'
+import { planningIssueText } from '../presentation/planningIssueText'
 import { hasCompleteV2Configuration } from '../domain/v2Configuration'
 import { deriveV2Conflicts, v2LocalDateTime } from '../domain/v2Restrictions'
 import { parseV2Timestamp, v2CourtDay } from '../domain/v2Display'
