@@ -18,7 +18,7 @@ export function getV2AutomaticDay(source: Tournament, day: string): DailyTimeWin
 }
 
 export const V2_DEFAULT_AUTOMATIC_WEEKDAYS = Object.freeze([1,2,3,4,5])
-const weekdayNames = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo']
+export const weekdayNames = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'] as const
 export function validV2AutomaticWeekdays(value: unknown): value is number[] {
   return Array.isArray(value) && value.length > 0 && value.length <= 7 && new Set(value).size === value.length && Array.from(value).every(day => Number.isInteger(day) && day >= 1 && day <= 7)
 }

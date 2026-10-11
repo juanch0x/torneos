@@ -7,6 +7,7 @@ import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
 import { plural } from '../../domain/text'
 import { configurationIssueText } from './organizerWarnings'
+import { planningIssueText } from './planningIssueText'
 import type { Tournament } from '../../domain/types'
 
 export function hasLegacyPlanningData(source: Tournament): boolean {
@@ -58,7 +59,7 @@ function ConfigurationModal({ initial, epoch, tournamentId, onClose, onSaved }: 
       event.preventDefault(); if (v2SessionStore.getState().saving) return
       setError('')
       const result = await v2SessionController.saveConfiguration(draft, { sourceId: tournamentId, epoch })
-      if (result.ok) onSaved(); else setError(result.error)
+      if (result.ok) onSaved(); else setError(result.issue ? planningIssueText(result.issue) : result.error)
     }}><Stack gap="md">
       <Text size="sm">Definí el período, la disponibilidad física y el horario de generación. Guardar no genera ni reprograma partidos y no elimina restricciones.</Text>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>{field('startDate', 'Primer día del período', 'date')}{field('endDate', 'Último día del período', 'date')}</SimpleGrid>
@@ -67,7 +68,7 @@ function ConfigurationModal({ initial, epoch, tournamentId, onClose, onSaved }: 
       <Text size="xs" c="dimmed">Las excepciones de cancha existentes se preservan, sin editor en esta etapa. Con resultados existentes no se permite cambiar ni inferir una duración histórica.</Text>
       {!validation.ok && <Text c="orange.8" size="sm">{validation.error}</Text>}
       {!!impacts.length && <Alert color="orange">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisá el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
-      {error && <Text role="alert" c="red" size="sm">{error}</Text>}
+      {(error || (state.saveIssue ? planningIssueText(state.saveIssue) : state.saveError)) && <Text role="alert" c="red" size="sm">{error || (state.saveIssue ? planningIssueText(state.saveIssue) : state.saveError)}</Text>}
       <Group justify="space-between"><Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando configuración…' : 'Solo se guarda al confirmar.'}</Text><Group><Button disabled={state.saving} variant="default" onClick={close}>Cancelar</Button><Button type="submit" loading={state.saving} disabled={state.saving || !validation.ok}>Guardar configuración</Button></Group></Group>
     </Stack></form>
   </Modal><Modal opened={discard} onClose={() => setDiscard(false)} centered size="sm" zIndex={410} title="¿Descartar cambios?" closeButtonProps={{ 'aria-label': 'Continuar editando configuración' }}><Stack><Text size="sm">La configuración tiene cambios sin guardar.</Text><Group justify="flex-end"><Button variant="default" data-autofocus onClick={() => setDiscard(false)}>Continuar editando</Button><Button color="red" onClick={onClose}>Descartar cambios</Button></Group></Stack></Modal></>

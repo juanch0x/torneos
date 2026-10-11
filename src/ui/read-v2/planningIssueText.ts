@@ -1,8 +1,9 @@
-import type { V2PlanningIssue } from '../../domain/v2PlanningIssues'
+import type { StaticPlanningCode, V2PlanningIssue } from '../../domain/v2PlanningIssues'
+import { weekdayNames } from '../../domain/v2AutomaticHours'
 import { plural } from '../../domain/text'
 import { formatDateRange, formatDayDate, formatTimeRange, tryFormatDayDateTime } from '../format'
 
-const messages = {
+const staticMessages: Record<StaticPlanningCode, string> = {
   "initial-generation-blocked": "Este torneo ya tiene horarios, franjas asignadas o resultados. La generación inicial no los reemplaza; usá Regenerar calendario con confirmación si no hay resultados.",
   "configuration-required": "Completá y guardá período, Disponibilidad de la cancha, Horario del torneo, Días del torneo y duración antes de generar.",
   "match-limit": "Los partidos superan el límite de 1000 partidos de esta generación. No se evaluó su factibilidad.",
@@ -24,14 +25,15 @@ const messages = {
   "court-closed": "La cancha está cerrada ese día.",
   "move-court-hours": "El partido completo debe quedar dentro de la Disponibilidad de la cancha.",
   "move-occupied": "Ese intervalo está ocupado por otro partido. No desplazamos otros horarios.",
-  "undo-slot-stale": "La franja original ya no está libre o cambió. No se puede deshacer este movimiento."
-} as const
-const dayNames = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
-const days = (weekdays: number[]) => weekdays.slice().sort((a,b) => a-b).map(day => dayNames[day-1]).join(', ')
+  "undo-slot-stale": "La franja original ya no está libre o cambió. No se puede deshacer este movimiento.",
+}
+
+const isStaticCode = (code: string): code is StaticPlanningCode => code in staticMessages
+const days = (weekdays: number[]) => weekdays.slice().sort((a,b) => a-b).map(day => weekdayNames[day-1]).join(', ')
 
 /** Extend the union and this exhaustive renderer for new planning conflict codes. */
 export function planningIssueText(issue: V2PlanningIssue, timeZone?: string): string {
-  if (issue.code in messages) return messages[issue.code as keyof typeof messages]
+  if (isStaticCode(issue.code)) return staticMessages[issue.code]
   switch (issue.code) {
     case 'source-diagnostic': return issue.diagnostic.code === 'invalid-date' ? 'Hay una fecha u horario inválido en los datos del torneo. Revisá las restricciones y los partidos; no se modificó ningún registro.' : 'Los datos del torneo tienen una inconsistencia. Revisá grupos, restricciones y configuración; no se modificó ningún registro.'
     case 'category-pairs': return `${issue.category}: agregá parejas.`
@@ -52,8 +54,6 @@ export function planningIssueText(issue: V2PlanningIssue, timeZone?: string): st
     case 'move-grid': return `Elegí una casilla de ${plural(issue.durationMinutes, 'minuto', 'minutos')} en la grilla visible.`
     case 'restriction-conflict': return `${issue.pair} no puede: ${restrictionRange(issue.restriction, timeZone)}${issue.restriction.reason ? ` · ${issue.restriction.reason}` : ''}.`
   }
-  // Static codes above are handled by the message table, checked against the union.
-  return messages[issue.code]
 }
 function restrictionsText(restrictions: Extract<V2PlanningIssue, { code: 'match-restrictions' }>['restrictions'], timeZone?: string): string {
   return restrictions.map(window => `${restrictionRange(window, timeZone)}${window.reason ? ` (${window.reason})` : ''}`).join('; ')

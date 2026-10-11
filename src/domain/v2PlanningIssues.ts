@@ -1,5 +1,5 @@
 import type { V2ReadinessIssue } from './v2Readiness'
-import type { DailyTimeWindow, Match, PairUnavailableWindow } from './types'
+import type { DailyTimeWindow, PairUnavailableWindow } from './types'
 
 /** Planning failures carry facts; presentation and local date formatting belong to the UI. */
 export type V2PlanningIssue = V2ReadinessIssue
@@ -11,9 +11,18 @@ export type V2PlanningIssue = V2ReadinessIssue
   | { code: 'invalid-restriction'; restrictionId: string }
   | { code: 'nonexistent-local-time'; day: string }
   | { code: 'no-eligible-days'; startDate: string; endDate: string; weekdays: number[] }
-  | { code: 'no-match-slots'; match: Match; label: string; durationMinutes: number; startDate: string; endDate: string; automaticWindow: DailyTimeWindow; weekdays: number[]; restrictions: PairUnavailableWindow[] }
+  | { code: 'no-match-slots'; matchId: string; pairAId?: string; pairBId?: string; label: string; durationMinutes: number; startDate: string; endDate: string; automaticWindow: DailyTimeWindow; weekdays: number[]; restrictions: PairUnavailableWindow[] }
   | { code: 'insufficient-capacity'; matchCount: number; slotCount: number; weekdays: number[] }
   | { code: 'competing-matches'; matchCount: number; weekdays: number[] }
-  | { code: 'match-restrictions'; match: Match; label: string; restrictions: PairUnavailableWindow[] }
+  | { code: 'match-restrictions'; matchId: string; pairAId?: string; pairBId?: string; label: string; restrictions: PairUnavailableWindow[] }
   | { code: 'move-grid'; durationMinutes: number }
   | { code: 'restriction-conflict'; matchId: string; pairId: string; pair: string; restriction: PairUnavailableWindow }
+
+type KeysWithoutCode<T> = Exclude<keyof T, 'code'>
+export type StaticPlanningCode = V2PlanningIssue extends infer I
+  ? I extends { code: string }
+    ? KeysWithoutCode<I> extends never
+      ? I['code']
+      : never
+    : never
+  : never

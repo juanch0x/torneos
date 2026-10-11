@@ -1,6 +1,6 @@
 import { planningIssueText } from './planningIssueText'
 import { v2StructureBlocked } from '../../domain/v2Membership'
-import { v2ReadinessIssues } from '../../domain/v2Readiness'
+import { v2ReadinessData } from '../../domain/v2Readiness'
 import { exportPlanningXlsx } from '../../export'
 import { createExportXlsxController, initialExportXlsxState } from '../exportXlsxController'
 import { planningExportIssues } from '../../export/viewModel'
@@ -83,7 +83,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
     {membershipAttempt && <Button variant="light" disabled={state.saving || state.draftDirty} onClick={() => void submitMembership(membershipAttempt)}>Reintentar la asignación pendiente</Button>}
     {editing && <RestrictionModal pairName={editing.name} initialWindows={editing.drafts} config={editing.config} onDraftDirtyChange={markDraftDirty} suspendFocus={state.navigationBlocked} onCancel={() => setEditing(null)} onSave={async drafts => {
       const result = await v2SessionController.savePairRestrictions(editing.pairId, drafts, { sourceId: tournamentId, epoch: editing.epoch })
-      if (!result.ok) return result.error
+      if (!result.ok) return result.issue ? planningIssueText(result.issue) : result.error
       setNotice(`Guardado en este torneo. Horarios intactos.${result.merges.length ? ` Se unieron ${plural(result.merges.length, 'restricción superpuesta', 'restricciones superpuestas')}.` : ''}`)
       setEditing(null)
     }} />}
@@ -105,7 +105,7 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
   const display = state.sourceId === tournamentId && state.display ? organizerDisplay(state.display) : null
   const match = display?.matches.find(match => match.key === details)
   const replacement = !!state.working && !!v2InitialGenerationBlocked(state.working)
-  const readiness = state.working ? v2ReadinessIssues(state.working) : []
+  const readiness = state.working ? v2ReadinessData(state.working) : []
   const organizerReadiness = display ? organizerReadinessIssues(display, readiness) : []
   const operationalWarning = display ? operationalPlanningWarning(display) : null
   const exportIssues = state.baseline ? planningExportIssues(state.baseline) : ['No hay un calendario confirmado.']
@@ -115,11 +115,14 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
   const snapshot: V2ReadSnapshot | null = state.working && display ? { baseline: state.working, display, sourceId: tournamentId, sourceVersion: state.sourceVersion! } : null
   return <Stack className="calendar-v2" gap="lg"><Group justify="space-between" className="calendar-v2-real-header"><Stack gap={6}><Title order={1} size="h2">Planificar la fase de grupos</Title><Text c="dimmed">Una cancha. Generá el calendario inicial y revisá cada movimiento antes de guardar.</Text></Stack>{moves.floating}</Group><V2SessionStatus tournamentId={tournamentId} />
     {operationalWarning && <Alert color="red" role="alert">{operationalWarning}</Alert>}
-    {snapshot && <>{!!organizerReadiness.length && <Alert color="orange" title="Completá las asignaciones antes de generar">{organizerReadiness.map((issue,index) => <Text size="sm" key={index}>{issue}</Text>)}<Button variant="light" renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Completar grupos</Button></Alert>}<Group><Button variant="default" loading={exportState.isExporting} disabled={state.saving || state.dirty || state.draftDirty || state.writeUncertain || state.navigationBlocked || exportIssues.length > 0} onClick={() => { const confirmed = structuredClone(v2SessionStore.getState().baseline!); void exportController.run(() => exportPlanningXlsx(confirmed)) }}>Exportar calendario XLSX</Button><Text size="xs" c="dimmed">Hora local del navegador</Text></Group>{exportState.errorMessage && <Alert color="red">{exportState.errorMessage}</Alert>}{!operationalWarning && !!exportIssues.length && <Text size="xs" c="dimmed">Exportación no disponible: {display ? organizerExportIssue(display, exportIssues) : 'Generá y confirmá un calendario completo.'}</Text>}<Paper withBorder p="sm" radius="md"><Stack gap="xs"><Group justify="space-between"><Text size="sm">{state.draftDirty ? 'Cancelá o guardá la edición antes de generar o regenerar.' : replacement ? regenerationBlocked ?? 'Regenerar reemplaza todo el calendario sin resultados, previa confirmación. No elimina parejas, grupos ni restricciones.' : 'Generar el calendario de todos los partidos y guardar este torneo. Si no caben todos, no cambia nada.'}</Text><Button color={replacement ? 'red' : undefined} variant={replacement ? 'light' : 'filled'} disabled={!!regenerationBlocked || state.saving || state.draftDirty || state.navigationBlocked || state.writeUncertain || readiness.length > 0} loading={state.saving} onClick={async () => {
+    {snapshot && <>{!!organizerReadiness.length && <Alert color="orange" title="Completá las asignaciones antes de generar">{organizerReadiness.map((issue,index) => <Text size="sm" key={index}>{planningIssueText(issue)}</Text>)}<Button variant="light" renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Completar grupos</Button></Alert>}<Group><Button variant="default" loading={exportState.isExporting} disabled={state.saving || state.dirty || state.draftDirty || state.writeUncertain || state.navigationBlocked || exportIssues.length > 0} onClick={() => { const confirmed = structuredClone(v2SessionStore.getState().baseline!); void exportController.run(() => exportPlanningXlsx(confirmed)) }}>Exportar calendario XLSX</Button><Text size="xs" c="dimmed">Hora local del navegador</Text></Group>{exportState.errorMessage && <Alert color="red">{exportState.errorMessage}</Alert>}{!operationalWarning && !!exportIssues.length && <Text size="xs" c="dimmed">Exportación no disponible: {display ? organizerExportIssue(display, exportIssues) : 'Generá y confirmá un calendario completo.'}</Text>}<Paper withBorder p="sm" radius="md"><Stack gap="xs"><Group justify="space-between"><Text size="sm">{state.draftDirty ? 'Cancelá o guardá la edición antes de generar o regenerar.' : replacement ? regenerationBlocked ?? 'Regenerar reemplaza todo el calendario sin resultados, previa confirmación. No elimina parejas, grupos ni restricciones.' : 'Generar el calendario de todos los partidos y guardar este torneo. Si no caben todos, no cambia nada.'}</Text><Button color={replacement ? 'red' : undefined} variant={replacement ? 'light' : 'filled'} disabled={!!regenerationBlocked || state.saving || state.draftDirty || state.navigationBlocked || state.writeUncertain || readiness.length > 0} loading={state.saving} onClick={async () => {
         setGenerationIssues([]); setGenerationNotice('')
         if (replacement) { moves.cancel(); setDetails(null); setRegenerationEpoch(v2SessionStore.getState().epoch); return }
         const result = await v2SessionController.generateCalendar({ sourceId: tournamentId, epoch: v2SessionStore.getState().epoch })
-        if (!result.ok) setGenerationIssues(result.issues ?? [result.error])
+        if (!result.ok) {
+          const issues = result.issues ?? (result.issue ? [result.issue] : [result.error])
+          setGenerationIssues(issues.map(issue => typeof issue === 'string' ? issue : planningIssueText(issue)))
+        }
         else setGenerationNotice('Calendario completo generado y guardado en este torneo.')
       }}>{replacement ? 'Regenerar calendario' : 'Generar calendario'}</Button></Group><Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando… No cierres esta vista.' : generationNotice}</Text>
       {!!generationIssues.length && <Alert color="orange" title="No se confirmó un calendario completo"><Stack gap="xs" style={{ maxHeight: 220, overflowY: 'auto' }}>{generationIssues.map((issue, i) => <Text key={i} size="sm">{issue}</Text>)}</Stack><Button mt="sm" variant="light" renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Editar restricciones / Configurar período</Button></Alert>}
@@ -137,7 +140,10 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
         if (regenerationEpoch === null || v2SessionStore.getState().saving) return
         setGenerationIssues([]); setGenerationNotice('')
         void v2SessionController.regenerateCalendar({ sourceId: tournamentId,epoch: regenerationEpoch }).then(result => {
-          if (!result.ok) setGenerationIssues(result.issues ?? [result.error])
+          if (!result.ok) {
+            const issues = result.issues ?? (result.issue ? [result.issue] : [result.error])
+            setGenerationIssues(issues.map(issue => typeof issue === 'string' ? issue : planningIssueText(issue)))
+          }
           else { moves.clearHistory(); setRegenerationEpoch(null); setGenerationNotice('Calendario regenerado y guardado. Se reemplazaron los ajustes manuales; parejas, grupos, restricciones y configuración intactos.') }
         })
       }} />

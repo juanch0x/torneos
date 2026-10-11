@@ -2,7 +2,7 @@ import { createTournament, createCategory, createPair } from '../factories'
 import { describe, it, expect } from 'vitest'
 import { sample } from './fixtures/v2Tournament'
 import { applyV2Membership, v2StructureBlocked } from '../v2Membership'
-import { v2ReadinessIssues } from '../v2Readiness'
+import { v2ReadinessData } from '../v2Readiness'
 function prepared() { const t=sample(); t.slots=[]; t.categories[0].matches=[{id:'m',groupId:'g',pairAId:'a',pairBId:'b',round:1}]; return t }
 describe('manual membership', () => {
   it('assigns unassigned and preserves surviving records and windows', () => { const t=prepared(); t.pairUnavailableWindows=[{id:'w',pairId:'free',startsAt:'2026-10-05T10:00:00Z',endsAt:'2026-10-05T11:00:00Z'}]; const result=applyV2Membership(t,{categoryId:'c',pairId:'free',groupId:'g'}); expect(result.ok).toBe(true); if(result.ok) { expect(result.document.categories[0].matches[0]).toEqual(t.categories[0].matches[0]); expect(result.document.categories[0].matches).toHaveLength(3); expect(result.document.pairUnavailableWindows).toEqual(t.pairUnavailableWindows); expect(t.categories[0].groups[0].pairIds).toEqual(['a','b']) } })
@@ -20,9 +20,21 @@ describe('manual membership', () => {
   it('removes only eligible obsolete crosses',()=> { const t=prepared(); t.categories[0].groups.push({id:'other',name:'Other',pairIds:['free']}); const result=applyV2Membership(t,{categoryId:'c',pairId:'a',groupId:'other'}); expect(result.ok).toBe(true); if(result.ok) {expect(result.document.categories[0].matches).toHaveLength(1); expect(result.document.categories[0].matches[0].groupId).toBe('other')} })
 })
 describe('generation readiness',()=> {
-  it('reports every unassigned pair',()=> {expect(v2ReadinessIssues(prepared()).join(' ')).toContain('X / Y')})
-  it('requires exact once and groups of two',()=> {const t=prepared(); t.categories[0].groups.push({id:'other',name:'Other',pairIds:['a','free']}); expect(v2ReadinessIssues(t).join(' ')).toContain('Ada / Luz')})
-  it('allows complete membership',()=> {const t=prepared();t.categories[0].groups[0].pairIds.push('free');expect(v2ReadinessIssues(t)).toEqual([])})
+  it('reports every unassigned pair',()=> {
+    const issues = v2ReadinessData(prepared())
+    expect(issues.some(issue => issue.code === 'pair-membership' && issue.pair === 'X / Y')).toBe(true)
+  })
+  it('requires exact once and groups of two',()=> {
+    const t = prepared()
+    t.categories[0].groups.push({ id: 'other', name: 'Other', pairIds: ['a', 'free'] })
+    const issues = v2ReadinessData(t)
+    expect(issues.some(issue => issue.code === 'pair-membership' && issue.pair === 'Ada / Luz')).toBe(true)
+  })
+  it('allows complete membership',()=> {
+    const t = prepared()
+    t.categories[0].groups[0].pairIds.push('free')
+    expect(v2ReadinessData(t)).toEqual([])
+  })
 })
 
 

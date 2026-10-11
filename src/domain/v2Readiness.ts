@@ -23,17 +23,3 @@ export function v2ReadinessData(source: Tournament): V2ReadinessIssue[] {
   }
   return issues
 }
-
-/** Legacy consumers retain their existing text; planning consumes the structured data. */
-export function v2ReadinessIssues(source: Tournament): string[] {
-  return v2ReadinessData(source).map(issue => {
-    switch (issue.code) {
-      case 'source-diagnostic': return `${issue.diagnostic.path}: ${issue.diagnostic.message}`
-      case 'no-categories': return 'Agregá categorías y parejas antes de generar.'
-      case 'category-pairs': return `${issue.category}: agregá parejas.`
-      case 'category-groups': return `${issue.category}: definí al menos un grupo.`
-      case 'pair-membership': return `${issue.category} · ${issue.pair}: asigná la pareja a exactamente un grupo (actualmente ${issue.count}).`
-      case 'group-pairs': return `${issue.category} · ${issue.group}: se necesitan al menos dos parejas.`
-    }
-  })
-}

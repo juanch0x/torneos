@@ -9,7 +9,7 @@ describe('structured planning failures', () => {
   it('returns exact restriction data rather than formatted generation text', () => {
     const t = source(); t.pairUnavailableWindows = [{ id: 'w', pairId: 'a', startsAt: at('09:00'), endsAt: at('16:00'), reason: 'Trabajo' }]
     const result = generateV2Calendar(t)
-    expect(result).toMatchObject({ ok: false, error: { code: 'no-match-slots', durationMinutes: 30, restrictions: t.pairUnavailableWindows, match: { pairAId: 'a', pairBId: 'b' } } })
+    expect(result).toMatchObject({ ok: false, error: { code: 'no-match-slots', durationMinutes: 30, restrictions: t.pairUnavailableWindows, matchId: expect.any(String), pairAId: 'a', pairBId: 'b' } })
   })
   it('returns civil period and selected weekdays without formatting them', () => {
     const t = source(); t.fixtureSettings!.automaticWeekdays = [7]
@@ -67,5 +67,41 @@ describe('structured validation codes preserve rejection behavior', () => {
   ])('returns generation %s with no source mutation', (code, mutate) => {
     const t = source(); mutate(t); const before = structuredClone(t)
     expect(generateV2Calendar(t)).toMatchObject({ ok: false, error: { code } }); expect(t).toEqual(before)
+  })
+
+  it('rejects moving a played match with move-played', () => {
+    const t = moving()
+    t.categories[0].matches[0].result = { scoreA: 1, scoreB: 0 }
+    expect(validateV2Move(t, { matchId: 'm', from: at('09:00'), to: at('10:00'), grid: 'automatic' })).toEqual({
+      ok: false,
+      error: { code: 'move-played' },
+    })
+  })
+
+  it('rejects moving when match schedule is stale with move-stale', () => {
+    const t = moving()
+    t.categories[0].matches[0].scheduledAt = at('09:30')
+    expect(validateV2Move(t, { matchId: 'm', from: at('09:00'), to: at('10:00'), grid: 'automatic' })).toEqual({
+      ok: false,
+      error: { code: 'move-stale' },
+    })
+  })
+
+  it('rejects moving to closed court day with court-closed', () => {
+    const t = moving()
+    expect(validateV2Move(t, { matchId: 'm', from: at('09:00'), to: new Date('2026-10-06T10:00').toISOString(), grid: 'automatic' })).toEqual({
+      ok: false,
+      error: { code: 'court-closed' },
+    })
+  })
+
+  it('rejects moving to an occupied slot with move-occupied', () => {
+    const t = moving()
+    t.categories[0].matches.push({ ...t.categories[0].matches[0], id: 'other', scheduledAt: at('10:00') })
+    t.slots.push({ id: 'other-slot', startsAt: at('10:00'), matchId: 'other' })
+    expect(validateV2Move(t, { matchId: 'm', from: at('09:00'), to: at('10:00'), grid: 'automatic' })).toEqual({
+      ok: false,
+      error: { code: 'move-occupied' },
+    })
   })
 })

@@ -4,13 +4,14 @@ import { adaptV2Tournament, type V2Display } from '../domain/v2Display'
 import { deriveV2Conflicts, getV2RestrictionConfig, normalizeV2PairWindows, validateV2DraftBounds, type V2RestrictionDraft, type V2WindowMerge } from '../domain/v2Restrictions'
 import { cloneV2Document } from '../domain/v2Snapshot'
 import type { Tournament, TournamentMeta } from '../domain/types'
+import type { V2PlanningIssue } from '../domain/v2PlanningIssues'
 
 export interface V2SessionState {
   sourceId: string | null; sourceVersion: string | null
   baseline: Tournament | null; working: Tournament | null; display: V2Display | null
   status: 'idle' | 'loading' | 'loaded' | 'not-found' | 'error'; error: string; dirty: boolean
   sources: TournamentMeta[]; listError: string; epoch: number; draftDirty: boolean; navigationBlocked: boolean; draftDiscardRevision: number
-  saving: boolean; saveError: string; writeUncertain: boolean
+  saving: boolean; saveError: string; saveIssue: V2PlanningIssue | null; writeUncertain: boolean
   availability: ReturnType<typeof deriveV2Conflicts>
   savePairRestrictions: (pairId: string, drafts: V2RestrictionDraft[], expected: { sourceId: string; epoch: number }) => { ok: true; merges: V2WindowMerge[] } | { ok: false; error: string }
   movePair: (request: V2MembershipRequest, expected: { sourceId: string; epoch: number }) => { ok: true } | { ok: false; error: string }
@@ -18,7 +19,7 @@ export interface V2SessionState {
   replaceWorking: (working: Tournament) => boolean
   resetWorking: () => boolean
 }
-export const emptyV2Session = { sourceId: null, sourceVersion: null, baseline: null, working: null, display: null, status: 'idle' as const, error: '', dirty: false, saving: false, saveError: '', writeUncertain: false }
+export const emptyV2Session = { sourceId: null, sourceVersion: null, baseline: null, working: null, display: null, status: 'idle' as const, error: '', dirty: false, saving: false, saveError: '', saveIssue: null as V2PlanningIssue | null, writeUncertain: false }
 export function createV2SessionStore() {
   return createStore<V2SessionState>((set, get) => ({
     ...emptyV2Session, sources: [], listError: '', epoch: 0, draftDirty: false, navigationBlocked: false, draftDiscardRevision: 0, availability: { conflicts: [], unvalidated: [] },

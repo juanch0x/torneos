@@ -3,7 +3,8 @@ import { sample } from '../../domain/__tests__/fixtures/v2Tournament'
 import { adaptV2Tournament } from '../../domain/v2Display'
 import { deriveV2Conflicts } from '../../domain/v2Restrictions'
 import { planningExportIssues } from '../../export/viewModel'
-import { v2ReadinessIssues } from '../../domain/v2Readiness'
+import { v2ReadinessData } from '../../domain/v2Readiness'
+import { planningIssueText } from './planningIssueText'
 import { availabilityWarnings, configurationIssueText, organizerDisplay, operationalPlanningWarning, organizerReadinessIssues, organizerExportIssue } from './organizerWarnings'
 
 describe('organizer warnings', () => {
@@ -62,9 +63,9 @@ describe('organizer warnings', () => {
     expect(warning).toContain('No se pueden mover ni exportar partidos')
     expect(warning).toContain('franjas')
     expect(warning).not.toContain('slots[')
-    const readiness = organizerReadinessIssues(adaptV2Tournament(source), v2ReadinessIssues(source))
-    expect(readiness.some(issue => issue.includes('asigná la pareja'))).toBe(true)
-    expect(readiness.join(' ')).not.toContain('categories[')
+    const readiness = organizerReadinessIssues(adaptV2Tournament(source), v2ReadinessData(source))
+    expect(readiness.some(issue => planningIssueText(issue).includes('asigná la pareja'))).toBe(true)
+    expect(readiness.map(issue => planningIssueText(issue)).join(' ')).not.toContain('categories[')
     expect(organizerExportIssue(adaptV2Tournament(source), planningExportIssues(source))).not.toContain('categories[')
   })
 
@@ -77,7 +78,7 @@ describe('organizer warnings', () => {
     const display = adaptV2Tournament(source)
     expect(display.diagnostics.some(issue => issue.code === 'duplicate-id')).toBe(true)
     expect(operationalPlanningWarning(display)).toContain('No se puede generar ni exportar')
-    expect(organizerReadinessIssues(display, v2ReadinessIssues(source)).join(' ')).not.toContain('Identificador repetido')
+    expect(organizerReadinessIssues(display, v2ReadinessData(source)).map(issue => planningIssueText(issue)).join(' ')).not.toContain('Identificador repetido')
   })
 
   it('does not mistake ordinary pre-configuration absence for corrupt tournament data', () => {
