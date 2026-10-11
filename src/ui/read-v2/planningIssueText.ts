@@ -28,12 +28,10 @@ const staticMessages: Record<StaticPlanningCode, string> = {
   "undo-slot-stale": "La franja original ya no está libre o cambió. No se puede deshacer este movimiento.",
 }
 
-const isStaticCode = (code: string): code is StaticPlanningCode => code in staticMessages
 const days = (weekdays: number[]) => weekdays.slice().sort((a,b) => a-b).map(day => weekdayNames[day-1]).join(', ')
 
 /** Extend the union and this exhaustive renderer for new planning conflict codes. */
 export function planningIssueText(issue: V2PlanningIssue, timeZone?: string): string {
-  if (isStaticCode(issue.code)) return staticMessages[issue.code]
   switch (issue.code) {
     case 'source-diagnostic': return issue.diagnostic.code === 'invalid-date' ? 'Hay una fecha u horario inválido en los datos del torneo. Revisá las restricciones y los partidos; no se modificó ningún registro.' : 'Los datos del torneo tienen una inconsistencia. Revisá grupos, restricciones y configuración; no se modificó ningún registro.'
     case 'category-pairs': return `${issue.category}: agregá parejas.`
@@ -53,6 +51,10 @@ export function planningIssueText(issue: V2PlanningIssue, timeZone?: string): st
     case 'match-restrictions': return `${issue.label}. ${restrictionsText(issue.restrictions, timeZone)}`
     case 'move-grid': return `Elegí una casilla de ${plural(issue.durationMinutes, 'minuto', 'minutos')} en la grilla visible.`
     case 'restriction-conflict': return `${issue.pair} no puede: ${restrictionRange(issue.restriction, timeZone)}${issue.restriction.reason ? ` · ${issue.restriction.reason}` : ''}.`
+    default: {
+      const staticCode: StaticPlanningCode = issue.code
+      return staticMessages[staticCode]
+    }
   }
 }
 function restrictionsText(restrictions: Extract<V2PlanningIssue, { code: 'match-restrictions' }>['restrictions'], timeZone?: string): string {
