@@ -1,4 +1,5 @@
-import { v2ReadinessIssues } from '../domain/v2Readiness'
+import { v2ReadinessData } from '../domain/v2Readiness'
+import { planningIssueText } from '../ui/read-v2/planningIssueText'
 import { hasCompleteV2Configuration } from '../domain/v2Configuration'
 import { deriveV2Conflicts, v2LocalDateTime } from '../domain/v2Restrictions'
 import { parseV2Timestamp, v2CourtDay } from '../domain/v2Display'
@@ -153,7 +154,11 @@ export function buildPlanningProjection(tournament: Tournament) {
 }
 
 export function planningExportIssues(source: Tournament): string[] {
-  const issues = v2ReadinessIssues(source)
+  const issues = v2ReadinessData(source).map(issue =>
+    issue.code === 'source-diagnostic'
+      ? `${issue.diagnostic.path}: ${issue.diagnostic.message}`
+      : planningIssueText(issue)
+  )
   if (!hasCompleteV2Configuration(source)) issues.push('Completá y guardá la configuración del torneo.')
   const availability = deriveV2Conflicts(source)
   if (availability.conflicts.length || availability.unvalidated.length) issues.push('Revisá los conflictos y las restricciones sin validar antes de exportar.')

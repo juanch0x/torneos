@@ -13,11 +13,11 @@ describe('planning issue presentation', () => {
     expect(planningIssueText({ ...conflict, restriction: { ...restriction, startsAt: '2026-02-30T18:00:00Z' } }, zone)).toBe('Ada / Luz no puede: Horario inválido · Trabajo.')
   })
   it('renders generation and collective failures with the same local restriction format', () => {
-    const issue: V2PlanningIssue = { code: 'no-match-slots', match, label: 'Primera · A: Ada / Luz vs. Leo / Sol', durationMinutes: 1, startDate: '2026-12-28', endDate: '2027-01-08', automaticWindow: { startsAt: '18:00', endsAt: '22:00' }, weekdays: [5,1], restrictions: [restriction] }
+    const issue: V2PlanningIssue = { code: 'no-match-slots', matchId: match.id, label: 'Primera · A: Ada / Luz vs. Leo / Sol', durationMinutes: 1, startDate: '2026-12-28', endDate: '2027-01-08', automaticWindow: { startsAt: '18:00', endsAt: '22:00' }, weekdays: [5,1], restrictions: [restriction] }
     const text = planningIssueText(issue, zone)
     expect(text).toContain('1 minuto'); expect(text).toContain('28/12/2026 → 08/01/2027'); expect(text).toContain('lunes, viernes')
     expect(text).toContain('lun 12/10 23:00 → mar 13/10 01:00 (Trabajo)')
-    expect(planningIssueText({ code: 'match-restrictions', match, label: issue.label, restrictions: [restriction] }, zone)).toContain('lun 12/10 23:00')
+    expect(planningIssueText({ code: 'match-restrictions', matchId: match.id, label: issue.label, restrictions: [restriction] }, zone)).toContain('lun 12/10 23:00')
     expect(text).not.toMatch(/hidden-|\d{4}-\d{2}-\d{2}T/)
   })
   it('uses singular/plural for capacity, competition and grid duration', () => {

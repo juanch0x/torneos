@@ -1,4 +1,3 @@
-import { planningIssueText } from '../ui/read-v2/planningIssueText'
 import type { V2PlanningIssue } from '../domain/v2PlanningIssues'
 import { type V2MembershipRequest } from '../domain/v2Membership'
 import type { StoreApi } from 'zustand/vanilla'
@@ -20,15 +19,22 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
   let active: { id: string; promise: Promise<ReadResult> } | null = null
   let listed = false
   let listing: Promise<void> | null = null
-  type SaveResult = { ok: true; merges: V2WindowMerge[] } | { ok: false; error: string; issues?: string[] }
-  type Prepared = { ok: true; document: Tournament; merges: V2WindowMerge[] } | { ok: false; error: string | V2PlanningIssue; issues?: string[] | V2PlanningIssue[] }
+  type SaveResult = { ok: true; merges: V2WindowMerge[] } | { ok: false; error: string; issue?: V2PlanningIssue; issues?: (string | V2PlanningIssue)[] }
+  type Prepared = { ok: true; document: Tournament; merges: V2WindowMerge[] } | { ok: false; error: string | V2PlanningIssue; issues?: (string | V2PlanningIssue)[] }
   async function persistConfirmed(expected: { sourceId: string; epoch: number }, prepare: (source: Tournament) => Prepared, kind = 'editing'): Promise<SaveResult> {
     const state = store.getState()
-    const fail = (error: string, issues?: string[]) => { store.setState({ saveError: error }); return { ok: false as const, error, issues } }
+    const fail = (error: string | V2PlanningIssue, issues?: (string | V2PlanningIssue)[]) => {
+      if (typeof error === 'string') {
+        store.setState({ saveError: error, saveIssue: null })
+        return { ok: false as const, error, issues }
+      }
+      store.setState({ saveError: '', saveIssue: error })
+      return { ok: false as const, error: error.code, issue: error, issues }
+    }
     if (state.saving) return { ok: false, error: 'Espera a que termine el guardado.' }
     if (!repository || !state.baseline || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch || state.dirty) return fail('La copia cambió. Releé el torneo y volvé a abrir el editor antes de guardar.')
     const token = revision; const baseline = state.baseline
-    store.setState({ saving: true, saveError: '' })
+    store.setState({ saving: true, saveError: '', saveIssue: null })
     try {
       const latest = await repository.load(expected.sourceId)
       if (token !== revision || store.getState().sourceId !== expected.sourceId || store.getState().epoch !== expected.epoch) return fail('La fuente cambió; no se guardaron los cambios.')
@@ -36,14 +42,14 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       const completingAttempt = (kind === 'generation' || kind === 'regeneration' || kind.startsWith('move:') || kind.startsWith('membership:')) && uncertainKind === kind && JSON.stringify(latest) === JSON.stringify(uncertainAttempt)
       const result: Prepared = completingAttempt
         ? { ok: true, document: latest, merges: [] } : prepare(latest)
-      if (!result.ok) return fail(typeof result.error === 'string' ? result.error : planningIssueText(result.error), result.issues?.map(issue => typeof issue === 'string' ? issue : planningIssueText(issue)))
+      if (!result.ok) return fail(result.error, result.issues)
       if (!completingAttempt && JSON.stringify(result.document) === JSON.stringify(latest) && !store.getState().writeUncertain) return { ok: true, merges: result.merges }
       const document = completingAttempt ? structuredClone(result.document) : { ...structuredClone(result.document), updatedAt: new Date().toISOString() }
       uncertainAttempt = document; uncertainKind = kind
       await repository.save(document)
       if (token !== revision || store.getState().sourceId !== expected.sourceId || store.getState().epoch !== expected.epoch) return fail('El guardado terminó, pero esta vista cambió. Releé el torneo para confirmar su estado.')
       store.getState().acceptSource(document, expected.sourceId)
-      store.setState({ saveError: '', sources: store.getState().sources.map(source => source.id === document.id ? { ...source, updatedAt: document.updatedAt } : source) })
+      store.setState({ saveError: '', saveIssue: null, sources: store.getState().sources.map(source => source.id === document.id ? { ...source, updatedAt: document.updatedAt } : source) })
       uncertainAttempt = null
       return { ok: true, merges: result.merges }
     } catch {
@@ -52,44 +58,44 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
     } finally { store.setState({ saving: false }) }
   }
   return {
-    movePair(request: V2MembershipRequest, expected: { sourceId: string; epoch: number }) {
+    movePair(request: V2MembershipRequest, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = { ...request }
-      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const, error: 'Guardá o cancelá la edición antes de mover parejas.' })
+      if (store.getState().draftDirty) return Promise.resolve<SaveResult>({ ok: false, error: 'Guardá o cancelá la edición antes de mover parejas.' })
       return persistConfirmed(expected, latest => {
         const staged = createV2SessionStore(); staged.getState().acceptSource(latest, expected.sourceId)
         const result = staged.getState().movePair(snapshot, { sourceId: expected.sourceId, epoch: staged.getState().epoch })
         return result.ok ? { ok: true, document: staged.getState().working!, merges: [] } : result
       }, `membership:${JSON.stringify(snapshot)}`)
     },
-    moveMatch(request: V2MoveRequest, expected: { sourceId: string; epoch: number }) {
+    moveMatch(request: V2MoveRequest, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = { ...request }
       return persistConfirmed(expected, latest => {
         const result = applyV2Move(latest,snapshot)
         return result.ok ? { ...result,merges: [] } : result
       }, `move:${JSON.stringify(snapshot)}`)
     },
-    regenerateCalendar(expected: { sourceId: string; epoch: number }) {
-      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const,error: 'Guardá o cancelá la edición antes de regenerar.',issues: undefined })
+    regenerateCalendar(expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
+      if (store.getState().draftDirty) return Promise.resolve<SaveResult>({ ok: false, error: 'Guardá o cancelá la edición antes de regenerar.', issues: undefined })
       return persistConfirmed(expected,latest => {
         const result = regenerateV2Calendar(latest)
         return result.ok ? { ...result,merges: [] } : result
       },'regeneration')
     },
-    generateCalendar(expected: { sourceId: string; epoch: number }) {
-      if (store.getState().draftDirty) return Promise.resolve({ ok: false as const, error: 'Guardá o cancelá la edición antes de generar.', issues: undefined })
+    generateCalendar(expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
+      if (store.getState().draftDirty) return Promise.resolve<SaveResult>({ ok: false, error: 'Guardá o cancelá la edición antes de generar.', issues: undefined })
       return persistConfirmed(expected, latest => {
         const result = generateV2Calendar(latest)
         return result.ok ? { ...result, merges: [] } : result
       }, 'generation')
     },
-    saveConfiguration(draft: V2ConfigurationDraft, expected: { sourceId: string; epoch: number }) {
+    saveConfiguration(draft: V2ConfigurationDraft, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = structuredClone(draft)
       return persistConfirmed(expected, latest => {
         const result = applyV2Configuration(latest, snapshot)
         return result.ok ? { ...result, merges: [] } : result
       })
     },
-    savePairRestrictions(pairId: string, drafts: V2RestrictionDraft[], expected: { sourceId: string; epoch: number }) {
+    savePairRestrictions(pairId: string, drafts: V2RestrictionDraft[], expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = structuredClone(drafts)
       return persistConfirmed(expected, latest => {
         if (!hasCompleteV2Configuration(latest)) return { ok: false, error: 'Completá y guardá la configuración del torneo antes de editar restricciones.' }

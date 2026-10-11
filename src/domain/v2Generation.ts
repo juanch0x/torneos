@@ -92,7 +92,7 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
   for (const [mi, slots] of allowed.entries()) if (!slots.length) {
     const match = planned[mi]
     const restrictions = (source.pairUnavailableWindows ?? []).filter(w => [match.match.pairAId,match.match.pairBId].includes(w.pairId))
-    issues.push({ code: 'no-match-slots', match: match.match, label: match.label, durationMinutes: duration/60000, startDate: calendar.startDate, endDate: calendar.endDate, automaticWindow: getV2AutomaticWindow(source)!, weekdays, restrictions })
+    issues.push({ code: 'no-match-slots', matchId: match.match.id, pairAId: match.match.pairAId, pairBId: match.match.pairBId, label: match.label, durationMinutes: duration/60000, startDate: calendar.startDate, endDate: calendar.endDate, automaticWindow: getV2AutomaticWindow(source)!, weekdays, restrictions })
   }
   if (issues.length) return failure(issues)
   if (candidates.length < planned.length) return failure([{ code: 'insufficient-capacity', matchCount: planned.length, slotCount: candidates.length, weekdays }])
@@ -107,7 +107,7 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
       if (owner === undefined) { free = { match: queue[qi], slot }; break }
       if (!visited.has(owner)) { visited.add(owner); parent.set(owner, { match: queue[qi], slot }); queue.push(owner) }
     }
-    if (!free) return failure([{ code: 'competing-matches', matchCount: visited.size, weekdays }, ...[...visited].map(mi => ({ code: 'match-restrictions' as const, match: planned[mi].match, label: planned[mi].label, restrictions: (source.pairUnavailableWindows ?? []).filter(w => [planned[mi].match.pairAId, planned[mi].match.pairBId].includes(w.pairId)) }))])
+    if (!free) return failure([{ code: 'competing-matches', matchCount: visited.size, weekdays }, ...[...visited].map(mi => ({ code: 'match-restrictions' as const, matchId: planned[mi].match.id, pairAId: planned[mi].match.pairAId, pairBId: planned[mi].match.pairBId, label: planned[mi].label, restrictions: (source.pairUnavailableWindows ?? []).filter(w => [planned[mi].match.pairAId, planned[mi].match.pairBId].includes(w.pairId)) }))])
     let step: { match: number; slot: number } | undefined = free
     while (step) { owners.set(step.slot, step.match); assigned.set(step.match, step.slot); step = parent.get(step.match) }
   }
