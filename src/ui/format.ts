@@ -116,9 +116,3 @@ export function formatTimeRange(from: Input, to: Input, timeZone?: string): stri
     ? `${dayDate(pa)} ${clock(pa)}–${clock(pb)}`
     : `${dayDate(pa)} ${clock(pa)} → ${dayDate(pb)} ${clock(pb)}`
 }
-
-// Today's (or any) local calendar day as "YYYY-MM-DD", for date inputs. Never the UTC day.
-export function localDateInput(date: Date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}

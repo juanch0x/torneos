@@ -1,4 +1,3 @@
-import { formatTournamentPeriod } from '../tournamentPeriod'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Alert, Badge, Button, Group, NativeSelect, Paper, SimpleGrid, Stack, Table, Tabs, Text, Title } from '@mantine/core'
@@ -19,6 +18,7 @@ import type { TournamentMeta } from '../../domain/types'
 import { useTournamentStore } from '../../store/tournamentStore'
 import '../preparation-v2/preparationMock.css'
 import { formatShortDate, formatDateRange, formatDayDateTime } from '../format'
+import { formatTournamentPeriod } from '../tournamentPeriod'
 import { plural } from '../../domain/text'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]

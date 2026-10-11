@@ -40,14 +40,27 @@ export class LocalRepository implements TournamentRepository {
 
   async list(): Promise<TournamentMeta[]> {
     const index = (await get<TournamentMeta[]>(INDEX_KEY)) ?? []
-    // Read the document so old indexes also reflect the calendar, without migration.
-    return Promise.all(index.map(async meta => {
-      const tournament = await this.load(meta.id)
-      return tournament ? toMeta(tournament) : {
-        id: meta.id, name: meta.name, categoryCount: meta.categoryCount,
-        updatedAt: meta.updatedAt, periodStart: meta.periodStart, periodEnd: meta.periodEnd,
-      }
-    }))
+    return Promise.all(
+      index.map(async (meta) => {
+        const fallback: TournamentMeta = {
+          id: meta.id,
+          name: meta.name,
+          categoryCount: meta.categoryCount,
+          updatedAt: meta.updatedAt,
+          periodStart: meta.periodStart,
+          periodEnd: meta.periodEnd,
+        }
+        if (meta.periodStart !== undefined) {
+          return fallback
+        }
+        try {
+          const tournament = await this.load(meta.id)
+          return tournament ? toMeta(tournament) : fallback
+        } catch {
+          return fallback
+        }
+      }),
+    )
   }
 
   async remove(id: ID): Promise<void> {
