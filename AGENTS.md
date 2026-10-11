@@ -1,6 +1,25 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file provides guidance to coding agents (Codex, Claude Code, and others) when working with code in this repository. Claude Code reads it directly because the repo has no `CLAUDE.md`.
+
+## Execution budget (overrides global agent rules in this repo)
+
+These rules take precedence over any global or user-level instructions for work in this
+repository, including delegation or orchestration rules such as "General Delegation Rules".
+
+- **No sub-agents.** Do not spawn, delegate to, or coordinate sub-agents unless the user
+  explicitly asks for it in the current request. Work inline, one agent per task.
+- **No browser or device automation.** Do not run the app to drive a browser or device.
+  "Verify manually" means the user verifies it: list the manual QA steps in the PR test plan.
+- **Read narrowly.** Read issues with `gh issue view N --json title,body`; add `--comments`
+  only when the body points to them. Read code by range (`rg -n`, `sed -n 'a,bp'`).
+  Never `cat` several files at once. Never dump tool catalogs or whole SKILL.md files.
+- **Test proportionally.** While developing, run focused tests (`pnpm test <file>`).
+  Run `pnpm test`, `npx tsc --noEmit -p tsconfig.app.json` and `pnpm build` once,
+  before opening the PR. After a review fix, rerun the focused tests for what changed,
+  then the full checks once before pushing.
+- **Bounded output.** Keep command output short (for example `| tail -40`).
+  Final report: at most 10 lines.
 
 ## Product context (read before any exploration or feature work)
 

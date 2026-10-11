@@ -1,0 +1,9 @@
+# Lean defaults for this repo: no device/browser automation rules or tools.
+# Sub-agent behavior is governed by AGENTS.md, not by config (see "Execution budget").
+developer_instructions = ""
+
+[mcp_servers.argent]
+enabled = false
+
+[mcp_servers.railway]
+enabled = false
