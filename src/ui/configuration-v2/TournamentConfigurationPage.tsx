@@ -6,14 +6,14 @@ import type { Tournament } from '../../domain/types'
 import { plural } from '../../domain/text'
 import { getV2SetupDraft, isV2SetupComplete, v2CategoryRemovalImpact, v2SetupIssues, type V2SetupDraft } from '../../domain/v2Setup'
 import { applyV2Setup } from '../../domain/v2SetupApply'
-import { v2ConfigurationIssues } from '../../domain/v2Configuration'
+import { applyV2Configuration, v2ConfigurationIssues } from '../../domain/v2Configuration'
 import { v2SessionController } from '../../router/v2SessionController'
 import { v2SessionStore } from '../../store/v2Session'
 import { V2HourWindowsFields, hasLegacyPlanningData } from '../read-v2/V2ConfigurationPanel'
 import { V2SessionStatus, V2SourceControls } from '../read-v2/V2SourceControls'
 import { planningIssueText } from '../read-v2/planningIssueText'
 import { CategoriesEditor } from './CategoriesEditor'
-import { groupPairCounts, isSetupDraftDirty, setupPageMode } from './configurationPageModel'
+import { groupPairCounts, isConfigurationDraftDirty, isSetupDraftDirty, setupPageMode } from './configurationPageModel'
 
 export function TournamentConfigurationPage() {
   const { tournamentId } = useSearch({ from: '/v2/configuration' })
@@ -37,10 +37,13 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
   const [draft, setDraft] = useState(snapshot.initial)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
-  const dirty = isSetupDraftDirty(snapshot.initial, draft)
-  const locked = setupPageMode(working) === 'locked'
+  const mode = setupPageMode(working)
+  const locked = mode === 'locked'
+  const baselineOnly = mode === 'baseline-only'
+  const { categories, ...baselineDraft } = draft
+  const dirty = baselineOnly ? isConfigurationDraftDirty(snapshot.initial, baselineDraft) : isSetupDraftDirty(snapshot.initial, draft)
   const disabled = locked || state.saving || state.writeUncertain
-  const validation = applyV2Setup(working, draft)
+  const validation = baselineOnly ? applyV2Configuration(working, baselineDraft) : applyV2Setup(working, draft)
   const impacts = validation.ok ? v2ConfigurationIssues(validation.document) : []
   const issues = v2SetupIssues(working)
   const pairCounts = groupPairCounts(working)
@@ -65,10 +68,13 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
     <form onSubmit={async event => {
       event.preventDefault()
       const current = v2SessionStore.getState()
-      if (locked || current.saving || current.writeUncertain || !dirty) return
+      if (locked || current.saving || current.writeUncertain || !baselineOnly && !dirty) return
       setError('')
       setSaved(false)
-      const result = await v2SessionController.saveSetup(draft, { sourceId: tournamentId, epoch: snapshot.epoch })
+      const expected = { sourceId: tournamentId, epoch: snapshot.epoch }
+      const result = baselineOnly
+        ? await v2SessionController.saveConfiguration(baselineDraft, expected)
+        : await v2SessionController.saveSetup(draft, expected)
       if (!result.ok) { setError(result.issue ? planningIssueText(result.issue) : result.error); return }
       const confirmed = v2SessionStore.getState()
       if (confirmed.sourceId !== tournamentId || !confirmed.working) return
@@ -84,11 +90,13 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
           <Button variant="light" renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Ver grupos</Button>
           <Button variant="light" renderRoot={props => <Link {...props} to="/v2/calendar" search={{ tournamentId }} />}>Ver calendario</Button>
         </Group>
+      </Alert> : baselineOnly ? <Alert color="orange" title="Completá la configuración de horarios">
+        El torneo ya tiene un calendario generado o resultados. Las categorías, los grupos y las parejas quedan bloqueados, pero tenés que completar la configuración de horarios que falta para abrir el calendario y editar las restricciones.
       </Alert> : <Text size="sm">Definí las categorías, el período y los horarios antes de cargar las parejas. Guardar no genera ni reprograma partidos.</Text>}
 
       <Stack gap="sm">
         <Title order={2} size="h3">Categorías</Title>
-        <CategoriesEditor value={draft.categories} disabled={disabled} onChange={value => change('categories', value)}
+        <CategoriesEditor value={categories} disabled={disabled || baselineOnly} onChange={value => change('categories', value)}
           impact={categoryId => v2CategoryRemovalImpact(working, categoryId)} groupPairCount={groupId => pairCounts.get(groupId) ?? 0} />
       </Stack>
       <Stack gap="sm">
@@ -116,9 +124,9 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       </Stack>}
       {saveError && <Text role="alert" c="red" size="sm">{saveError}</Text>}
       {saved && <Text role="status" aria-live="polite" c="green.8">Configuración guardada.</Text>}
-      {!locked && <Text size="sm" c="dimmed">Al generar el calendario por primera vez, la configuración, las categorías, los grupos y las parejas quedan bloqueados.</Text>}
+      {mode === 'edit' && <Text size="sm" c="dimmed">Al generar el calendario por primera vez, la configuración, las categorías, los grupos y las parejas quedan bloqueados.</Text>}
       <Group justify="flex-end">
-        {!locked && <Button type="submit" loading={state.saving} disabled={disabled || !dirty}>Guardar configuración</Button>}
+        {!locked && <Button type="submit" loading={state.saving} disabled={disabled || !baselineOnly && !dirty}>Guardar configuración</Button>}
         {!dirty && isV2SetupComplete(working) && <Button disabled={state.saving || state.writeUncertain} renderRoot={props => <Link {...props} to="/tournaments/$id/groups" params={{ id: tournamentId }} />}>Continuar a parejas</Button>}
       </Group>
     </Stack></form>

@@ -67,6 +67,25 @@ it('loads incomplete setup on the configuration route without redirecting', asyn
   expect(v2SessionController.open).toHaveBeenCalledWith('t')
 })
 
+it.each(['/v2/groups', '/v2/configuration'])('loads %s with a locked incomplete baseline', async path => {
+  const source = sample()
+  delete source.calendar
+  v2SessionStore.getState().acceptSource(source, 't')
+  const router = await loadRoute(`${path}?tournamentId=t`)
+  expect(router.state.redirect).toBeUndefined()
+  expect(router.state.matches.at(-1)?.routeId).toBe(path)
+})
+
+it('redirects calendar to configuration with a locked incomplete baseline', async () => {
+  const source = sample()
+  delete source.calendar
+  v2SessionStore.getState().acceptSource(source, 't')
+  const router = await loadRoute('/v2/calendar?tournamentId=t')
+  expect(router.state.redirect?.options).toMatchObject({
+    to: '/v2/configuration', search: { tournamentId: 't' },
+  })
+})
+
 it.each(['/v2/groups', '/v2/calendar', '/v2/configuration'])('never redirects demo route %s', async path => {
   const router = await loadRoute(path)
   expect(router.state.redirect).toBeUndefined()

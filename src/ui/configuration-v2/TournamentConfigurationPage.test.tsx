@@ -38,6 +38,7 @@ describe('tournament configuration page server markup', () => {
     }
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*?Guardar configuración/)
     expect(html).toContain('Continuar a parejas')
+    expect(html).toContain('Editar categorías y parejas')
     expect(html).toContain('href="/tournaments/t/groups"')
     expect(html).toContain('Al generar el calendario por primera vez')
     expect(html.match(/aria-pressed=/g)).toHaveLength(7)
@@ -68,7 +69,32 @@ describe('tournament configuration page server markup', () => {
     expect(html).toContain('Agregá al menos una categoría.')
     expect(html).toContain('Completá el período, los horarios, los días y la duración del torneo.')
     expect(html).not.toContain('Continuar a parejas')
+    expect(html).not.toContain('Editar categorías y parejas')
     expect(html).toMatch(/<a[^>]*data-disabled="true"[^>]*>.*?Ver grupos/)
+  })
+
+  it('offers baseline completion with an enabled save button and locked category inputs', () => {
+    const source = sample()
+    delete source.calendar
+    v2SessionStore.getState().acceptSource(source, 't')
+    const html = markup()
+    expect(html).toContain('Completá la configuración de horarios')
+    expect(html).toContain('Las categorías, los grupos y las parejas quedan bloqueados')
+    expect(html).toContain('abrir el calendario y editar las restricciones')
+    expect(html).toContain('Completá un período válido')
+    expect(html).toContain('Editar categorías y parejas')
+    const saveButton = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar configuración'))!
+    expect(saveButton).toBeDefined()
+    expect(saveButton.split('>')[0]).not.toContain('disabled')
+    const inputs = html.match(/<input[^>]*>/g)!
+    for (const name of ['Unique category', 'Actual group']) {
+      const input = inputs.find(input => input.includes(`value="${name}"`))
+      expect(input).toContain('disabled=""')
+    }
+    const baselineInputs = inputs.filter(input => /type="(?:date|number)"/.test(input))
+    expect(baselineInputs).toHaveLength(3)
+    for (const input of baselineInputs) expect(input).not.toContain('disabled')
+    for (const button of html.match(/<button[^>]*aria-pressed=[^>]*>/g)!) expect(button).not.toContain('disabled')
   })
 
   it('requires a saved tournament instead of offering demo configuration', () => {
