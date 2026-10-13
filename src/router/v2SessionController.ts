@@ -3,6 +3,8 @@ import { type V2MembershipRequest } from '../domain/v2Membership'
 import type { StoreApi } from 'zustand/vanilla'
 import { createV2SessionStore, emptyV2Session, v2SessionStore, type V2SessionState } from '../store/v2Session'
 import { applyV2Configuration, hasCompleteV2Configuration, type V2ConfigurationDraft } from '../domain/v2Configuration'
+import { applyV2Setup } from '../domain/v2SetupApply'
+import { isV2SetupLocked, type V2SetupDraft } from '../domain/v2Setup'
 import type { V2RestrictionDraft, V2WindowMerge } from '../domain/v2Restrictions'
 import { applyV2Move, type V2MoveRequest } from '../domain/v2Moves'
 import { generateV2Calendar, regenerateV2Calendar } from '../domain/v2Generation'
@@ -91,8 +93,16 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
     saveConfiguration(draft: V2ConfigurationDraft, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = structuredClone(draft)
       return persistConfirmed(expected, latest => {
+        if (isV2SetupLocked(latest)) return { ok: false, error: 'La configuración es de solo lectura después de la primera generación del calendario.' }
         const result = applyV2Configuration(latest, snapshot)
         return result.ok ? { ...result, merges: [] } : result
+      })
+    },
+    saveSetup(draft: V2SetupDraft, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
+      const snapshot = structuredClone(draft)
+      return persistConfirmed(expected, latest => {
+        const r = applyV2Setup(latest, snapshot)
+        return r.ok ? { ...r, merges: [] } : r
       })
     },
     savePairRestrictions(pairId: string, drafts: V2RestrictionDraft[], expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
