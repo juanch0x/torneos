@@ -93,7 +93,7 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
     saveConfiguration(draft: V2ConfigurationDraft, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = structuredClone(draft)
       return persistConfirmed(expected, latest => {
-        if (isV2SetupLocked(latest)) return { ok: false, error: 'La configuración es de solo lectura después de la primera generación del calendario.' }
+        if (isV2SetupLocked(latest) && hasCompleteV2Configuration(latest)) return { ok: false, error: 'La configuración es de solo lectura después de la primera generación del calendario.' }
         const result = applyV2Configuration(latest, snapshot)
         return result.ok ? { ...result, merges: [] } : result
       })

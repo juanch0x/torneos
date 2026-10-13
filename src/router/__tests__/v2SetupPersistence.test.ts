@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { sample } from '../../domain/__tests__/fixtures/v2Tournament'
-import { isV2SetupLocked, type V2SetupDraft } from '../../domain/v2Setup'
+import { getV2SetupDraft, isV2SetupLocked, type V2SetupDraft } from '../../domain/v2Setup'
+import { hasCompleteV2Configuration } from '../../domain/v2Configuration'
 import { createV2SessionStore } from '../../store/v2Session'
 import { createV2Reader } from '../v2ReadService'
 import { createV2SessionController } from '../v2SessionController'
@@ -137,6 +138,52 @@ describe('V2 setup persistence controller', () => {
     const res = await controller.savePairRestrictions('a', restrictionDraft, expected())
     expect(res.ok).toBe(true)
     expect(repository.save).toHaveBeenCalledTimes(1)
+  })
+
+  it('completes and persists a locked incomplete baseline without changing structure or history, then allows restrictions', async () => {
+    const locked = sample()
+    delete locked.calendar
+    expect(isV2SetupLocked(locked)).toBe(true)
+    expect(hasCompleteV2Configuration(locked)).toBe(false)
+    const { repository, store, controller, expected } = setup(locked)
+    await controller.open('t')
+
+    expect((await controller.saveConfiguration(baselineConfig, expected())).ok).toBe(true)
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = await repository.load()
+    expect(saved).toEqual(store.getState().working)
+    expect(hasCompleteV2Configuration(saved)).toBe(true)
+    expect(isV2SetupLocked(saved)).toBe(true)
+    expect(saved.categories).toEqual(locked.categories)
+    expect(saved.slots).toEqual(locked.slots)
+    expect(saved.fixtureSettings?.matchDurationMinutes).toBe(30)
+    expect(saved.calendar).toMatchObject({ startDate: baselineConfig.startDate, endDate: baselineConfig.endDate })
+    expect(saved.fixtureSettings?.automaticWindow).toEqual({ startsAt: '09:00', endsAt: '16:00' })
+
+    const restriction = [{ id: 'res-1', start: '2026-10-05T10:00:00.000', end: '2026-10-05T11:00:00.000', reason: 'Médico' }]
+    expect((await controller.savePairRestrictions('a', restriction, expected())).ok).toBe(true)
+    expect(repository.save).toHaveBeenCalledTimes(2)
+  })
+
+  it('still refuses setup changes on a locked incomplete tournament', async () => {
+    const locked = sample()
+    delete locked.calendar
+    const { repository, controller, expected } = setup(locked)
+    await controller.open('t')
+    const draft = { ...getV2SetupDraft(locked), ...baselineConfig }
+    const result = await controller.saveSetup(draft, expected())
+    expect(result).toMatchObject({ ok: false, error: 'La configuración es de solo lectura después de la primera generación del calendario.' })
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('preserves the domain prohibition on duration changes with results during baseline completion', async () => {
+    const locked = sample()
+    delete locked.calendar
+    const { repository, controller, expected } = setup(locked)
+    await controller.open('t')
+    const result = await controller.saveConfiguration({ ...baselineConfig, duration: '45' }, expected())
+    expect(result).toMatchObject({ ok: false, error: expect.stringContaining('No se puede cambiar ni inferir la duración con resultados existentes') })
+    expect(repository.save).not.toHaveBeenCalled()
   })
 
   it('rejects saveSetup if source changed outside the view', async () => {
