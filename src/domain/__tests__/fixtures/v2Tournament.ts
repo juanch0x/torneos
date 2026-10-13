@@ -12,3 +12,11 @@ export function readySample(): Tournament {
   source.categories[0].pairs = source.categories[0].pairs.filter(pair => pair.id !== 'free')
   return source
 }
+
+/** sample() without slots assignments, schedules or results: setup is not locked (issue #67). */
+export function unlockedSample(): Tournament {
+  const source = sample()
+  source.slots = source.slots.map(({ matchId: _matchId, ...slot }) => slot)
+  for (const category of source.categories) for (const match of category.matches) { delete match.scheduledAt; delete match.result }
+  return source
+}
