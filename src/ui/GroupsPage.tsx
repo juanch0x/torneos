@@ -1,19 +1,13 @@
-import { v2StructureBlocked } from '../domain/v2Membership'
-import { useState } from 'react'
-import { Alert, Button, Group, NumberInput, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Link } from '@tanstack/react-router'
+import { Alert, Button, Paper, Stack, Text, Title } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
 import { CategoryPanel } from './CategoryPanel'
 
 export function GroupsPage() {
   const current = useTournamentStore((s) => s.current)
-  const addCategory = useTournamentStore((s) => s.addCategory)
-
-  const [catName, setCatName] = useState('')
-  const [numGroups, setNumGroups] = useState(1)
 
   // TournamentLayout already guarantees current is loaded before rendering children
   if (!current) return null
-  const hasPlayedMatch = !!v2StructureBlocked(current)
 
   return (
     <Stack gap="md">
@@ -22,48 +16,31 @@ export function GroupsPage() {
           <Stack gap={4}>
             <Title order={2}>Categorías</Title>
             <Text c="dimmed" size="sm">
-              Creá cada categoría y definí cuántos grupos necesitás antes de cargar las parejas.
+              Las categorías y los grupos se configuran desde la página de configuración del torneo.
             </Text>
           </Stack>
 
-          <Group gap="sm" align="flex-end" wrap="wrap">
-          <TextInput
-            label="Nombre"
-            placeholder="Nombre de categoría (ej: Núcleo)"
-            value={catName}
-            onChange={(e) => setCatName(e.target.value)}
-            disabled={hasPlayedMatch}
-            style={{ flex: '1 1 18rem' }}
-          />
-          <NumberInput
-            label="Grupos"
-            min={1}
-            style={{ width: '7rem' }}
-            value={numGroups}
-            disabled={hasPlayedMatch}
-            onChange={(val) =>
-              setNumGroups(Math.max(1, typeof val === 'number' ? val || 1 : 1))
-            }
-          />
           <Button
-            disabled={hasPlayedMatch || !catName.trim()}
-            title={hasPlayedMatch ? 'No se pueden agregar categorías cuando hay horarios o resultados' : undefined}
-            onClick={() => {
-              addCategory(catName.trim(), numGroups)
-              setCatName('')
-              setNumGroups(1)
-            }}
+            renderRoot={(props) => (
+              <Link
+                {...props}
+                to="/v2/configuration"
+                search={{ tournamentId: current.id }}
+              />
+            )}
           >
-            Agregar categoría
+            Editar configuración
           </Button>
-          </Group>
-          {hasPlayedMatch && <Text c="dimmed" size="sm">No se pueden agregar categorías cuando hay horarios o resultados.</Text>}
         </Stack>
       </Paper>
 
       {current.categories.length === 0 ? (
         <Alert title="Todavía no hay categorías">
-          Empezá creando la primera categoría para poder repartir grupos y cargar parejas.
+          Agregá las categorías desde la{' '}
+          <Link to="/v2/configuration" search={{ tournamentId: current.id }}>
+            página de configuración
+          </Link>
+          .
         </Alert>
       ) : (
         current.categories.map((category) => <CategoryPanel key={category.id} category={category} />)
