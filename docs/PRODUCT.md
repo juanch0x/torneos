@@ -51,15 +51,19 @@ Model pair unavailability, not individual-player cross-category conflict detecti
 
 ## The organizer's path
 
-1. **Capture categories and pairs.** A pair may remain unassigned at this step.
-2. **Prepare groups and availability.** Use the category → group → pair view to assign
-   or move pairs within their category. Configure the tournament before editing
-   restrictions; group assignment itself does not require schedule configuration.
-3. **Generate the group-stage schedule.** All participating pairs must belong to exactly
+1. **Configure the tournament.** Define categories (name and groups), the period, court
+   availability, tournament hours, tournament days and match duration on a dedicated
+   page right after creation. Preparation stays unavailable until this configuration
+   is complete and saved.
+2. **Capture categories and pairs.** A pair may remain unassigned at this step.
+3. **Prepare groups and availability.** Use the category → group → pair view to assign
+   or move pairs within their category and edit pair availability restrictions. Group
+   assignment itself does not require schedule configuration.
+4. **Generate the group-stage schedule.** All participating pairs must belong to exactly
    one valid group, with at least two pairs in each group.
-4. **Review and adjust visually.** Inspect details, move a match within or across weeks,
+5. **Review and adjust visually.** Inspect details, move a match within or across weeks,
    review the proposed change, cancel or apply it, and undo an eligible movement.
-5. **Export and communicate.** Download the confirmed schedule and send it to players.
+6. **Export and communicate.** Download the confirmed schedule and send it to players.
 
 The existing first capture screen is retained during incremental integration. The real V2
 preparation and calendar screens follow it. **V2 is the replacement direction, not a
@@ -130,13 +134,19 @@ conservatively; safe name correction remains possible. The permanent policy for 
 participants/groups after scheduling is **unresolved**. Do not invent a reset/reflow policy
 or delete history to make editing convenient.
 
+**Post-generation lock:** After the first successful calendar generation, only pair
+restrictions and confirmed regeneration remain editable. Dates, hours, weekdays,
+duration, categories, groups, membership, pair creation/deletion and pair names are
+read-only. Read and export remain available. A failed generation does not lock. There
+is no unlock, reset or clear-calendar action in this version.
+
 ## Now, next and possible later directions
 
 | Horizon | Scope |
 |---------|-------|
 | **Now** | Maintain the connected capture → preparation → calendar → XLSX flow. Functional verification and scoped browser acceptance are recorded in the closeout plan; they are not proof of every possible dataset or device. |
 | **Next** | Audit the real flow and simplify pair/group loading and navigation, then refine the application-wide UX and visual design without widening functional scope. Preserve tested persistence and scheduling behavior. |
-| **Possible later — not committed** | A live read-only schedule link with highlighted changes; easier dated holiday/daily-hour configuration; optional capacity blocks or manual support for later stages; bulk input if it demonstrably reduces organizer effort. |
+| **Possible later — not committed** | A live read-only schedule link with highlighted changes; easier dated holiday/daily-hour configuration; optional capacity blocks or manual support for later stages; bulk input if it demonstrably reduces organizer effort; editing structure after generation. |
 
 Excel input was explored, not selected as the required ingestion method. Reserving court
 blocks for eliminations would reserve capacity, not guarantee the future qualifiers can
