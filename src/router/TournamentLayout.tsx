@@ -98,7 +98,7 @@ export function TournamentLayout() {
 
           {activeTab === 'groups' ? (
             <Stack gap="xs">
-              <Text size="sm">Cargá categorías y parejas; podés completar las asignaciones en el siguiente paso.</Text>
+              <Text size="sm">Cargá las parejas de cada categoría; podés completar las asignaciones en el siguiente paso.</Text>
               <Group gap="sm">
                 <Button
                   variant="default"
