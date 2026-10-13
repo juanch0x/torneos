@@ -1,4 +1,5 @@
 import { v2StructureBlocked } from '../domain/v2Membership'
+import { isV2SetupLocked } from '../domain/v2Setup'
 import {
   createColumnHelper,
   flexRender,
@@ -11,7 +12,6 @@ import {
   Button,
   Group,
   NativeSelect,
-  NumberInput,
   Paper,
   Stack,
   Table,
@@ -41,10 +41,11 @@ export function CategoryPanel({ category }: { category: Category }) {
   const theme = useMantineTheme()
   const addPair = useTournamentStore((s) => s.addPair)
   const updatePair = useTournamentStore((s) => s.updatePair)
-  const setCategoryGroupCount = useTournamentStore((s) => s.setCategoryGroupCount)
   const assignPairToGroup = useTournamentStore((s) => s.assignPairToGroup)
   const movePairToGroup = useTournamentStore((s) => s.movePairToGroup)
+  const current = useTournamentStore((s) => s.current)
   const hasPlayedMatch = useTournamentStore((s) => s.current ? !!v2StructureBlocked(s.current) : false)
+  const locked = current ? isV2SetupLocked(current) : false
 
   const [p1, setP1] = useState('')
   const [p2, setP2] = useState('')
@@ -89,13 +90,18 @@ export function CategoryPanel({ category }: { category: Category }) {
         id: 'acciones',
         header: 'Acciones',
         cell: ({ row }) => (
-          <Button variant="subtle" size="compact-sm" onClick={() => setPairBeingEdited(row.original)}>
+          <Button
+            variant="subtle"
+            size="compact-sm"
+            disabled={locked}
+            onClick={() => { if (!locked) setPairBeingEdited(row.original) }}
+          >
             Editar
           </Button>
         ),
       }),
     ],
-    [category, assignPairToGroup, movePairToGroup, hasPlayedMatch],
+    [category, assignPairToGroup, movePairToGroup, hasPlayedMatch, locked],
   )
 
   const table = useReactTable({
@@ -141,68 +147,51 @@ export function CategoryPanel({ category }: { category: Category }) {
 
         </Group>
 
-        <Paper
-          p="md"
-          radius="lg"
-          style={getMutedSurfaceStyle(theme)}
-        >
-          <Stack gap="sm">
-            <Group gap="sm" align="flex-end" wrap="wrap">
-              <NumberInput
-                label="Cantidad de grupos"
-                min={1}
-                style={{ width: '9rem' }}
-                value={category.groups.length}
-                disabled={hasPlayedMatch}
-                onChange={(val) =>
-                  setCategoryGroupCount(category.id, typeof val === 'number' ? val || 1 : 1)
-                }
-              />
-            </Group>
-            <Text c="dimmed" size="sm">
-              {hasPlayedMatch ? 'Los grupos y las asignaciones quedan bloqueados para proteger horarios y resultados.' : 'Cambiar la cantidad de grupos reparte las parejas al azar y limpia los partidos.'}
-            </Text>
-          </Stack>
-        </Paper>
+        {locked && (
+          <Text c="dimmed" size="sm">
+            El calendario ya fue generado: las parejas quedan bloqueadas. Solo podés editar restricciones y regenerar el calendario.
+          </Text>
+        )}
 
-        <Paper
-          p="md"
-          radius="lg"
-          style={getMutedSurfaceStyle(theme)}
-        >
-          <Stack gap="sm">
-            <Group gap="sm" align="flex-end" wrap="wrap">
-              <TextInput
-                label="Jugador 1"
-                placeholder="Jugador 1"
-                value={p1}
-                onChange={(e) => setP1(e.target.value)}
-                style={{ flex: '1 1 12rem' }}
-              />
-              <TextInput
-                label="Jugador 2"
-                placeholder="Jugador 2"
-                value={p2}
-                onChange={(e) => setP2(e.target.value)}
-                style={{ flex: '1 1 12rem' }}
-              />
-              <Button
-                disabled={hasPlayedMatch || !p1.trim() || !p2.trim()}
-                title={hasPlayedMatch ? 'No se pueden agregar parejas cuando hay horarios o resultados' : undefined}
-                onClick={() => {
-                  addPair(category.id, p1.trim(), p2.trim())
-                  setP1('')
-                  setP2('')
-                }}
-              >
-                Agregar pareja
-              </Button>
-            </Group>
-            <Text c="dimmed" size="sm">
-              {hasPlayedMatch ? 'No se pueden agregar parejas cuando hay horarios o resultados.' : 'Cargá la pareja y después asignala al grupo correspondiente desde la tabla.'}
-            </Text>
-          </Stack>
-        </Paper>
+        {!locked && (
+          <Paper
+            p="md"
+            radius="lg"
+            style={getMutedSurfaceStyle(theme)}
+          >
+            <Stack gap="sm">
+              <Group gap="sm" align="flex-end" wrap="wrap">
+                <TextInput
+                  label="Jugador 1"
+                  placeholder="Jugador 1"
+                  value={p1}
+                  onChange={(e) => setP1(e.target.value)}
+                  style={{ flex: '1 1 12rem' }}
+                />
+                <TextInput
+                  label="Jugador 2"
+                  placeholder="Jugador 2"
+                  value={p2}
+                  onChange={(e) => setP2(e.target.value)}
+                  style={{ flex: '1 1 12rem' }}
+                />
+                <Button
+                  disabled={!p1.trim() || !p2.trim()}
+                  onClick={() => {
+                    addPair(category.id, p1.trim(), p2.trim())
+                    setP1('')
+                    setP2('')
+                  }}
+                >
+                  Agregar pareja
+                </Button>
+              </Group>
+              <Text c="dimmed" size="sm">
+                Cargá la pareja y después asignala al grupo correspondiente desde la tabla.
+              </Text>
+            </Stack>
+          </Paper>
+        )}
 
         <Stack gap="xs">
           <Title order={4}>Parejas y grupos</Title>
@@ -252,7 +241,7 @@ export function CategoryPanel({ category }: { category: Category }) {
 
         <EditPairDrawer
           pair={pairBeingEdited}
-          opened={pairBeingEdited != null}
+          opened={pairBeingEdited != null && !locked}
           onClose={() => setPairBeingEdited(null)}
           onSubmit={(player1, player2) => {
             if (!pairBeingEdited) return

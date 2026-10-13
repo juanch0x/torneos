@@ -96,7 +96,38 @@ export function TournamentLayout() {
             </Paper>
           </Group>
 
-          {activeTab === 'groups' ? <Stack gap="xs"><Text size="sm">Cargá categorías y parejas; podés completar las asignaciones en el siguiente paso.</Text><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: id }} />}>Continuar a grupos y restricciones</Button></Stack> : <CockpitGuidanceCard guidance={guidance} />}
+          {activeTab === 'groups' ? (
+            <Stack gap="xs">
+              <Text size="sm">Cargá categorías y parejas; podés completar las asignaciones en el siguiente paso.</Text>
+              <Group gap="sm">
+                <Button
+                  variant="default"
+                  renderRoot={(props) => (
+                    <Link
+                      {...props}
+                      to="/v2/configuration"
+                      search={{ tournamentId: id }}
+                    />
+                  )}
+                >
+                  Configuración del torneo
+                </Button>
+                <Button
+                  renderRoot={(props) => (
+                    <Link
+                      {...props}
+                      to="/v2/groups"
+                      search={{ tournamentId: id }}
+                    />
+                  )}
+                >
+                  Continuar a grupos y restricciones
+                </Button>
+              </Group>
+            </Stack>
+          ) : (
+            <CockpitGuidanceCard guidance={guidance} />
+          )}
         </Stack>
       </Paper>
 
