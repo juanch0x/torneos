@@ -7,6 +7,18 @@ import { createPreparationAutosave } from '../../store/autosave'
 import { createPlanningOwnerBoundary } from '../planningOwnership'
 beforeEach(()=>{vi.clearAllMocks();useTournamentStore.setState({current:unlockedSample(),status:'loaded',revision:0,editsEnabled:true,saveError:''})})
 describe('route ownership boundary',()=>{
+ it.each(['/v2/configuration', '/v2/configuration/'])('treats %s as a V2 path', async pathname => {
+  const writer = createPreparationAutosave(useTournamentStore, repo)
+  const suspend = vi.spyOn(writer, 'suspend')
+  const closeV2 = vi.fn(() => false)
+  const enter = createPlanningOwnerBoundary(useTournamentStore, () => writer, closeV2)
+  await enter(pathname)
+  expect(suspend).toHaveBeenCalledOnce()
+  expect(closeV2).not.toHaveBeenCalled()
+  expect(useTournamentStore.getState().current).toBeNull()
+  expect(useTournamentStore.getState().editsEnabled).toBe(false)
+  writer.stop()
+ })
  it('awaits under-debounce capture edit before V2, freezes legacy edits, and freshly rereads on return',async()=> {const writer=createPreparationAutosave(useTournamentStore,repo);const enter=createPlanningOwnerBoundary(useTournamentStore,()=>writer,()=>true);useTournamentStore.getState().updatePair('c','a','Latest','Name');await enter('/v2/groups');expect(repo.save).toHaveBeenCalledTimes(1);expect(useTournamentStore.getState().current).toBeNull();expect(useTournamentStore.getState().editsEnabled).toBe(false);const v2=sample();v2.name='V2 save';vi.mocked(repo.load).mockResolvedValue(v2);await enter('/tournaments/t/groups');await useTournamentStore.getState().loadTournament('t');expect(useTournamentStore.getState().current!.name).toBe('V2 save');await writer.flush();expect(repo.save).toHaveBeenCalledTimes(1);writer.stop()})
  it('retains dirty capture and edit permission on failed flush; retry succeeds',async()=>{const writer=createPreparationAutosave(useTournamentStore,repo);const enter=createPlanningOwnerBoundary(useTournamentStore,()=>writer,()=>true);useTournamentStore.getState().updatePair('c','a','Retained','Name');vi.mocked(repo.save).mockRejectedValueOnce(new Error('denied'));await expect(enter('/v2/calendar')).rejects.toThrow('denied');expect(useTournamentStore.getState().current!.categories[0].pairs[0].player1).toBe('Retained');expect(useTournamentStore.getState().editsEnabled).toBe(true);await enter('/v2/calendar');expect(repo.save).toHaveBeenCalledTimes(2);writer.stop()})
  it('refuses to release V2 while pending/draft guard denies close, including legacy direct route',async()=>{const writer=createPreparationAutosave(useTournamentStore,repo);let release=false;const enter=createPlanningOwnerBoundary(useTournamentStore,()=>writer,()=>release);await enter('/v2/groups');await expect(enter('/tournaments/t/fixture')).rejects.toThrow();expect(useTournamentStore.getState().editsEnabled).toBe(false);release=true;await enter('/');expect(repo.list).toHaveBeenCalled();expect(useTournamentStore.getState().editsEnabled).toBe(true);writer.stop()})

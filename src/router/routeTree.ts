@@ -9,6 +9,7 @@ import { RootLayout } from './RootLayout'
 import { TournamentLayout } from './TournamentLayout'
 import { NotFound } from './NotFound'
 import { hasCompleteV2Configuration } from '../domain/v2Configuration'
+import { isV2SetupComplete, isV2SetupLocked } from '../domain/v2Setup'
 import { v2SessionStore } from '../store/v2Session'
 import { v2SessionController } from './v2SessionController'
 
@@ -64,6 +65,15 @@ const loadV2Session = async (id?: string, signal?: AbortSignal) => {
   else v2SessionController.close()
 }
 
+const guardV2Setup = (tournamentId?: string, requireConfiguration = false) => {
+  const { sourceId, status, working } = v2SessionStore.getState()
+  if (!tournamentId || sourceId !== tournamentId || status !== 'loaded' || !working) return
+  const needsSetup = !isV2SetupComplete(working) && !isV2SetupLocked(working)
+  if (needsSetup || (requireConfiguration && !hasCompleteV2Configuration(working))) {
+    throw redirect({ to: '/v2/configuration', search: { tournamentId } })
+  }
+}
+
 const calendarV2Route = createRoute({
   getParentRoute: () => rootRoute,
   path: '/v2/calendar',
@@ -73,8 +83,7 @@ const calendarV2Route = createRoute({
     if (cause === 'preload') return
     await loadV2Session(deps.tournamentId, abortController.signal)
     if (abortController.signal.aborted) return
-    const state = v2SessionStore.getState()
-    if (deps.tournamentId && state.sourceId === deps.tournamentId && state.status === 'loaded' && !hasCompleteV2Configuration(state.working)) throw redirect({ to: '/v2/groups', search: { tournamentId: deps.tournamentId } })
+    guardV2Setup(deps.tournamentId, true)
   },
   component: lazyRouteComponent(() => import('../ui/calendar-v2/CalendarMockPage'), 'CalendarMockPage'),
 })
@@ -84,8 +93,22 @@ const groupsV2Route = createRoute({
   path: '/v2/groups',
   validateSearch: validateV2Search,
   loaderDeps: ({ search }) => ({ tournamentId: search.tournamentId }),
-  loader: ({ deps, cause, abortController }) => cause === 'preload' ? undefined : loadV2Session(deps.tournamentId, abortController.signal),
+  loader: async ({ deps, cause, abortController }) => {
+    if (cause === 'preload') return
+    await loadV2Session(deps.tournamentId, abortController.signal)
+    if (abortController.signal.aborted) return
+    guardV2Setup(deps.tournamentId)
+  },
   component: lazyRouteComponent(() => import('../ui/preparation-v2/GroupsMockPage'), 'GroupsMockPage'),
+})
+
+const configurationV2Route = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/v2/configuration',
+  validateSearch: validateV2Search,
+  loaderDeps: ({ search }) => ({ tournamentId: search.tournamentId }),
+  loader: ({ deps, cause, abortController }) => cause === 'preload' ? undefined : loadV2Session(deps.tournamentId, abortController.signal),
+  component: lazyRouteComponent(() => import('../ui/configuration-v2/TournamentConfigurationPage'), 'TournamentConfigurationPage'),
 })
 
 const readV2Route = createRoute({
@@ -98,6 +121,7 @@ export const routeTree = rootRoute.addChildren([
   indexRoute,
   calendarV2Route,
   groupsV2Route,
+  configurationV2Route,
   readV2Route,
   tournamentRoute.addChildren([groupsRoute, fixtureRoute, resultsRoute]),
 ])
