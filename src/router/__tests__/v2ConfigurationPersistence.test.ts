@@ -6,7 +6,9 @@ import { createV2Reader } from '../v2ReadService'
 import { createV2SessionController } from '../v2SessionController'
 const values = { startDate: '2026-10-05', endDate: '2026-10-06', opensAt: '09:00', closesAt: '16:00', tournamentOpensAt: '09:00', tournamentClosesAt: '16:00', duration: '30', automaticWeekdays: [1,2,3,4,5] }
 function setup() {
-  const missing = sample(); delete missing.calendar; delete missing.fixtureSettings; delete missing.categories[0].matches[0].result
+  const missing = sample(); delete missing.calendar; delete missing.fixtureSettings
+  missing.slots.forEach(slot => { delete slot.matchId })
+  missing.categories.forEach(cat => { cat.matches.forEach(m => { delete m.scheduledAt; delete m.result }) })
   let source = missing
   const repository = { list: vi.fn().mockResolvedValue([]), load: vi.fn(async () => structuredClone(source)), save: vi.fn(async (document: typeof source) => { source = structuredClone(document) }) }
   const store = createV2SessionStore(); const reader = createV2Reader(repository); const controller = createV2SessionController(store, reader, repository)
