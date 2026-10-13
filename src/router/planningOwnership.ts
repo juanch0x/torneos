@@ -7,7 +7,7 @@ export function createPlanningOwnerBoundary(store = useTournamentStore, getWrite
   let sequence = Promise.resolve()
   /** Every route entry (including history/direct URLs) crosses the same awaited boundary. */
   return function enterPlanningOwner(pathname: string) {
-    const v2 = ['/v2/groups', '/v2/calendar', '/v2/read'].includes(pathname.replace(/\/$/, ''))
+    const v2 = ['/v2/groups', '/v2/calendar', '/v2/configuration', '/v2/read'].includes(pathname.replace(/\/$/, ''))
     const transition = sequence.then(async () => {
       const writer = getWriter()
       store.setState({ editsEnabled: false })
