@@ -1,0 +1,101 @@
+import type { ComponentProps } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { MantineProvider } from '@mantine/core'
+import { useSearch } from '@tanstack/react-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { sample, unlockedSample } from '../../domain/__tests__/fixtures/v2Tournament'
+import { v2SessionStore } from '../../store/v2Session'
+import { TournamentConfigurationPage } from './TournamentConfigurationPage'
+
+vi.mock('@tanstack/react-router', async importOriginal => ({
+  ...await importOriginal<typeof import('@tanstack/react-router')>(),
+  useSearch: vi.fn(() => ({ tournamentId: 't' })),
+  useNavigate: () => vi.fn(),
+  useBlocker: () => ({ status: 'idle' }),
+  Link: ({ to, params, search, ...props }: ComponentProps<'a'> & { to: string; params?: { id: string }; search?: { tournamentId?: string } }) =>
+    <a {...props} href={`${params ? to.replace('$id', params.id) : to}${search?.tournamentId ? `?tournamentId=${search.tournamentId}` : ''}`} />,
+}))
+
+beforeEach(() => {
+  v2SessionStore.setState(v2SessionStore.getInitialState(), true)
+  vi.spyOn(v2SessionStore, 'getInitialState').mockImplementation(v2SessionStore.getState)
+  vi.mocked(useSearch).mockReturnValue({ tournamentId: 't' })
+})
+afterEach(() => { vi.restoreAllMocks() })
+
+const markup = () => renderToStaticMarkup(<MantineProvider><TournamentConfigurationPage /></MantineProvider>)
+
+describe('tournament configuration page server markup', () => {
+  it('renders ordered setup sections, a clean disabled save button and the preparation link', () => {
+    v2SessionStore.getState().acceptSource(unlockedSample(), 't')
+    const html = markup()
+    const sections = ['Categorías', 'Período del torneo', 'Disponibilidad de la cancha', 'Horario del torneo', 'Días del torneo', 'Duración de cada partido']
+    let position = html.indexOf('<form')
+    for (const section of sections) {
+      const next = html.indexOf(section, position)
+      expect(next).toBeGreaterThan(position)
+      position = next
+    }
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*?Guardar configuración/)
+    expect(html).toContain('Continuar a parejas')
+    expect(html).toContain('href="/tournaments/t/groups"')
+    expect(html).toContain('Al generar el calendario por primera vez')
+    expect(html.match(/aria-pressed=/g)).toHaveLength(7)
+    expect(html).not.toContain('Configuración guardada.')
+  })
+
+  it('shows the lock explanation with disabled fields and links, without a save button', () => {
+    v2SessionStore.getState().acceptSource(sample(), 't')
+    const html = markup()
+    expect(html).toContain('Después de la primera generación del calendario')
+    expect(html).toContain('Solo podés editar las restricciones de las parejas y regenerar el calendario.')
+    expect(html).not.toContain('Guardar configuración')
+    expect(html).toContain('href="/v2/groups?tournamentId=t"')
+    expect(html).toContain('href="/v2/calendar?tournamentId=t"')
+    const inputs = html.match(/<input[^>]*>/g)!
+    expect(inputs.length).toBeGreaterThan(0)
+    for (const input of inputs) expect(input).toContain('disabled=""')
+    for (const button of html.match(/<button[^>]*aria-pressed=[^>]*>/g)!) expect(button).toContain('disabled=""')
+  })
+
+  it('lists saved setup omissions and keeps preparation unavailable', () => {
+    const source = unlockedSample()
+    source.categories = []
+    delete source.fixtureSettings
+    v2SessionStore.getState().acceptSource(source, 't')
+    const html = markup()
+    expect(html).toContain('Falta completar')
+    expect(html).toContain('Agregá al menos una categoría.')
+    expect(html).toContain('Completá el período, los horarios, los días y la duración del torneo.')
+    expect(html).not.toContain('Continuar a parejas')
+    expect(html).toMatch(/<a[^>]*data-disabled="true"[^>]*>.*?Ver grupos/)
+  })
+
+  it('requires a saved tournament instead of offering demo configuration', () => {
+    vi.mocked(useSearch).mockReturnValue({ tournamentId: undefined })
+    const html = markup()
+    expect(html).toContain('Esta página requiere un torneo guardado.')
+    expect(html).toContain('href="/"')
+    expect(html).not.toContain('<form')
+    expect(html).not.toContain('Ejemplo ficticio')
+  })
+
+  it('does not expose a previous source while another tournament loads', () => {
+    v2SessionStore.getState().acceptSource({ ...unlockedSample(), id: 'old', name: 'Previous source' }, 'old')
+    v2SessionStore.setState({ status: 'loading' })
+    const html = markup()
+    expect(html).toContain('Leyendo torneo')
+    expect(html).not.toContain('Previous source')
+    expect(html).not.toContain('<form')
+  })
+
+  it('renders recoverable save errors without claiming success', () => {
+    v2SessionStore.getState().acceptSource(unlockedSample(), 't')
+    v2SessionStore.setState({ saveError: 'No se pudo confirmar el guardado.', writeUncertain: true })
+    const html = markup()
+    expect(html).toContain('role="alert"')
+    expect(html).toContain('No se pudo confirmar el guardado.')
+    expect(html).toContain('Actualizar desde datos guardados')
+    expect(html).not.toContain('Configuración guardada.')
+  })
+})
