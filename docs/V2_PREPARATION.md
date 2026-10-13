@@ -12,16 +12,19 @@ This prototype does not replace the existing V1 product or its implementation.
 
 ## Preparation flow
 
-1. Configure and save planning dates, physical court availability, automatic tournament hours/days and global match duration.
-2. Review category → group → pair membership (real names/membership stay read-only).
+1. Configure the tournament baseline (categories, groups, period, hours, days, duration) on the configuration page (`/v2/configuration?tournamentId=…`). This explicit save never generates or reschedules matches. Before generation, structural edit rules apply:
+   - adding a group creates an empty group;
+   - removing a group moves its pairs to the category's unassigned pool and keeps restrictions;
+   - removing a category requires confirmation with group/pair counts and cascades only to its own data.
+2. Review category → group → pair membership and manage participants.
 3. Mark exceptions to availability for each pair. Unmarked time is available.
 4. Confirm restriction Save to update the selected real tournament, or cancel the draft.
 5. Generate and save the complete initial calendar explicitly. Review and explicitly apply later moves, with one-step durable undo.
 
-Real-data restrictions and calendar entry require complete saved configuration. Direct
-calendar deep links return to groups when configuration is incomplete. The period bounds
-planning; it does not promise the finals date. Synthetic examples keep their independent
-existing editing flow, including names/membership, and remain memory-only.
+Real-data restrictions and calendar entry require complete saved configuration. Incomplete setup
+redirects preparation and calendar routes to configuration unless the tournament is already locked.
+The period bounds planning; it does not promise the finals date. Synthetic examples keep their
+independent existing editing flow, including names/membership, and remain memory-only.
 
 Preferences are not constraints. The restriction editor records **cannot play** windows,
 not requests for a more convenient time. A pair's restrictions apply to both members.
