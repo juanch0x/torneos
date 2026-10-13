@@ -55,7 +55,7 @@ Model pair unavailability, not individual-player cross-category conflict detecti
    availability, tournament hours, tournament days and match duration on a dedicated
    page right after creation. Preparation stays unavailable until this configuration
    is complete and saved.
-2. **Capture categories and pairs.** A pair may remain unassigned at this step.
+2. **Capture pairs.** Add pairs to the configured categories; a pair may remain unassigned at this step.
 3. **Prepare groups and availability.** Use the category → group → pair view to assign
    or move pairs within their category and edit pair availability restrictions. Group
    assignment itself does not require schedule configuration.

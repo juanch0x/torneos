@@ -12,11 +12,11 @@ This prototype does not replace the existing V1 product or its implementation.
 
 ## Preparation flow
 
-1. Configure tournament baseline on the configuration page (`/v2/configuration?tournamentId=…`). This explicit save never generates or reschedules matches.
-2. Review category → group → pair membership and manage participants. Before generation, structural edit rules apply:
+1. Configure the tournament baseline (categories, groups, period, hours, days, duration) on the configuration page (`/v2/configuration?tournamentId=…`). This explicit save never generates or reschedules matches. Before generation, structural edit rules apply:
    - adding a group creates an empty group;
    - removing a group moves its pairs to the category's unassigned pool and keeps restrictions;
    - removing a category requires confirmation with group/pair counts and cascades only to its own data.
+2. Review category → group → pair membership and manage participants.
 3. Mark exceptions to availability for each pair. Unmarked time is available.
 4. Confirm restriction Save to update the selected real tournament, or cancel the draft.
 5. Generate and save the complete initial calendar explicitly. Review and explicitly apply later moves, with one-step durable undo.
