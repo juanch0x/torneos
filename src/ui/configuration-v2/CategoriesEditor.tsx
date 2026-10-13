@@ -10,6 +10,16 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import type { V2SetupCategoryDraft, V2CategoryRemovalImpact } from '../../domain/v2Setup'
+import {
+  addGroup,
+  newCategoryDraft,
+  removeCategory,
+  removeGroup,
+  renameCategory,
+  renameGroup,
+} from './categoriesDraft'
+
 // Inline SVG icons (project does not depend on @tabler/icons-react)
 function IconTrash({ size = 18 }: { size?: number }) {
   return (
@@ -30,16 +40,6 @@ function IconPlus({ size = 16 }: { size?: number }) {
     </svg>
   )
 }
-import type { V2SetupCategoryDraft, V2CategoryRemovalImpact } from '../../domain/v2Setup'
-import {
-  addGroup,
-  newCategoryDraft,
-  removeCategory,
-  removeGroup,
-  renameCategory,
-  renameGroup,
-} from './categoriesDraft'
-
 export interface CategoriesEditorProps {
   value: V2SetupCategoryDraft[]
   onChange: (next: V2SetupCategoryDraft[]) => void
@@ -109,7 +109,8 @@ function CategoryCard({
 
   function handleRemoveGroup(index: number) {
     onChange(removeGroup(category, index))
-    if (pendingGroupRemoval === index) setPendingGroupRemoval(null)
+    // Indexes shift after any removal, so a pending confirmation would target another group.
+    setPendingGroupRemoval(null)
   }
 
   return (
@@ -125,25 +126,17 @@ function CategoryCard({
             disabled={disabled}
             style={{ flex: 1 }}
           />
-          {category.id ? (
-            // Saved category → confirmation modal
-            <RemoveCategoryButton
-              disabled={disabled}
-              onClick={onRemove}
-            />
-          ) : (
-            // New (unsaved) category → remove directly
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              size={44}
-              aria-label="Eliminar categoría"
-              disabled={disabled}
-              onClick={onRemove}
-            >
-              <IconTrash size={18} />
-            </ActionIcon>
-          )}
+          {/* Saved categories confirm in the parent; unsaved ones are removed directly. */}
+          <ActionIcon
+            variant="subtle"
+            color="red"
+            size={44}
+            aria-label="Eliminar categoría"
+            disabled={disabled}
+            onClick={onRemove}
+          >
+            <IconTrash size={18} />
+          </ActionIcon>
         </Group>
 
         {/* Groups list */}
@@ -153,7 +146,7 @@ function CategoryCard({
             const showWarning = pendingGroupRemoval === index && pairCount > 0
 
             return (
-              <Stack key={index} gap={4}>
+              <Stack key={group.id ?? `new-${index}`} gap={4}>
                 <Group gap="sm" align="flex-end" wrap="nowrap">
                   <TextInput
                     label={`Grupo ${index + 1}`}
@@ -196,6 +189,7 @@ function CategoryCard({
                       variant="subtle"
                       color="red"
                       size="compact-xs"
+                      disabled={disabled}
                       onClick={() => handleRemoveGroup(index)}
                     >
                       Confirmar eliminación
@@ -227,28 +221,6 @@ function CategoryCard({
         </Button>
       </Stack>
     </Card>
-  )
-}
-
-// Small helper so the saved-category remove button can be inline
-function RemoveCategoryButton({
-  disabled,
-  onClick,
-}: {
-  disabled: boolean
-  onClick: () => void
-}) {
-  return (
-    <ActionIcon
-      variant="subtle"
-      color="red"
-      size={44}
-      aria-label="Eliminar categoría"
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <IconTrash size={18} />
-    </ActionIcon>
   )
 }
 
