@@ -83,8 +83,9 @@ const weekdayChoices = [
 ]
 export function V2AutomaticWeekdaysField({ value,disabled,onChange,error }: { value: number[]; disabled: boolean; onChange: (days: number[]) => void; error?: string }) {
   // Input.Wrapper keeps label, description and error aligned with the other inputs.
-  return <Input.Wrapper label="Días del torneo" withAsterisk mt="sm" description="Se aplican cada semana del período. Sábado y domingo son opcionales."
-    error={error ?? (value.length ? undefined : 'Seleccioná al menos un día.')} inputWrapperOrder={['label', 'description', 'input', 'error']}>
+  // size="md" matches the theme default of the other inputs (Input.Wrapper is not themed).
+  return <Input.Wrapper label="Días del torneo" withAsterisk mt="sm" size="md"
+    error={error ?? (value.length ? undefined : 'Seleccioná al menos un día.')}>
     <Chip.Group multiple value={value.map(String)} onChange={days => onChange(days.map(Number).sort((a,b) => a-b))}>
       <Group gap="xs" mt={6} mb={4} role="group" aria-label="Días del torneo">
         {weekdayChoices.map(day => <Chip key={day.value} value={String(day.value)} disabled={disabled} aria-label={day.label}>{day.short}</Chip>)}
