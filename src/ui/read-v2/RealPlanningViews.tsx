@@ -117,7 +117,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
     </>}
     <Text role="status" aria-live="polite" size="sm">{notice}</Text>
     {membershipAttempt && <Button variant="light" disabled={state.saving || state.draftDirty} onClick={() => void submitMembership(membershipAttempt)}>Reintentar la asignación pendiente</Button>}
-    {pairForm && state.working?.categories[pairForm.categoryIndex] && <PairModal key={pairForm.pairId} mode={pairForm.mode} categoryName={state.working.categories[pairForm.categoryIndex].name} initial={pairForm.initial} onDraftDirtyChange={markDraftDirty} suspendFocus={state.navigationBlocked}
+    {pairForm && state.working?.categories[pairForm.categoryIndex] && <PairModal key={pairForm.pairId} mode={pairForm.mode} categoryName={state.working.categories[pairForm.categoryIndex].name} initial={pairForm.initial} onDraftDirtyChange={markDraftDirty} suspendFocus={state.navigationBlocked} namesLocked={state.writeUncertain}
       findDuplicate={names => { const match = findDuplicatePair(state.working!.categories[pairForm.categoryIndex], names, pairForm.mode === 'edit' ? pairForm.pairId : undefined); return match ? `${match.player1} / ${match.player2}` : null }}
       onCancel={() => setPairForm(null)} onSave={savePairNames} />}
     <Modal opened={deleting !== null} onClose={() => { if (!state.saving) setDeleting(null) }} title={`¿Eliminar la pareja ${deleting?.label ?? ''}?`} centered size="sm">

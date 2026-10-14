@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core'
-import { validatePairNames, type V2PairNames } from '../../domain/v2PairSchema'
+import { nameKey, validatePairNames, type V2PairNames } from '../../domain/v2PairSchema'
 import type { V2DraftIssue } from '../../domain/v2SetupSchema'
 
 export type PairModalSaveResult = void | { error: string; issues?: V2DraftIssue[] }
 
 /** Add or edit the two names of a pair. Group and restrictions are edited elsewhere. */
-export function PairModal({ mode, categoryName, initial, findDuplicate, onSave, onCancel, onDraftDirtyChange, suspendFocus = false }: {
+export function PairModal({ mode, categoryName, initial, findDuplicate, onSave, onCancel, onDraftDirtyChange, suspendFocus = false, namesLocked = false }: {
   mode: 'add' | 'edit'; categoryName: string; initial: V2PairNames
   findDuplicate: (names: V2PairNames) => string | null
   onSave: (names: V2PairNames) => Promise<PairModalSaveResult>; onCancel: () => void
   onDraftDirtyChange: (dirty: boolean) => void; suspendFocus?: boolean
+  /** While a save is uncertain, only the exact same request may be retried. */
+  namesLocked?: boolean
 }) {
   const [names, setNames] = useState(initial)
   const [issues, setIssues] = useState<V2DraftIssue[]>([])
@@ -23,7 +25,7 @@ export function PairModal({ mode, categoryName, initial, findDuplicate, onSave, 
   useEffect(() => { onDraftDirtyChange(dirty) }, [dirty, onDraftDirtyChange])
   useEffect(() => () => { onDraftDirtyChange(false) }, [onDraftDirtyChange])
 
-  const namesKey = (value: V2PairNames) => JSON.stringify([value.player1, value.player2])
+  const namesKey = (value: V2PairNames) => JSON.stringify([nameKey(value.player1), nameKey(value.player2)])
   const duplicateConfirmed = duplicate !== null && duplicate.key === namesKey(names)
   const confirmLabel = mode === 'add' ? (duplicateConfirmed ? 'Agregar igual' : 'Agregar pareja') : (duplicateConfirmed ? 'Guardar igual' : 'Guardar cambios')
   const fieldError = (path: keyof V2PairNames) => issues.find(issue => issue.path === path)?.message
@@ -42,7 +44,8 @@ export function PairModal({ mode, categoryName, initial, findDuplicate, onSave, 
     if (savingRef.current) return
     const validated = validatePairNames(names)
     if (!validated.ok) { setIssues(validated.issues); return }
-    const match = findDuplicate(validated.names)
+    const unchanged = mode === 'edit' && namesKey(validated.names) === namesKey(initial)
+    const match = unchanged ? null : findDuplicate(validated.names)
     if (match && !duplicateConfirmed) { setDuplicate({ key: namesKey(names), label: match }); return }
     savingRef.current = true; setSaving(true); setSaveError('')
     try {
@@ -58,10 +61,11 @@ export function PairModal({ mode, categoryName, initial, findDuplicate, onSave, 
       closeButtonProps={{ 'aria-label': 'Cancelar edición de la pareja', disabled: saving }}>
       <form onSubmit={event => { event.preventDefault(); void submit() }}>
         <Stack gap="sm">
-          <TextInput data-autofocus label="Integrante 1" value={names.player1} disabled={saving} error={fieldError('player1')} onChange={event => update('player1', event.currentTarget.value)} />
-          <TextInput label="Integrante 2" value={names.player2} disabled={saving} error={fieldError('player2')} onChange={event => update('player2', event.currentTarget.value)} />
+          <TextInput data-autofocus label="Integrante 1" value={names.player1} disabled={saving || namesLocked} error={fieldError('player1')} onChange={event => update('player1', event.currentTarget.value)} />
+          <TextInput label="Integrante 2" value={names.player2} disabled={saving || namesLocked} error={fieldError('player2')} onChange={event => update('player2', event.currentTarget.value)} />
           {duplicateConfirmed && <Alert color="orange">Ya existe la pareja {duplicate.label} en esta categoría. Confirmá solo si es otra pareja con los mismos nombres.</Alert>}
           {saveError && <Alert color="red" role="alert">{saveError}</Alert>}
+          {namesLocked && <Text size="xs" c="dimmed">El guardado anterior no se confirmó: reintentá con los mismos nombres para completarlo.</Text>}
           {mode === 'edit' && <Text size="xs" c="dimmed">Corrige los nombres de la misma pareja: conserva su grupo, sus partidos y sus restricciones.</Text>}
           <Group justify="flex-end">
             <Button variant="default" disabled={saving} onClick={requestClose}>Cancelar</Button>

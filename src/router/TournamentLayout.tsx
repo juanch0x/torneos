@@ -22,8 +22,9 @@ export function TournamentLayout() {
   const location = useLocation()
   const theme = useMantineTheme()
 
+  // v2 pages write through the repository directly: reread on entry so the v1 copy is never stale.
   useEffect(() => {
-    void loadTournament(id)
+    void loadTournament(id, !useTournamentStore.getState().savePending)
   }, [id, loadTournament])
 
   if (status === 'idle' || status === 'loading') return <Loader size="sm" m="md" />
