@@ -6,6 +6,13 @@ import { V2ConfigurationHeader, V2HourWindowsFields, V2AutomaticWeekdaysField, h
 import { v2SessionStore } from '../../store/v2Session'
 import { sample } from '../../domain/__tests__/fixtures/v2Tournament'
 import { createTournament } from '../../domain/factories'
+import type { ComponentProps } from 'react'
+
+vi.mock('@tanstack/react-router', async importOriginal => ({
+  ...await importOriginal<typeof import('@tanstack/react-router')>(),
+  Link: ({ to, search, ...props }: ComponentProps<'a'> & { to: string; search?: Record<string, string> }) =>
+    <a {...props} href={`${to}${search ? `?${new URLSearchParams(search)}` : ''}`} />,
+}))
 // Render-only SSR fixture: Zustand otherwise intentionally uses the original empty server snapshot.
 beforeEach(() => { vi.spyOn(v2SessionStore, 'getInitialState').mockImplementation(v2SessionStore.getState) })
 afterEach(() => { vi.restoreAllMocks() })
@@ -19,6 +26,7 @@ describe('compact configuration header server markup', () => {
     v2SessionStore.getState().acceptSource({ ...sample(), name: 'Actual tournament' }, 't')
     const html = markup()
     expect(html).toContain('Actual tournament'); expect(html).toContain('aria-label="Configurar torneo"')
+    expect(html).toContain('href="/v2/configuration?tournamentId=t"')
     expect(html).not.toContain('Necesita configuración'); expect(html).not.toContain('Período de planificación:')
     expect(html).not.toContain('Configuración completa'); expect(html).not.toContain('Torneo seleccionado')
   })

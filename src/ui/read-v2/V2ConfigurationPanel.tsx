@@ -1,6 +1,7 @@
 import { HourEntryInput } from './HourEntryInput'
 import { useEffect } from 'react'
 import { useStore } from 'zustand'
+import { Link } from '@tanstack/react-router'
 import { ActionIcon, Badge, Chip, Fieldset, Group, Input, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { hasCompleteV2Configuration, v2ConfigurationIssues, type V2ConfigurationDraft } from '../../domain/v2Configuration'
 import { v2SessionStore } from '../../store/v2Session'
@@ -22,7 +23,7 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
   const selected = state.sources.find(item => item.id === tournamentId)
   const title = source?.name ?? selected?.name ?? (state.status === 'loading' ? 'Cargando torneo…' : state.status === 'not-found' ? 'Torneo no disponible' : 'Torneo seleccionado')
   const locked = source ? isV2SetupLocked(source) : false
-  const configHref = `/v2/configuration?tournamentId=${encodeURIComponent(tournamentId)}`
+  const gearDisabled = !source || state.saving || state.draftDirty || state.writeUncertain || state.navigationBlocked
   return <Stack gap="xs">
     <Group justify="space-between" wrap="nowrap">
       <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
@@ -35,9 +36,9 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
           size={44}
           style={{ flexShrink: 0 }}
           variant="subtle"
-          component="a"
-          href={configHref}
-          disabled={!source || state.saving || state.draftDirty || state.writeUncertain || state.navigationBlocked}
+          disabled={gearDisabled}
+          // Router navigation: a plain href reloads the whole app (visible blink) and bypasses the navigation guard.
+          {...(gearDisabled ? {} : { renderRoot: (props: Record<string, unknown>) => <Link {...props} to="/v2/configuration" search={{ tournamentId }} /> })}
           aria-label="Configurar torneo"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 2h4l.7 3 2.1 1.2 2.9-.9 2 3.4-2.2 2.1v2.4l2.2 2.1-2 3.4-2.9-.9-2.1 1.2-.7 3h-4l-.7-3-2.1-1.2-2.9.9-2-3.4 2.2-2.1v-2.4l-2.2-2.1 2-3.4 2.9.9L9.3 5Z" /><circle cx="12" cy="12" r="3" /></svg>
