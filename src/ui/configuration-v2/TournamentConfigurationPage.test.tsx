@@ -43,7 +43,7 @@ describe('tournament configuration page server markup', () => {
     expect(html).toContain('href="/tournaments/t/groups"')
     expect(html).not.toContain('Editar categorías y parejas')
     expect(html).toContain('Al generar el calendario por primera vez')
-    expect(html.match(/aria-pressed=/g)).toHaveLength(7)
+    expect(html.match(/mantine-Chip-input/g)).toHaveLength(7)
     expect(html).not.toContain('Configuración guardada.')
   })
 
@@ -58,7 +58,7 @@ describe('tournament configuration page server markup', () => {
     const inputs = html.match(/<input[^>]*>/g)!
     expect(inputs.length).toBeGreaterThan(0)
     for (const input of inputs) expect(input).toContain('disabled=""')
-    for (const button of html.match(/<button[^>]*aria-pressed=[^>]*>/g)!) expect(button).toContain('disabled=""')
+    for (const chip of html.match(/<input[^>]*mantine-Chip-input[^>]*>/g)!) expect(chip).toContain('disabled=""')
   })
 
   it('hides errors before interaction and keeps the tournament unreachable while setup is incomplete', () => {
@@ -94,7 +94,7 @@ describe('tournament configuration page server markup', () => {
     const baselineInputs = inputs.filter(input => /type="(?:date|number)"/.test(input))
     expect(baselineInputs).toHaveLength(3)
     for (const input of baselineInputs) expect(input).not.toContain('disabled')
-    for (const button of html.match(/<button[^>]*aria-pressed=[^>]*>/g)!) expect(button).not.toContain('disabled')
+    for (const chip of html.match(/<input[^>]*mantine-Chip-input[^>]*>/g)!) expect(chip).not.toContain('disabled')
   })
 
   it('requires a saved tournament instead of offering demo configuration', () => {

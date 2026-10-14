@@ -1,7 +1,7 @@
 import { HourEntryInput } from './HourEntryInput'
 import { useEffect } from 'react'
 import { useStore } from 'zustand'
-import { ActionIcon, Badge, Button, Fieldset, Group, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Chip, Fieldset, Group, Input, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { hasCompleteV2Configuration, v2ConfigurationIssues, type V2ConfigurationDraft } from '../../domain/v2Configuration'
 import { v2SessionStore } from '../../store/v2Session'
 import { plural } from '../../domain/text'
@@ -77,13 +77,18 @@ export function V2HourWindowsFields({ draft, disabled, legacy, legacyWeekdays, o
 
 
 const weekdayChoices = [
-  { value: 1,short: 'L',label: 'Lunes' },{ value: 2,short: 'M',label: 'Martes' },
-  { value: 3,short: 'X',label: 'Miércoles' },{ value: 4,short: 'J',label: 'Jueves' },
-  { value: 5,short: 'V',label: 'Viernes' },{ value: 6,short: 'S',label: 'Sábado' },{ value: 7,short: 'D',label: 'Domingo' },
+  { value: 1,short: 'Lun',label: 'Lunes' },{ value: 2,short: 'Mar',label: 'Martes' },
+  { value: 3,short: 'Mié',label: 'Miércoles' },{ value: 4,short: 'Jue',label: 'Jueves' },
+  { value: 5,short: 'Vie',label: 'Viernes' },{ value: 6,short: 'Sáb',label: 'Sábado' },{ value: 7,short: 'Dom',label: 'Domingo' },
 ]
 export function V2AutomaticWeekdaysField({ value,disabled,onChange,error }: { value: number[]; disabled: boolean; onChange: (days: number[]) => void; error?: string }) {
-  return <Stack gap={4}><Text fw={500} size="sm">Días del torneo</Text><Group gap={4} role="group" aria-label="Días del torneo">{weekdayChoices.map(day => <Tooltip key={day.value} label={day.label} withArrow><Button type="button" w={44} h={44} px={0} variant={value.includes(day.value) ? 'filled' : 'default'} disabled={disabled} aria-label={day.label} aria-pressed={value.includes(day.value)} onClick={() => onChange(value.includes(day.value) ? value.filter(selected => selected !== day.value) : [...value,day.value].sort((a,b) => a-b))}>{day.short}</Button></Tooltip>)}</Group>
-    <Text size="xs" c="dimmed">Se aplican cada semana del período. Sábado y domingo son opcionales.</Text>
-    {(error || !value.length) && <Text size="xs" c="red" role="alert">{error ?? 'Seleccioná al menos un día del torneo.'}</Text>}
-  </Stack>
+  // Input.Wrapper keeps label, description and error aligned with the other inputs.
+  return <Input.Wrapper label="Días del torneo" withAsterisk mt="sm" description="Se aplican cada semana del período. Sábado y domingo son opcionales."
+    error={error ?? (value.length ? undefined : 'Seleccioná al menos un día.')} inputWrapperOrder={['label', 'description', 'input', 'error']}>
+    <Chip.Group multiple value={value.map(String)} onChange={days => onChange(days.map(Number).sort((a,b) => a-b))}>
+      <Group gap="xs" mt={6} mb={4} role="group" aria-label="Días del torneo">
+        {weekdayChoices.map(day => <Chip key={day.value} value={String(day.value)} disabled={disabled} aria-label={day.label}>{day.short}</Chip>)}
+      </Group>
+    </Chip.Group>
+  </Input.Wrapper>
 }

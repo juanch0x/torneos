@@ -23,7 +23,7 @@ export const v2ConfigurationDraftSchema = z.object({
   tournamentOpensAt: timeField(isOpeningTime, 'Completá el inicio del torneo.', 'Ingresá un inicio de torneo válido.'),
   tournamentClosesAt: timeField(isClosingTime, 'Completá el cierre del torneo.', 'Ingresá un cierre de torneo válido (hasta 24:00).'),
   automaticWeekdays: z.custom<number[]>(validV2AutomaticWeekdays, {
-    error: 'Seleccioná al menos un Día del torneo válido (lunes a domingo, sin repeticiones).',
+    error: 'Seleccioná al menos un día.',
     abort: false,
   }),
   duration: z.string().refine(value => !!value.trim() && Number.isInteger(Number(value)) && Number(value) > 0, 'La duración debe ser una cantidad entera positiva de minutos.'),
