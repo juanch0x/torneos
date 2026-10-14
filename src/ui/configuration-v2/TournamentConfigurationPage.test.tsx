@@ -81,7 +81,7 @@ describe('tournament configuration page server markup', () => {
     expect(html).toContain('Completá la configuración de horarios')
     expect(html).toContain('Las categorías, los grupos y las parejas quedan bloqueados')
     expect(html).toContain('abrir el calendario y editar las restricciones')
-    expect(html).toContain('Completá un período válido')
+    expect(html).toContain('Completá el primer día.')
     expect(html).toContain('Editar categorías y parejas')
     const saveButton = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar configuración'))!
     expect(saveButton).toBeDefined()

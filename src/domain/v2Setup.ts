@@ -1,6 +1,7 @@
 import type { Tournament } from './types'
 import { getV2ConfigurationDraft, hasCompleteV2Configuration, type V2ConfigurationDraft } from './v2Configuration'
 import { v2StructureBlocked } from './v2Membership'
+import type { V2DraftIssue } from './v2SetupSchema'
 
 // Shared contract for the setup-first configuration flow (issue #67).
 // Predicates (lock, completion, draft, removal impact) are implemented in this file;
@@ -17,7 +18,7 @@ export interface V2SetupDraft extends V2ConfigurationDraft { categories: V2Setup
 
 export interface V2CategoryRemovalImpact { groups: number; pairs: number; restrictions: number }
 
-export type V2SetupResult<T> = { ok: true; document: T } | { ok: false; error: string }
+export type V2SetupResult<T> = { ok: true; document: T } | { ok: false; error: string; issues?: V2DraftIssue[] }
 
 export function isV2SetupLocked(t: Tournament): boolean {
   return v2StructureBlocked(t) !== null
