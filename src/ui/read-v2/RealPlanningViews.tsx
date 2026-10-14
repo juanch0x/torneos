@@ -16,6 +16,8 @@ import { useStore } from 'zustand'
 import { Alert, Badge, Button, Group, Modal, Paper, SimpleGrid, Stack, Tabs, Menu, Text, Title } from '@mantine/core'
 import { getV2RestrictionConfig, toV2RestrictionDraft, validateV2DraftBounds, type V2RestrictionDraft } from '../../domain/v2Restrictions'
 import { RestrictionModal } from '../preparation-v2/RestrictionModal'
+import { PairModal, type PairModalSaveResult } from '../preparation-v2/PairModal'
+import { findDuplicatePair, type V2PairNames } from '../../domain/v2PairSchema'
 import { v2CalendarFallbackMatches } from '../../domain/v2Display'
 import { v2SessionController } from '../../router/v2SessionController'
 import { v2SessionStore } from '../../store/v2Session'
@@ -32,7 +34,7 @@ import { plural } from '../../domain/text'
 
 export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   const state = useStore(v2SessionStore)
-  const [membershipAttempt, setMembershipAttempt] = useState<{ request: {categoryId: string; pairId: string; groupId: string}; epoch: number } | null>(null)
+  const [membershipAttempt, setMembershipAttempt] = useState<{ request: {categoryId: string; pairId: string; groupId: string | null}; epoch: number } | null>(null)
   async function submitMembership(attempt: NonNullable<typeof membershipAttempt>) {
     setMembershipAttempt(attempt)
     const result = await v2SessionController.movePair(attempt.request, { sourceId: tournamentId, epoch: attempt.epoch })
@@ -43,7 +45,40 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   const [pairId, setPairId] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ pairId: string; name: string; epoch: number; drafts: V2RestrictionDraft[]; config: NonNullable<ReturnType<typeof getV2RestrictionConfig>> } | null>(null)
   const [notice, setNotice] = useState('Guardar restricciones actualiza este torneo; nunca cambia horarios de partidos.')
-  useEffect(() => { setEditing(null) }, [state.draftDiscardRevision])
+  // The pair id is generated when the add modal opens and reused on every retry, so an uncertain save never duplicates the pair.
+  const [pairForm, setPairForm] = useState<{ mode: 'add' | 'edit'; categoryIndex: number; pairId: string; initial: V2PairNames; epoch: number } | null>(null)
+  const [deleting, setDeleting] = useState<{ categoryId: string; pairId: string; label: string; message: string; epoch: number } | null>(null)
+  const [deleteError, setDeleteError] = useState('')
+  useEffect(() => { setEditing(null); setPairForm(null) }, [state.draftDiscardRevision])
+  useEffect(() => { setDeleting(null) }, [state.epoch, tournamentId])
+  async function savePairNames(names: V2PairNames): Promise<PairModalSaveResult> {
+    if (!pairForm) return
+    const category = v2SessionStore.getState().working?.categories[pairForm.categoryIndex]
+    if (!category) return { error: 'La categoría ya no existe. Releé el torneo.' }
+    const request = { categoryId: category.id, pairId: pairForm.pairId, ...names }
+    const expected = { sourceId: tournamentId, epoch: pairForm.epoch }
+    const result = pairForm.mode === 'add' ? await v2SessionController.addPair(request, expected) : await v2SessionController.renamePair(request, expected)
+    if (!result.ok) return { error: result.issue ? planningIssueText(result.issue) : result.error, issues: result.issues }
+    setNotice(pairForm.mode === 'add' ? `Pareja ${names.player1} / ${names.player2} agregada en Sin grupo.` : 'Nombres guardados. Grupo, partidos y restricciones conservados.')
+    setPairForm(null)
+  }
+  function requestDelete(ci: number, pairId: string, label: string) {
+    const source = v2SessionStore.getState().working
+    const category = source?.categories[ci]
+    if (!source || !category) return
+    const windows = source.pairUnavailableWindows?.filter(window => window.pairId === pairId).length ?? 0
+    const group = category.groups.find(group => group.pairIds.includes(pairId))
+    const crosses = group && group.pairIds.length > 1 ? group : null
+    const removed = [windows ? `sus ${plural(windows, 'restricción', 'restricciones')}` : '', crosses ? `sus partidos pendientes en ${crosses.name}` : ''].filter(Boolean)
+    const message = removed.length ? `Se eliminarán ${removed.join(' y ')}.${crosses ? ` Los cruces de ${crosses.name} se recalculan solos.` : ''}` : 'La pareja no tiene restricciones ni partidos.'
+    setDeleteError(''); setDeleting({ categoryId: category.id, pairId, label, message, epoch: v2SessionStore.getState().epoch })
+  }
+  async function confirmDelete() {
+    if (!deleting) return
+    const result = await v2SessionController.deletePair({ categoryId: deleting.categoryId, pairId: deleting.pairId }, { sourceId: tournamentId, epoch: deleting.epoch })
+    if (!result.ok) { setDeleteError(result.issue ? planningIssueText(result.issue) : result.error); return }
+    setNotice(`Pareja ${deleting.label} eliminada.`); setDeleting(null)
+  }
   const markDraftDirty = useCallback((dirty: boolean) => v2SessionStore.setState({ draftDirty: dirty }), [])
   function openRestrictions(id: string) {
     const current = v2SessionStore.getState(); const source = current.working
@@ -58,23 +93,23 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   }
   const display = state.sourceId === tournamentId && state.display ? organizerDisplay(state.display) : null
   const windows = state.working?.pairUnavailableWindows?.filter(window => window.pairId === pairId) ?? []
-  return <Stack className="preparation-v2" gap="lg"><Title order={1} size="h2">Preparar grupos y restricciones</Title>
-    <Text c="dimmed">Asigná o mové cada pareja desde su menú. Editá restricciones sin reprogramar partidos.</Text><V2SessionStatus tournamentId={tournamentId} />
+  return <Stack className="preparation-v2" gap="lg"><Title order={1} size="h2">Parejas y grupos</Title>
+    <Text c="dimmed">Inscribí parejas, armá los grupos y registrá restricciones a medida que llegan.</Text><V2SessionStatus tournamentId={tournamentId} />
     {display && <>
       {operationalPlanningWarning(display) && <Alert color="red" role="alert">{operationalPlanningWarning(display)}</Alert>}
-      {state.working && v2StructureBlocked(state.working) && <Alert color="orange">Calendario generado: la configuración, las categorías, los grupos y las parejas están bloqueados. Podés editar restricciones y regenerar el calendario.</Alert>}
+      {state.working && v2StructureBlocked(state.working) && <Alert color="orange">Calendario generado: no se pueden agregar, eliminar ni mover parejas. Podés corregir nombres, editar restricciones y regenerar el calendario.</Alert>}
       <AvailabilitySummary />
       <Tabs defaultValue="0" key={tournamentId}><Tabs.List>{display.categories.map((category, ci) => <Tabs.Tab key={ci} value={String(ci)}>{category.name}<Badge ml={6} size="sm" style={{ backgroundColor: category.color, color: '#1b2927' }}>{state.working!.categories[ci].pairs.length}</Badge></Tabs.Tab>)}</Tabs.List>
-        {display.categories.map((category, ci) => <Tabs.Panel key={ci} value={String(ci)} pt="lg"><Stack gap="md"><Title order={2} size="h4">{category.name}</Title><SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+        {display.categories.map((category, ci) => <Tabs.Panel key={ci} value={String(ci)} pt="lg"><Stack gap="md"><Group justify="space-between"><Title order={2} size="h4">{category.name} · {plural(state.working!.categories[ci].pairs.length, 'pareja', 'parejas')}</Title><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)} onClick={() => setPairForm({ mode: 'add', categoryIndex: ci, pairId: crypto.randomUUID(), initial: { player1: '', player2: '' }, epoch: state.epoch })}>Agregar pareja</Button></Group><SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
           {[...category.groups, { id: '', name: 'Sin grupo', pairs: category.unassigned.map(pair => ({ id: pair.id, label: `${pair.player1} / ${pair.player2}` })) }].map((group, gi) => <Paper key={gi} withBorder p="md" radius="lg"><Stack gap="md"><Group justify="space-between"><Title order={3} size="h5">{group.name}</Title><Text size="sm" c="dimmed">{plural(group.pairs.length, 'pareja', 'parejas')}</Text></Group>
             {!group.pairs.length && <Text size="sm" c="dimmed">Sin parejas asignadas.</Text>}{group.pairs.map((pair, pi) => {
               const count = state.working!.pairUnavailableWindows?.filter(window => window.pairId === pair.id).length ?? 0
               const conflicts = state.availability.conflicts.filter(conflict => conflict.pairId === pair.id)
               const pending = state.availability.unvalidated.filter(item => item.pairIds.includes(pair.id) && display.matches.some(match => match.key === item.matchKey && match.status !== 'unscheduled'))
-              return <Paper key={pi} withBorder p="sm" radius="md"><Stack gap={3}><Text fw={600} size="sm">{pair.label}</Text><Menu withinPortal loop><Menu.Target><Button variant="default" size="sm" aria-label={`Mover ${pair.label} a grupo`} disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)}>Mover a grupo…</Button></Menu.Target><Menu.Dropdown>{state.working!.categories[ci].groups.map(target => <Menu.Item key={target.id} disabled={target.id === group.id} onClick={() => {
+              return <Paper key={pi} withBorder p="sm" radius="md"><Stack gap={3}><Text fw={600} size="sm">{pair.label}</Text><Group gap="xs" wrap="nowrap"><Menu withinPortal loop><Menu.Target><Button variant="default" size="sm" aria-label={`Mover ${pair.label} a…`} disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)}>Mover a…</Button></Menu.Target><Menu.Dropdown>{[...state.working!.categories[ci].groups.map(target => ({ id: target.id as string | null, name: target.name })), { id: null, name: 'Sin grupo' }].map(target => { const current = (target.id ?? '') === group.id; return <Menu.Item key={target.id ?? ''} disabled={current} onClick={() => {
                 const request = { categoryId: state.working!.categories[ci].id, pairId: pair.id, groupId: target.id }
                 void submitMembership({ request, epoch: state.epoch })
-              }}>{target.name}{target.id === group.id ? ' · Actual' : ''}</Menu.Item>)}</Menu.Dropdown></Menu><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${plural(count, 'restricción', 'restricciones')} · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{plural(conflicts.length, 'conflicto', 'conflictos')} de restricción</Text>}{!!pending.length && <Text size="xs" c="orange.8">{plural(pending.length, 'partido', 'partidos')} sin validación completa</Text>}</Stack></Paper>
+              }}>{target.name}{current ? ' · Actual' : ''}</Menu.Item> })}</Menu.Dropdown></Menu><Menu withinPortal loop position="bottom-end"><Menu.Target><Button variant="subtle" size="sm" aria-label={`Más acciones para ${pair.label}`} disabled={state.saving || state.draftDirty || state.writeUncertain}>Más…</Button></Menu.Target><Menu.Dropdown><Menu.Item onClick={() => { const record = state.working!.categories[ci].pairs.find(item => item.id === pair.id); if (record) setPairForm({ mode: 'edit', categoryIndex: ci, pairId: pair.id, initial: { player1: record.player1, player2: record.player2 }, epoch: state.epoch }) }}>Editar nombres</Menu.Item><Menu.Item color="red" disabled={!!v2StructureBlocked(state.working!)} onClick={() => requestDelete(ci, pair.id, pair.label)}>Eliminar pareja</Menu.Item></Menu.Dropdown></Menu></Group><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${plural(count, 'restricción', 'restricciones')} · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{plural(conflicts.length, 'conflicto', 'conflictos')} de restricción</Text>}{!!pending.length && <Text size="xs" c="orange.8">{plural(pending.length, 'partido', 'partidos')} sin validación completa</Text>}</Stack></Paper>
             })}
           </Stack></Paper>)}
         </SimpleGrid></Stack></Tabs.Panel>)}
@@ -82,6 +117,14 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
     </>}
     <Text role="status" aria-live="polite" size="sm">{notice}</Text>
     {membershipAttempt && <Button variant="light" disabled={state.saving || state.draftDirty} onClick={() => void submitMembership(membershipAttempt)}>Reintentar la asignación pendiente</Button>}
+    {pairForm && state.working?.categories[pairForm.categoryIndex] && <PairModal key={pairForm.pairId} mode={pairForm.mode} categoryName={state.working.categories[pairForm.categoryIndex].name} initial={pairForm.initial} onDraftDirtyChange={markDraftDirty} suspendFocus={state.navigationBlocked}
+      findDuplicate={names => { const match = findDuplicatePair(state.working!.categories[pairForm.categoryIndex], names, pairForm.mode === 'edit' ? pairForm.pairId : undefined); return match ? `${match.player1} / ${match.player2}` : null }}
+      onCancel={() => setPairForm(null)} onSave={savePairNames} />}
+    <Modal opened={deleting !== null} onClose={() => { if (!state.saving) setDeleting(null) }} title={`¿Eliminar la pareja ${deleting?.label ?? ''}?`} centered size="sm">
+      <Stack gap="md"><Text size="sm">{deleting?.message}</Text>{deleteError && <Alert color="red" role="alert">{deleteError}</Alert>}
+        <Group justify="flex-end"><Button variant="default" data-autofocus disabled={state.saving} onClick={() => setDeleting(null)}>Cancelar</Button><Button color="red" loading={state.saving} onClick={() => void confirmDelete()}>Eliminar pareja</Button></Group>
+      </Stack>
+    </Modal>
     {editing && <RestrictionModal pairName={editing.name} initialWindows={editing.drafts} config={editing.config} onDraftDirtyChange={markDraftDirty} suspendFocus={state.navigationBlocked} onCancel={() => setEditing(null)} onSave={async drafts => {
       const result = await v2SessionController.savePairRestrictions(editing.pairId, drafts, { sourceId: tournamentId, epoch: editing.epoch })
       if (!result.ok) return result.issue ? planningIssueText(result.issue) : result.error
