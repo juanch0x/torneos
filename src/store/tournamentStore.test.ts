@@ -325,6 +325,28 @@ describe('tournamentStore — availability reflow actions', () => {
 })
 
 describe('tournamentStore — pair editing', () => {
+  it('blocks pair name edits once the tournament is locked by a generated calendar', () => {
+    const pair = { id: 'pair-1', player1: 'Ana', player2: 'Beto' }
+    const tournament: Tournament = {
+      ...makeTournament('t1'),
+      slots: [{ id: 'slot-1', startsAt: '2024-01-01T09:00:00.000Z', matchId: 'match-1' }],
+      categories: [{
+        id: 'category-1',
+        name: 'Primera',
+        color: '#eee',
+        config: { numGroups: 1, format: 'round-robin' },
+        pairs: [pair, { id: 'pair-2', player1: 'Caro', player2: 'Dani' }],
+        groups: [{ id: 'group-1', name: 'Grupo A', pairIds: [pair.id, 'pair-2'] }],
+        matches: [{ id: 'match-1', groupId: 'group-1', pairAId: pair.id, pairBId: 'pair-2', round: 1, scheduledAt: '2024-01-01T09:00:00.000Z' }],
+      }],
+    }
+    useTournamentStore.setState({ current: tournament, status: 'loaded' } as any)
+
+    useTournamentStore.getState().updatePair('category-1', pair.id, 'Ana María', 'Bruno')
+
+    expect(useTournamentStore.getState().current).toBe(tournament)
+  })
+
   it('updates only the pair names while preserving every existing reference', () => {
     const pair = { id: 'pair-1', player1: 'Ana', player2: 'Beto', seed: 3 }
     const match = {
@@ -333,12 +355,10 @@ describe('tournamentStore — pair editing', () => {
       pairAId: pair.id,
       pairBId: 'pair-2',
       round: 1,
-      scheduledAt: '2024-01-01T09:00:00.000Z',
-      result: { scoreA: 6, scoreB: 3 },
     }
     const tournament: Tournament = {
       ...makeTournament('t1'),
-      slots: [{ id: 'slot-1', startsAt: match.scheduledAt, matchId: match.id }],
+      slots: [{ id: 'slot-1', startsAt: '2024-01-01T09:00:00.000Z' }],
       pairUnavailableWindows: [{
         id: 'unavailable-1',
         pairId: pair.id,

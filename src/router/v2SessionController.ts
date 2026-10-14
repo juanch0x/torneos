@@ -3,6 +3,9 @@ import { type V2MembershipRequest } from '../domain/v2Membership'
 import type { StoreApi } from 'zustand/vanilla'
 import { createV2SessionStore, emptyV2Session, v2SessionStore, type V2SessionState } from '../store/v2Session'
 import { applyV2Configuration, hasCompleteV2Configuration, type V2ConfigurationDraft } from '../domain/v2Configuration'
+import { applyV2Setup } from '../domain/v2SetupApply'
+import { isV2SetupLocked, type V2SetupDraft } from '../domain/v2Setup'
+import type { V2DraftIssue } from '../domain/v2SetupSchema'
 import type { V2RestrictionDraft, V2WindowMerge } from '../domain/v2Restrictions'
 import { applyV2Move, type V2MoveRequest } from '../domain/v2Moves'
 import { generateV2Calendar, regenerateV2Calendar } from '../domain/v2Generation'
@@ -19,11 +22,11 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
   let active: { id: string; promise: Promise<ReadResult> } | null = null
   let listed = false
   let listing: Promise<void> | null = null
-  type SaveResult = { ok: true; merges: V2WindowMerge[] } | { ok: false; error: string; issue?: V2PlanningIssue; issues?: (string | V2PlanningIssue)[] }
-  type Prepared = { ok: true; document: Tournament; merges: V2WindowMerge[] } | { ok: false; error: string | V2PlanningIssue; issues?: (string | V2PlanningIssue)[] }
-  async function persistConfirmed(expected: { sourceId: string; epoch: number }, prepare: (source: Tournament) => Prepared, kind = 'editing'): Promise<SaveResult> {
+  type SaveResult<I = string | V2PlanningIssue> = { ok: true; merges: V2WindowMerge[] } | { ok: false; error: string; issue?: V2PlanningIssue; issues?: I[] }
+  type Prepared<I> = { ok: true; document: Tournament; merges: V2WindowMerge[] } | { ok: false; error: string | V2PlanningIssue; issues?: I[] }
+  async function persistConfirmed<I = string | V2PlanningIssue>(expected: { sourceId: string; epoch: number }, prepare: (source: Tournament) => Prepared<I>, kind = 'editing'): Promise<SaveResult<I>> {
     const state = store.getState()
-    const fail = (error: string | V2PlanningIssue, issues?: (string | V2PlanningIssue)[]) => {
+    const fail = (error: string | V2PlanningIssue, issues?: I[]) => {
       if (typeof error === 'string') {
         store.setState({ saveError: error, saveIssue: null })
         return { ok: false as const, error, issues }
@@ -40,7 +43,7 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       if (token !== revision || store.getState().sourceId !== expected.sourceId || store.getState().epoch !== expected.epoch) return fail('La fuente cambió; no se guardaron los cambios.')
       if (!latest || latest.id !== expected.sourceId || (JSON.stringify(latest) !== JSON.stringify(baseline) && JSON.stringify(latest) !== JSON.stringify(uncertainAttempt))) return fail('El torneo cambió fuera de esta vista. Conservá tu borrador; releé el original y revisá los cambios antes de reintentar.')
       const completingAttempt = (kind === 'generation' || kind === 'regeneration' || kind.startsWith('move:') || kind.startsWith('membership:')) && uncertainKind === kind && JSON.stringify(latest) === JSON.stringify(uncertainAttempt)
-      const result: Prepared = completingAttempt
+      const result: Prepared<I> = completingAttempt
         ? { ok: true, document: latest, merges: [] } : prepare(latest)
       if (!result.ok) return fail(result.error, result.issues)
       if (!completingAttempt && JSON.stringify(result.document) === JSON.stringify(latest) && !store.getState().writeUncertain) return { ok: true, merges: result.merges }
@@ -88,11 +91,19 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
         return result.ok ? { ...result, merges: [] } : result
       }, 'generation')
     },
-    saveConfiguration(draft: V2ConfigurationDraft, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
+    saveConfiguration(draft: V2ConfigurationDraft, expected: { sourceId: string; epoch: number }): Promise<SaveResult<V2DraftIssue>> {
       const snapshot = structuredClone(draft)
       return persistConfirmed(expected, latest => {
+        if (isV2SetupLocked(latest) && hasCompleteV2Configuration(latest)) return { ok: false, error: 'La configuración es de solo lectura después de la primera generación del calendario.' }
         const result = applyV2Configuration(latest, snapshot)
         return result.ok ? { ...result, merges: [] } : result
+      })
+    },
+    saveSetup(draft: V2SetupDraft, expected: { sourceId: string; epoch: number }): Promise<SaveResult<V2DraftIssue>> {
+      const snapshot = structuredClone(draft)
+      return persistConfirmed(expected, latest => {
+        const r = applyV2Setup(latest, snapshot)
+        return r.ok ? { ...r, merges: [] } : r
       })
     },
     savePairRestrictions(pairId: string, drafts: V2RestrictionDraft[], expected: { sourceId: string; epoch: number }): Promise<SaveResult> {

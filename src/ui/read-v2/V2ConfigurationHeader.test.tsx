@@ -25,7 +25,7 @@ describe('compact configuration header server markup', () => {
   it('keeps explicit incomplete explanation and conditional issue details', () => {
     const source = sample(); delete source.fixtureSettings
     v2SessionStore.getState().acceptSource(source, 't')
-    expect(markup()).toContain('Necesita configuración'); expect(markup()).toContain('Completá y guardá fechas')
+    expect(markup()).toContain('Necesita configuración'); expect(markup()).toContain('Completá y guardá la configuración del torneo desde la página de configuración')
     expect(markup()).toContain('1 registro requiere revisión')
   })
   it('never displays a different prior tournament identity while the selected source loads', () => {
@@ -51,7 +51,7 @@ it('renders matching 24-hour controls with accessible individual range errors, a
 it('renders separate physical and automatic hour sections with four consistent 24-hour controls and legacy explanation', () => {
   const html = renderToStaticMarkup(<MantineProvider><V2HourWindowsFields draft={{ startDate: '', endDate: '', opensAt: '15:00', closesAt: '22:00', tournamentOpensAt: '18:00', tournamentClosesAt: '22:00', duration: '', automaticWeekdays: [1,2,3,4,5] }} disabled={false} legacy onWeekdaysChange={() => {}} onChange={() => {}} /></MantineProvider>)
   expect(html).toContain('Disponibilidad de la cancha'); expect(html).toContain('Horario del torneo'); expect(html).toContain('La generación automática usará este horario')
-  expect(html).toContain('por compatibilidad'); const inputs = html.match(/<input[^>]+>/g)!; expect(inputs).toHaveLength(4)
+  expect(html).toContain('por compatibilidad'); const inputs = html.match(/<input[^>]+>/g)!.filter(input => !input.includes('type="checkbox"')); expect(inputs).toHaveLength(4)
   for (const input of inputs) { expect(input).toContain('type="text"'); expect(input).toContain('placeholder="HH:mm"') }
 })
 
@@ -59,11 +59,11 @@ it('renders separate physical and automatic hour sections with four consistent 2
 it('renders seven accessible weekday toggles with Monday–Friday selected and weekend optional', () => {
   const html = renderToStaticMarkup(<MantineProvider><V2AutomaticWeekdaysField value={[1,2,3,4,5]} disabled={false} onChange={() => {}} /></MantineProvider>)
   expect(html).toContain('Días del torneo')
-  const buttons = html.match(/<button[^>]+>/g)!; expect(buttons).toHaveLength(7)
-  expect(buttons.filter(button => button.includes('aria-pressed="true"'))).toHaveLength(5)
-  expect(buttons[5]).toContain('aria-label="Sábado"'); expect(buttons[5]).toContain('aria-pressed="false"')
-  expect(buttons[6]).toContain('aria-label="Domingo"'); expect(buttons[6]).toContain('aria-pressed="false"')
-  for (const button of buttons) expect(button).toContain('type="button"')
+  const chips = html.match(/<input[^>]+>/g)!; expect(chips).toHaveLength(7)
+  for (const chip of chips) expect(chip).toContain('type="checkbox"')
+  expect(chips.filter(chip => chip.includes('checked=""'))).toHaveLength(5)
+  expect(chips[5]).toContain('aria-label="Sábado"'); expect(chips[5]).not.toContain('checked=""')
+  expect(chips[6]).toContain('aria-label="Domingo"'); expect(chips[6]).not.toContain('checked=""')
   const empty = renderToStaticMarkup(<MantineProvider><V2AutomaticWeekdaysField value={[]} disabled onChange={() => {}} /></MantineProvider>)
   expect(empty).toContain('Seleccioná al menos un día'); expect(empty.match(/disabled=""/g)).toHaveLength(7)
 })

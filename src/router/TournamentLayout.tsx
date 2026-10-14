@@ -1,5 +1,5 @@
 import { PreparationNavigationGuard } from './PreparationNavigationGuard'
-import { Link, Outlet, useNavigate, useParams, useLocation } from '@tanstack/react-router'
+import { Link, Navigate, Outlet, useNavigate, useParams, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { Alert, Button, Box, Breadcrumbs, Group, Loader, Paper, Stack, Tabs, Text, Title, useMantineTheme } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
@@ -7,6 +7,7 @@ import { deriveCockpitGuidance } from '../ui/cockpitGuidance'
 import { CockpitGuidanceCard } from '../ui/CockpitGuidanceCard'
 import { formatTournamentPeriod } from '../ui/tournamentPeriod'
 import { NotFound } from './NotFound'
+import { isV2SetupComplete, isV2SetupLocked } from '../domain/v2Setup'
 
 export function TournamentLayout() {
   const { id } = useParams({ from: '/tournaments/$id' })
@@ -28,6 +29,9 @@ export function TournamentLayout() {
   if (status === 'idle' || status === 'loading') return <Loader size="sm" m="md" />
   if (status === 'error') return <Alert color="red">{loadError}<Button onClick={() => void loadTournament(id, true)}>Reintentar lectura</Button></Alert>
   if (status === 'not-found' || !current) return <NotFound />
+  if (status === 'loaded' && !isV2SetupComplete(current) && !isV2SetupLocked(current)) {
+    return <Navigate to="/v2/configuration" search={{ tournamentId: id }} replace />
+  }
 
   const activeTab = location.pathname.endsWith('/results')
     ? 'results'
@@ -92,7 +96,38 @@ export function TournamentLayout() {
             </Paper>
           </Group>
 
-          {activeTab === 'groups' ? <Stack gap="xs"><Text size="sm">Cargá categorías y parejas; podés completar las asignaciones en el siguiente paso.</Text><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: id }} />}>Continuar a grupos y restricciones</Button></Stack> : <CockpitGuidanceCard guidance={guidance} />}
+          {activeTab === 'groups' ? (
+            <Stack gap="xs">
+              <Text size="sm">Cargá las parejas de cada categoría; podés completar las asignaciones en el siguiente paso.</Text>
+              <Group gap="sm">
+                <Button
+                  variant="default"
+                  renderRoot={(props) => (
+                    <Link
+                      {...props}
+                      to="/v2/configuration"
+                      search={{ tournamentId: id }}
+                    />
+                  )}
+                >
+                  Configuración del torneo
+                </Button>
+                <Button
+                  renderRoot={(props) => (
+                    <Link
+                      {...props}
+                      to="/v2/groups"
+                      search={{ tournamentId: id }}
+                    />
+                  )}
+                >
+                  Continuar a grupos y restricciones
+                </Button>
+              </Group>
+            </Stack>
+          ) : (
+            <CockpitGuidanceCard guidance={guidance} />
+          )}
         </Stack>
       </Paper>
 

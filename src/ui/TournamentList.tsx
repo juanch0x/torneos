@@ -67,7 +67,7 @@ export function TournamentList() {
             void newTournament(trimmed).then(() => {
               setName('')
               const id = useTournamentStore.getState().current!.id
-              return navigate({ to: '/tournaments/$id/groups', params: { id } })
+              return navigate({ to: '/v2/configuration', search: { tournamentId: id } })
             }).catch(() => setCreationError('No se pudo confirmar la creación. Releé la lista antes de reintentar: el documento puede haberse guardado parcialmente.')).finally(() => { creatingRef.current = false; setCreating(false) })
           }}
         >
