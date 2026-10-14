@@ -6,8 +6,8 @@ import { ConfigurationBreadcrumb } from './ConfigurationBreadcrumb'
 
 vi.mock('@tanstack/react-router', async importOriginal => ({
   ...await importOriginal<typeof import('@tanstack/react-router')>(),
-  Link: ({ to, params, ...props }: ComponentProps<'a'> & { to: string; params?: { id: string } }) =>
-    <a {...props} href={params ? to.replace('$id', params.id) : to} />,
+  Link: ({ to, params, search, ...props }: ComponentProps<'a'> & { to: string; params?: { id: string }; search?: Record<string, string> }) =>
+    <a {...props} href={`${params ? to.replace('$id', params.id) : to}${search ? `?${new URLSearchParams(search)}` : ''}`} />,
 }))
 
 const render = (props: ComponentProps<typeof ConfigurationBreadcrumb>) =>
@@ -25,18 +25,18 @@ describe('ConfigurationBreadcrumb', () => {
 
   it('renders the tournament name as a link to its groups page when linkTournament is true', () => {
     const html = render({ tournamentId: 'abc', name: 'Mi Torneo', linkTournament: true })
-    expect(html).toContain('href="/tournaments/abc/groups"')
+    expect(html).toContain('href="/v2/groups?tournamentId=abc"')
     expect(html).toContain('Mi Torneo')
   })
 
   it('renders the tournament name as plain text when linkTournament is false', () => {
     const html = render({ tournamentId: 'abc', name: 'Mi Torneo', linkTournament: false })
-    expect(html).not.toContain('href="/tournaments/abc/groups"')
+    expect(html).not.toContain('href="/v2/groups?tournamentId=abc"')
     expect(html).toContain('Mi Torneo')
   })
 
   it('uses the provided tournamentId in the groups link', () => {
     const html = render({ tournamentId: 'xyz-123', name: 'Otro', linkTournament: true })
-    expect(html).toContain('href="/tournaments/xyz-123/groups"')
+    expect(html).toContain('href="/v2/groups?tournamentId=xyz-123"')
   })
 })

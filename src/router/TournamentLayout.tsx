@@ -37,11 +37,13 @@ export function TournamentLayout() {
     ? 'results'
     : location.pathname.endsWith('/fixture')
       ? 'fixture'
-      : 'groups'
+      : null
+  // Pairs and groups live in the v2 preparation page; the layout only hosts the legacy fixture and results.
+  if (!activeTab) return <Navigate to="/v2/groups" search={{ tournamentId: id }} replace />
 
   const handleTabChange = (value: string | null) => {
     if (value === 'groups') {
-      void navigate({ to: '/tournaments/$id/groups', params: { id } })
+      void navigate({ to: '/v2/groups', search: { tournamentId: id } })
     } else if (value === 'fixture') {
       void navigate({ to: '/tournaments/$id/fixture', params: { id } })
     } else if (value === 'results') {
@@ -49,7 +51,7 @@ export function TournamentLayout() {
     }
   }
 
-  const sectionLabel = activeTab === 'results' ? 'Resultados' : activeTab === 'fixture' ? 'Calendario' : 'Categorías y parejas'
+  const sectionLabel = activeTab === 'results' ? 'Resultados' : 'Calendario'
   const guidance = deriveCockpitGuidance(current)
 
   return (
@@ -96,38 +98,7 @@ export function TournamentLayout() {
             </Paper>
           </Group>
 
-          {activeTab === 'groups' ? (
-            <Stack gap="xs">
-              <Text size="sm">Cargá las parejas de cada categoría; podés completar las asignaciones en el siguiente paso.</Text>
-              <Group gap="sm">
-                <Button
-                  variant="default"
-                  renderRoot={(props) => (
-                    <Link
-                      {...props}
-                      to="/v2/configuration"
-                      search={{ tournamentId: id }}
-                    />
-                  )}
-                >
-                  Configuración del torneo
-                </Button>
-                <Button
-                  renderRoot={(props) => (
-                    <Link
-                      {...props}
-                      to="/v2/groups"
-                      search={{ tournamentId: id }}
-                    />
-                  )}
-                >
-                  Continuar a grupos y restricciones
-                </Button>
-              </Group>
-            </Stack>
-          ) : (
-            <CockpitGuidanceCard guidance={guidance} />
-          )}
+          <CockpitGuidanceCard guidance={guidance} />
         </Stack>
       </Paper>
 
@@ -150,7 +121,7 @@ export function TournamentLayout() {
         >
           <Tabs.List grow>
             <Tabs.Tab value="groups">Categorías y parejas</Tabs.Tab>
-            {activeTab !== 'groups' && <Tabs.Tab value={activeTab}>{activeTab === 'fixture' ? 'Calendario legacy' : 'Resultados legacy'}</Tabs.Tab>}
+            <Tabs.Tab value={activeTab}>{activeTab === 'fixture' ? 'Calendario legacy' : 'Resultados legacy'}</Tabs.Tab>
           </Tabs.List>
         </Tabs>
 

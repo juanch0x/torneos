@@ -308,7 +308,6 @@ export const useTournamentStore = create<TournamentState>()(
 
       // Corrige los nombres de una pareja sin alterar su identidad ni las
       // referencias existentes en grupos, cruces, calendario o playoffs.
-      // Bloqueado después de generar el calendario (issue #67).
       updatePair(categoryId, pairId, player1, player2) {
         mutateCategoryUnlessPlayed(categoryId, (c) => ({
           ...c,

@@ -2,7 +2,6 @@ import { enterPlanningOwner } from './planningOwnership'
 import { FlowRouteError } from './FlowRouteError'
 import { createRootRoute, createRoute, lazyRouteComponent, redirect } from '@tanstack/react-router'
 import { TournamentList } from '../ui/TournamentList'
-import { GroupsPage } from '../ui/GroupsPage'
 import { FixturePage } from '../ui/FixturePage'
 import { ResultsPage } from '../ui/ResultsPage'
 import { RootLayout } from './RootLayout'
@@ -37,7 +36,8 @@ export const tournamentRoute = createRoute({
 const groupsRoute = createRoute({
   getParentRoute: () => tournamentRoute,
   path: 'groups',
-  component: GroupsPage,
+  // Pair enrollment and groups live in the v2 preparation page; old links keep working.
+  beforeLoad: ({ params }) => { throw redirect({ to: '/v2/groups', search: { tournamentId: params.id } }) },
 })
 
 const fixtureRoute = createRoute({

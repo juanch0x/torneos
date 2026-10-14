@@ -112,7 +112,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
     // Clear the draft flag now so the navigation guard does not block this exit.
     v2SessionStore.setState({ draftDirty: false })
     if (baselineOnly) void navigate({ to: '/v2/calendar', search: { tournamentId } })
-    else void navigate({ to: '/tournaments/$id/groups', params: { id: tournamentId } })
+    else void navigate({ to: '/v2/groups', search: { tournamentId } })
   }
   function blur(path: string) {
     setBlurred(current => current.has(path) ? current : new Set(current).add(path))

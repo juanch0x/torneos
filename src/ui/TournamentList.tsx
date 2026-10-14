@@ -34,7 +34,7 @@ export function TournamentList() {
         id: 'acciones',
         header: '',
         cell: ({ row }) => (
-          <Link to="/tournaments/$id/groups" params={{ id: row.original.id }}>
+          <Link to="/v2/groups" search={{ tournamentId: row.original.id }}>
             Abrir
           </Link>
         ),

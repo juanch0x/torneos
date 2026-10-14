@@ -21,7 +21,7 @@ export function ConfigurationBreadcrumb({
     <Breadcrumbs>
       <Link to="/">Torneos</Link>
       {linkTournament ? (
-        <Link to="/tournaments/$id/groups" params={{ id: tournamentId }}>
+        <Link to="/v2/groups" search={{ tournamentId }}>
           {name}
         </Link>
       ) : (
