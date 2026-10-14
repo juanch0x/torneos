@@ -26,7 +26,7 @@ afterEach(() => { vi.restoreAllMocks() })
 const markup = () => renderToStaticMarkup(<MantineProvider><TournamentConfigurationPage /></MantineProvider>)
 
 describe('tournament configuration page server markup', () => {
-  it('renders ordered setup sections, a clean disabled save button and the preparation link', () => {
+  it('renders ordered setup sections, an enabled save button and the preparation link', () => {
     v2SessionStore.getState().acceptSource(unlockedSample(), 't')
     const html = markup()
     const sections = ['Categorías', 'Período del torneo', 'Disponibilidad de la cancha', 'Horario del torneo', 'Días del torneo', 'Duración de cada partido']
@@ -36,7 +36,8 @@ describe('tournament configuration page server markup', () => {
       expect(next).toBeGreaterThan(position)
       position = next
     }
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*?Guardar configuración/)
+    const save = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar configuración'))!
+    expect(save.split('>')[0]).not.toContain('disabled')
     expect(html).toContain('Continuar a parejas')
     expect(html).toContain('mantine-Breadcrumbs-root')
     expect(html).toContain('href="/tournaments/t/groups"')

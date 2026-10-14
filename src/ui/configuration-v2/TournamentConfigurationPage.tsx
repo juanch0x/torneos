@@ -112,9 +112,10 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       setError('')
       setSaved(false)
       const current = v2SessionStore.getState()
-      if (locked || current.saving || current.writeUncertain || !baselineOnly && !dirty) return
+      if (locked || current.saving || current.writeUncertain) return
+      // Always enabled: the first attempt reveals every error, even on an untouched draft.
       setSubmitted(true)
-      if (issues.length || stateError) return
+      if (issues.length || stateError || !baselineOnly && !dirty) return
       void form.handleSubmit()
     }}><Stack gap="lg">
       <Title order={1}>Configuración del torneo</Title>
@@ -155,7 +156,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       {saved && <Text role="status" aria-live="polite" c="green.8">Configuración guardada.</Text>}
       {mode === 'edit' && <Text size="sm" c="dimmed">Al generar el calendario por primera vez, la configuración, las categorías, los grupos y las parejas quedan bloqueados.</Text>}
       <Group justify="flex-end">
-        {!locked && <Button type="submit" loading={state.saving} disabled={disabled || !baselineOnly && !dirty}>Guardar configuración</Button>}
+        {!locked && <Button type="submit" loading={state.saving} disabled={disabled}>Guardar configuración</Button>}
         {!dirty && isV2SetupComplete(working) && <Button disabled={state.saving || state.writeUncertain} renderRoot={props => <Link {...props} to="/tournaments/$id/groups" params={{ id: tournamentId }} />}>Continuar a parejas</Button>}
       </Group>
     </Stack></form>
