@@ -26,7 +26,7 @@ afterEach(() => { vi.restoreAllMocks() })
 const markup = () => renderToStaticMarkup(<MantineProvider><TournamentConfigurationPage /></MantineProvider>)
 
 describe('tournament configuration page server markup', () => {
-  it('renders ordered setup sections, an enabled save button and the preparation link', () => {
+  it('renders ordered setup sections, an enabled save-and-continue button', () => {
     v2SessionStore.getState().acceptSource(unlockedSample(), 't')
     const html = markup()
     const sections = ['Categorías', 'Período del torneo', 'Disponibilidad de la cancha', 'Horario del torneo', 'Días del torneo', 'Duración de cada partido']
@@ -36,9 +36,8 @@ describe('tournament configuration page server markup', () => {
       expect(next).toBeGreaterThan(position)
       position = next
     }
-    const save = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar configuración'))!
+    const save = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar y continuar'))!
     expect(save.split('>')[0]).not.toContain('disabled')
-    expect(html).toContain('Continuar a parejas')
     expect(html).toContain('mantine-Breadcrumbs-root')
     expect(html).toContain('href="/tournaments/t/groups"')
     expect(html).not.toContain('Editar categorías y parejas')
@@ -52,7 +51,7 @@ describe('tournament configuration page server markup', () => {
     const html = markup()
     expect(html).toContain('Después de la primera generación del calendario')
     expect(html).toContain('Solo podés editar las restricciones de las parejas y regenerar el calendario.')
-    expect(html).not.toContain('Guardar configuración')
+    expect(html).not.toContain('Guardar y continuar')
     expect(html).toContain('href="/v2/groups?tournamentId=t"')
     expect(html).toContain('href="/v2/calendar?tournamentId=t"')
     const inputs = html.match(/<input[^>]*>/g)!
@@ -69,7 +68,6 @@ describe('tournament configuration page server markup', () => {
     const html = markup()
     expect(html).not.toContain('Agregá al menos una categoría.')
     expect(html).not.toContain('datos para revisar')
-    expect(html).not.toContain('Continuar a parejas')
     expect(html).not.toContain('href="/tournaments/t/groups"')
     expect(html).toContain('mantine-Breadcrumbs-root')
   })
@@ -83,7 +81,7 @@ describe('tournament configuration page server markup', () => {
     expect(html).toContain('Las categorías, los grupos y las parejas quedan bloqueados')
     expect(html).toContain('abrir el calendario y editar las restricciones')
     expect(html).not.toContain('Completá el primer día.')
-    const saveButton = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar configuración'))!
+    const saveButton = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar y continuar'))!
     expect(saveButton).toBeDefined()
     expect(saveButton.split('>')[0]).not.toContain('disabled')
     const inputs = html.match(/<input[^>]*>/g)!

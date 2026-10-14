@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from 'zustand'
 import { useForm, useStore as useFormStore } from '@tanstack/react-form'
-import { Link, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Alert, Button, Group, List, Paper, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
 import type { Tournament } from '../../domain/types'
 import { plural } from '../../domain/text'
@@ -42,7 +42,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
   const state = useStore(v2SessionStore)
   const [snapshot, setSnapshot] = useState(() => ({ initial: getV2SetupDraft(working), epoch: state.epoch }))
   const [error, setError] = useState('')
-  const [saved, setSaved] = useState(false)
+  const navigate = useNavigate()
   // Paths the user has left at least once; their errors show before the first save attempt.
   const [blurred, setBlurred] = useState<ReadonlySet<string>>(new Set())
   // After the first save attempt every error is visible.
@@ -67,9 +67,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       const initial = getV2SetupDraft(confirmed.working)
       setSnapshot({ initial, epoch: confirmed.epoch })
       form.reset(initial)
-      setBlurred(new Set())
-      setSubmitted(false)
-      setSaved(true)
+      continueToTournament()
     },
   })
   const draft = useFormStore(form.store, formState => formState.values)
@@ -96,7 +94,13 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
   function change<K extends keyof V2SetupDraft>(key: K, value: V2SetupDraft[K]) {
     form.setFieldValue(key, value as never)
     setError('')
-    setSaved(false)
+  }
+  /** Saving is the way forward: pair capture, or the calendar when pairs are already locked. */
+  function continueToTournament() {
+    // Clear the draft flag now so the navigation guard does not block this exit.
+    v2SessionStore.setState({ draftDirty: false })
+    if (baselineOnly) void navigate({ to: '/v2/calendar', search: { tournamentId } })
+    else void navigate({ to: '/tournaments/$id/groups', params: { id: tournamentId } })
   }
   function blur(path: string) {
     setBlurred(current => current.has(path) ? current : new Set(current).add(path))
@@ -111,12 +115,13 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
     <form noValidate onSubmit={event => {
       event.preventDefault()
       setError('')
-      setSaved(false)
       const current = v2SessionStore.getState()
       if (locked || current.saving || current.writeUncertain) return
       // Always enabled: the first attempt reveals every error, even on an untouched draft.
       setSubmitted(true)
-      if (issues.length || stateError || !baselineOnly && !dirty) return
+      if (issues.length || stateError) return
+      // A clean, complete setup has nothing to write: just move on.
+      if (!baselineOnly && !dirty && isV2SetupComplete(working)) { continueToTournament(); return }
       void form.handleSubmit()
     }}><Stack gap="lg">
       <Title order={1}>Configuración del torneo</Title>
@@ -154,11 +159,9 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       </Stack>
       <Text size="xs" c="dimmed">Las excepciones de cancha existentes se preservan, sin editor en esta etapa. Con resultados existentes no se permite cambiar ni inferir una duración histórica.</Text>
       {!!impacts.length && <Alert color="orange">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisá el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
-      {saved && <Text role="status" aria-live="polite" c="green.8">Configuración guardada.</Text>}
       {mode === 'edit' && <Text size="sm" c="dimmed">Al generar el calendario por primera vez, la configuración, las categorías, los grupos y las parejas quedan bloqueados.</Text>}
       <Group justify="flex-end">
-        {!locked && <Button type="submit" loading={state.saving} disabled={disabled}>Guardar configuración</Button>}
-        {!dirty && isV2SetupComplete(working) && <Button disabled={state.saving || state.writeUncertain} renderRoot={props => <Link {...props} to="/tournaments/$id/groups" params={{ id: tournamentId }} />}>Continuar a parejas</Button>}
+        {!locked && <Button type="submit" loading={state.saving} disabled={disabled}>Guardar y continuar</Button>}
       </Group>
     </Stack></form>
   </Paper>
