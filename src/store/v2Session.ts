@@ -1,4 +1,6 @@
 import { applyV2Membership, type V2MembershipRequest } from '../domain/v2Membership'
+import { addV2Pair, deleteV2Pair, renameV2Pair, type V2PairNamesRequest, type V2PairRef } from '../domain/v2Pairs'
+import type { V2DraftIssue } from '../domain/v2SetupSchema'
 import { createStore } from 'zustand/vanilla'
 import { adaptV2Tournament, type V2Display } from '../domain/v2Display'
 import { deriveV2Conflicts, getV2RestrictionConfig, normalizeV2PairWindows, validateV2DraftBounds, type V2RestrictionDraft, type V2WindowMerge } from '../domain/v2Restrictions'
@@ -6,6 +8,8 @@ import { cloneV2Document } from '../domain/v2Snapshot'
 import type { Tournament, TournamentMeta } from '../domain/types'
 import type { V2PlanningIssue } from '../domain/v2PlanningIssues'
 
+type V2Expected = { sourceId: string; epoch: number }
+export type V2PairActionResult = { ok: true } | { ok: false; error: string; issues?: V2DraftIssue[] }
 export interface V2SessionState {
   sourceId: string | null; sourceVersion: string | null
   baseline: Tournament | null; working: Tournament | null; display: V2Display | null
@@ -15,13 +19,26 @@ export interface V2SessionState {
   availability: ReturnType<typeof deriveV2Conflicts>
   savePairRestrictions: (pairId: string, drafts: V2RestrictionDraft[], expected: { sourceId: string; epoch: number }) => { ok: true; merges: V2WindowMerge[] } | { ok: false; error: string }
   movePair: (request: V2MembershipRequest, expected: { sourceId: string; epoch: number }) => { ok: true } | { ok: false; error: string }
+  addPair: (request: V2PairNamesRequest, expected: V2Expected) => V2PairActionResult
+  renamePair: (request: V2PairNamesRequest, expected: V2Expected) => V2PairActionResult
+  deletePair: (request: V2PairRef, expected: V2Expected) => V2PairActionResult
   acceptSource: (source: Tournament, id: string) => void
   replaceWorking: (working: Tournament) => boolean
   resetWorking: () => boolean
 }
 export const emptyV2Session = { sourceId: null, sourceVersion: null, baseline: null, working: null, display: null, status: 'idle' as const, error: '', dirty: false, saving: false, saveError: '', saveIssue: null as V2PlanningIssue | null, writeUncertain: false }
 export function createV2SessionStore() {
-  return createStore<V2SessionState>((set, get) => ({
+  return createStore<V2SessionState>((set, get) => {
+  function applyPairChange(change: (source: Tournament) => ReturnType<typeof addV2Pair>, expected: V2Expected, ownsDraft: boolean): V2PairActionResult {
+    const state = get()
+    if (state.saving || (!ownsDraft && state.draftDirty) || !state.working || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch) return { ok: false, error: 'La copia cambió. Releé el torneo antes de editar la pareja.' }
+    const result = change(state.working)
+    if (!result.ok) return result
+    if (result.document !== state.working) state.replaceWorking(result.document)
+    if (ownsDraft) set({ draftDirty: false })
+    return { ok: true }
+  }
+  return {
     ...emptyV2Session, sources: [], listError: '', epoch: 0, draftDirty: false, navigationBlocked: false, draftDiscardRevision: 0, availability: { conflicts: [], unvalidated: [] },
     acceptSource(source, id) {
       const baseline = cloneV2Document(source); const working = cloneV2Document(baseline)
@@ -42,6 +59,10 @@ export function createV2SessionStore() {
       if (result.document !== state.working) state.replaceWorking(result.document)
       return { ok: true }
     },
+    // The names modal owns the open draft, so add and rename are not blocked by draftDirty and clear it on success.
+    addPair(request, expected) { return applyPairChange(document => addV2Pair(document, request), expected, true) },
+    renamePair(request, expected) { return applyPairChange(document => renameV2Pair(document, request), expected, true) },
+    deletePair(request, expected) { return applyPairChange(document => deleteV2Pair(document, request), expected, false) },
     savePairRestrictions(pairId, drafts, expected) {
       const state = get(); const source = state.working
       if (state.saving || !source || state.sourceId !== expected.sourceId || state.epoch !== expected.epoch) return { ok: false, error: 'La copia cambió. Cerrá y volvé a abrir las restricciones antes de guardar.' }
@@ -74,6 +95,7 @@ export function createV2SessionStore() {
       set({ working, display: adaptV2Tournament(working), dirty: false, epoch: get().epoch + 1, draftDirty: false, draftDiscardRevision: get().draftDiscardRevision + 1, availability: deriveV2Conflicts(working) })
       return true
     },
-  }))
+  }
+  })
 }
 export const v2SessionStore = createV2SessionStore()
