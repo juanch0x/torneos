@@ -51,22 +51,24 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
 }
 
 
-export function V2HourWindowsFields({ draft, disabled, legacy, legacyWeekdays, onWeekdaysChange, onChange }: {
+type V2HourKey = 'opensAt' | 'closesAt' | 'tournamentOpensAt' | 'tournamentClosesAt'
+export function V2HourWindowsFields({ draft, disabled, legacy, legacyWeekdays, onWeekdaysChange, onChange, errors, onBlur }: {
   draft: V2ConfigurationDraft; disabled: boolean; legacy: boolean; legacyWeekdays?: boolean; onWeekdaysChange: (value: number[]) => void;
-  onChange: (key: 'opensAt' | 'closesAt' | 'tournamentOpensAt' | 'tournamentClosesAt', value: string) => void
+  onChange: (key: V2HourKey, value: string) => void
+  errors?: (key: V2HourKey | 'automaticWeekdays') => string | undefined; onBlur?: (key: V2HourKey) => void
 }) {
   return <Stack gap="md">
     <Fieldset legend="Disponibilidad de la cancha"><SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <HourEntryInput label="Apertura" value={draft.opensAt} disabled={disabled} onChange={value => onChange('opensAt', value)} />
-      <HourEntryInput label="Cierre" value={draft.closesAt} allow24 disabled={disabled} onChange={value => onChange('closesAt', value)} />
+      <HourEntryInput label="Apertura" value={draft.opensAt} disabled={disabled} error={errors?.('opensAt')} onBlur={() => onBlur?.('opensAt')} onChange={value => onChange('opensAt', value)} />
+      <HourEntryInput label="Cierre" value={draft.closesAt} allow24 disabled={disabled} error={errors?.('closesAt')} onBlur={() => onBlur?.('closesAt')} onChange={value => onChange('closesAt', value)} />
     </SimpleGrid></Fieldset>
     <Fieldset legend="Horario del torneo"><Stack gap="xs">
       <Text size="sm">La generación automática usará este horario</Text>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        <HourEntryInput label="Desde" value={draft.tournamentOpensAt} disabled={disabled} onChange={value => onChange('tournamentOpensAt', value)} />
-        <HourEntryInput label="Hasta" value={draft.tournamentClosesAt} allow24 disabled={disabled} onChange={value => onChange('tournamentClosesAt', value)} />
+        <HourEntryInput label="Desde" value={draft.tournamentOpensAt} disabled={disabled} error={errors?.('tournamentOpensAt')} onBlur={() => onBlur?.('tournamentOpensAt')} onChange={value => onChange('tournamentOpensAt', value)} />
+        <HourEntryInput label="Hasta" value={draft.tournamentClosesAt} allow24 disabled={disabled} error={errors?.('tournamentClosesAt')} onBlur={() => onBlur?.('tournamentClosesAt')} onChange={value => onChange('tournamentClosesAt', value)} />
       </SimpleGrid>
-      <V2AutomaticWeekdaysField value={draft.automaticWeekdays} disabled={disabled} onChange={onWeekdaysChange} />
+      <V2AutomaticWeekdaysField value={draft.automaticWeekdays} disabled={disabled} error={errors?.('automaticWeekdays')} onChange={onWeekdaysChange} />
       {legacyWeekdays && <Text size="xs" c="dimmed">Sin días guardados se usan lunes a viernes. Los partidos existentes en fin de semana se conservan; podés incluir sábado y domingo para nuevas generaciones.</Text>}
       {legacy && <Text size="xs" c="dimmed">Torneo importado sin un horario de generación separado: por compatibilidad se usa la disponibilidad de la cancha. Confirmá o ajustá estos horarios al guardar.</Text>}
     </Stack></Fieldset>
@@ -79,9 +81,9 @@ const weekdayChoices = [
   { value: 3,short: 'X',label: 'Miércoles' },{ value: 4,short: 'J',label: 'Jueves' },
   { value: 5,short: 'V',label: 'Viernes' },{ value: 6,short: 'S',label: 'Sábado' },{ value: 7,short: 'D',label: 'Domingo' },
 ]
-export function V2AutomaticWeekdaysField({ value,disabled,onChange }: { value: number[]; disabled: boolean; onChange: (days: number[]) => void }) {
+export function V2AutomaticWeekdaysField({ value,disabled,onChange,error }: { value: number[]; disabled: boolean; onChange: (days: number[]) => void; error?: string }) {
   return <Stack gap={4}><Text fw={500} size="sm">Días del torneo</Text><Group gap={4} role="group" aria-label="Días del torneo">{weekdayChoices.map(day => <Tooltip key={day.value} label={day.label} withArrow><Button type="button" w={44} h={44} px={0} variant={value.includes(day.value) ? 'filled' : 'default'} disabled={disabled} aria-label={day.label} aria-pressed={value.includes(day.value)} onClick={() => onChange(value.includes(day.value) ? value.filter(selected => selected !== day.value) : [...value,day.value].sort((a,b) => a-b))}>{day.short}</Button></Tooltip>)}</Group>
     <Text size="xs" c="dimmed">Se aplican cada semana del período. Sábado y domingo son opcionales.</Text>
-    {!value.length && <Text size="xs" c="orange.8" role="alert">Seleccioná al menos un día del torneo.</Text>}
+    {(error || !value.length) && <Text size="xs" c="red" role="alert">{error ?? 'Seleccioná al menos un día del torneo.'}</Text>}
   </Stack>
 }

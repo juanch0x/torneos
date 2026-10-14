@@ -38,8 +38,9 @@ describe('tournament configuration page server markup', () => {
     }
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*?Guardar configuración/)
     expect(html).toContain('Continuar a parejas')
-    expect(html).toContain('Editar categorías y parejas')
+    expect(html).toContain('mantine-Breadcrumbs-root')
     expect(html).toContain('href="/tournaments/t/groups"')
+    expect(html).not.toContain('Editar categorías y parejas')
     expect(html).toContain('Al generar el calendario por primera vez')
     expect(html.match(/aria-pressed=/g)).toHaveLength(7)
     expect(html).not.toContain('Configuración guardada.')
@@ -59,18 +60,17 @@ describe('tournament configuration page server markup', () => {
     for (const button of html.match(/<button[^>]*aria-pressed=[^>]*>/g)!) expect(button).toContain('disabled=""')
   })
 
-  it('lists saved setup omissions and keeps preparation unavailable', () => {
+  it('hides errors before interaction and keeps the tournament unreachable while setup is incomplete', () => {
     const source = unlockedSample()
     source.categories = []
     delete source.fixtureSettings
     v2SessionStore.getState().acceptSource(source, 't')
     const html = markup()
-    expect(html).toContain('Falta completar')
-    expect(html).toContain('Agregá al menos una categoría.')
-    expect(html).toContain('Completá el período, los horarios, los días y la duración del torneo.')
+    expect(html).not.toContain('Agregá al menos una categoría.')
+    expect(html).not.toContain('datos para revisar')
     expect(html).not.toContain('Continuar a parejas')
-    expect(html).not.toContain('Editar categorías y parejas')
-    expect(html).toMatch(/<a[^>]*data-disabled="true"[^>]*>.*?Ver grupos/)
+    expect(html).not.toContain('href="/tournaments/t/groups"')
+    expect(html).toContain('mantine-Breadcrumbs-root')
   })
 
   it('offers baseline completion with an enabled save button and locked category inputs', () => {
@@ -81,8 +81,7 @@ describe('tournament configuration page server markup', () => {
     expect(html).toContain('Completá la configuración de horarios')
     expect(html).toContain('Las categorías, los grupos y las parejas quedan bloqueados')
     expect(html).toContain('abrir el calendario y editar las restricciones')
-    expect(html).toContain('Completá el primer día.')
-    expect(html).toContain('Editar categorías y parejas')
+    expect(html).not.toContain('Completá el primer día.')
     const saveButton = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar configuración'))!
     expect(saveButton).toBeDefined()
     expect(saveButton.split('>')[0]).not.toContain('disabled')
