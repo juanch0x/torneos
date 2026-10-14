@@ -1,7 +1,7 @@
 import { HourEntryInput } from './HourEntryInput'
 import { useEffect } from 'react'
 import { useStore } from 'zustand'
-import { ActionIcon, Badge, Chip, Fieldset, Group, Input, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Chip, Fieldset, Group, Input, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { hasCompleteV2Configuration, v2ConfigurationIssues, type V2ConfigurationDraft } from '../../domain/v2Configuration'
 import { v2SessionStore } from '../../store/v2Session'
 import { plural } from '../../domain/text'
@@ -26,7 +26,7 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
   return <Stack gap="xs">
     <Group justify="space-between" wrap="nowrap">
       <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
-        <Text fw={700} size="lg" style={{ overflowWrap: 'anywhere' }}>{title}</Text>
+        <Title order={1} size="h2" style={{ overflowWrap: 'anywhere' }}>{title}</Title>
         {source && !ready && <Badge color="orange" variant="light">Necesita configuración</Badge>}
         {locked && <Badge color="gray" variant="light">Configuración bloqueada</Badge>}
       </Group>
