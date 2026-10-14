@@ -11,9 +11,10 @@ import { useRealCalendarMoves } from './RealCalendarMoves'
 import { getV2AutomaticWindow } from '../../domain/v2AutomaticHours'
 import { v2InitialGenerationBlocked, v2RegenerationBlocked } from '../../domain/v2Generation'
 import { hasCompleteV2Configuration } from '../../domain/v2Configuration'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
-import { Alert, Button, Chip, Group, Modal, Paper, SimpleGrid, Stack, Menu, Text, Title } from '@mantine/core'
+import { Alert, Badge, Button, Chip, Divider, Group, Menu, Modal, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { PairRow } from '../preparation-v2/PairRow'
 import { getV2RestrictionConfig, toV2RestrictionDraft, validateV2DraftBounds, type V2RestrictionDraft } from '../../domain/v2Restrictions'
 import { RestrictionModal } from '../preparation-v2/RestrictionModal'
 import { PairModal, type PairModalSaveResult } from '../preparation-v2/PairModal'
@@ -104,17 +105,26 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
       <Group justify="space-between" align="center" gap="sm"><Chip.Group value={String(Math.min(selectedCategory, display.categories.length - 1))} onChange={value => setSelectedCategory(Number(value))}><Group gap="xs" role="radiogroup" aria-label="Categoría">{display.categories.map((category, ci) => <Chip key={ci} value={String(ci)} styles={{ label: { borderColor: category.color } }}>{category.name} · {state.working!.categories[ci].pairs.length}</Chip>)}</Group></Chip.Group>
         {!!display.categories.length && <Button disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)} onClick={() => setPairForm({ mode: 'add', categoryIndex: Math.min(selectedCategory, display.categories.length - 1), pairId: crypto.randomUUID(), initial: { player1: '', player2: '' }, epoch: state.epoch })}>Agregar pareja</Button>}</Group>
         {display.categories.map((category, ci) => ci !== Math.min(selectedCategory, display.categories.length - 1) ? null : <Stack key={ci} gap="md"><SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-          {[...category.groups, { id: '', name: 'Sin grupo', pairs: category.unassigned.map(pair => ({ id: pair.id, label: `${pair.player1} / ${pair.player2}` })) }].map((group, gi) => <Paper key={gi} withBorder p="md" radius="lg"><Stack gap="md"><Group justify="space-between"><Title order={3} size="h5">{group.name}</Title><Text size="sm" c="dimmed">{plural(group.pairs.length, 'pareja', 'parejas')}</Text></Group>
-            {!group.pairs.length && <Text size="sm" c="dimmed">Sin parejas asignadas.</Text>}{group.pairs.map((pair, pi) => {
-              const count = state.working!.pairUnavailableWindows?.filter(window => window.pairId === pair.id).length ?? 0
-              const conflicts = state.availability.conflicts.filter(conflict => conflict.pairId === pair.id)
-              const pending = state.availability.unvalidated.filter(item => item.pairIds.includes(pair.id) && display.matches.some(match => match.key === item.matchKey && match.status !== 'unscheduled'))
-              return <Paper key={pi} withBorder p="sm" radius="md"><Stack gap={3}><Text fw={600} size="sm">{pair.label}</Text><Group gap="xs" wrap="nowrap"><Menu withinPortal loop><Menu.Target><Button variant="default" size="sm" aria-label={`Mover ${pair.label} a…`} disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)}>Mover a…</Button></Menu.Target><Menu.Dropdown>{[...state.working!.categories[ci].groups.map(target => ({ id: target.id as string | null, name: target.name })), { id: null, name: 'Sin grupo' }].map(target => { const current = (target.id ?? '') === group.id; return <Menu.Item key={target.id ?? ''} disabled={current} onClick={() => {
-                const request = { categoryId: state.working!.categories[ci].id, pairId: pair.id, groupId: target.id }
-                void submitMembership({ request, epoch: state.epoch })
-              }}>{target.name}{current ? ' · Actual' : ''}</Menu.Item> })}</Menu.Dropdown></Menu><Menu withinPortal loop position="bottom-end"><Menu.Target><Button variant="subtle" size="sm" aria-label={`Más acciones para ${pair.label}`} disabled={state.saving || state.draftDirty || state.writeUncertain}>Más…</Button></Menu.Target><Menu.Dropdown><Menu.Item onClick={() => { const record = state.working!.categories[ci].pairs.find(item => item.id === pair.id); if (record) setPairForm({ mode: 'edit', categoryIndex: ci, pairId: pair.id, initial: { player1: record.player1, player2: record.player2 }, epoch: state.epoch }) }}>Editar nombres</Menu.Item><Menu.Item color="red" disabled={!!v2StructureBlocked(state.working!)} onClick={() => requestDelete(ci, pair.id, pair.label)}>Eliminar pareja</Menu.Item></Menu.Dropdown></Menu></Group><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${plural(count, 'restricción', 'restricciones')} · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{plural(conflicts.length, 'conflicto', 'conflictos')} de restricción</Text>}{!!pending.length && <Text size="xs" c="orange.8">{plural(pending.length, 'partido', 'partidos')} sin validación completa</Text>}</Stack></Paper>
-            })}
-          </Stack></Paper>)}
+          {[...category.groups, { id: '', name: 'Sin grupo', pairs: category.unassigned.map(pair => ({ id: pair.id, label: `${pair.player1} / ${pair.player2}` })) }].map((group, gi) => {
+            const unassigned = group.id === ''
+            const blocked = state.saving || state.draftDirty || state.writeUncertain
+            const moveTargets = [...state.working!.categories[ci].groups.map(target => ({ id: target.id as string | null, name: target.name })), { id: null, name: 'Sin grupo' }]
+            return <Paper key={gi} withBorder px="md" py="sm" radius="lg" style={unassigned ? { borderStyle: 'dashed', background: 'transparent' } : undefined}><Stack gap={4}>
+              <Group justify="space-between" py={4}><Title order={3} size="h5">{group.name}</Title><Badge variant="light" color={unassigned && group.pairs.length ? 'orange' : 'gray'} radius="sm" aria-label={plural(group.pairs.length, 'pareja', 'parejas')}>{group.pairs.length}</Badge></Group>
+              {!group.pairs.length && <Text size="sm" c="dimmed" py={4}>{unassigned ? 'Todas las parejas tienen grupo.' : 'Sin parejas asignadas.'}</Text>}
+              {group.pairs.map((pair, pi) => {
+                const count = state.working!.pairUnavailableWindows?.filter(window => window.pairId === pair.id).length ?? 0
+                const conflicts = state.availability.conflicts.filter(conflict => conflict.pairId === pair.id)
+                const pending = state.availability.unvalidated.filter(item => item.pairIds.includes(pair.id) && display.matches.some(match => match.key === item.matchKey && match.status !== 'unscheduled'))
+                return <Fragment key={pi}>{pi > 0 && <Divider />}<PairRow label={pair.label} currentGroupId={group.id || null} moveTargets={moveTargets}
+                  moveDisabled={blocked || !!v2StructureBlocked(state.working!)} actionsDisabled={blocked} deleteDisabled={!!v2StructureBlocked(state.working!)}
+                  restrictionCount={count} restrictionsDisabled={blocked || !count && !hasCompleteV2Configuration(state.working)} conflictCount={conflicts.length} pendingCount={pending.length}
+                  onMove={groupId => void submitMembership({ request: { categoryId: state.working!.categories[ci].id, pairId: pair.id, groupId }, epoch: state.epoch })}
+                  onEditNames={() => { const record = state.working!.categories[ci].pairs.find(item => item.id === pair.id); if (record) setPairForm({ mode: 'edit', categoryIndex: ci, pairId: pair.id, initial: { player1: record.player1, player2: record.player2 }, epoch: state.epoch }) }}
+                  onRestrictions={() => openRestrictions(pair.id)} onDelete={() => requestDelete(ci, pair.id, pair.label)} /></Fragment>
+              })}
+            </Stack></Paper>
+          })}
         </SimpleGrid></Stack>)}
     </>}
     <Text role="status" aria-live="polite" size="sm">{notice}</Text>
