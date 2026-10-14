@@ -2,22 +2,20 @@ import { useState } from 'react'
 import {
   ActionIcon,
   Button,
-  Card,
   Group,
   Modal,
+  NumberInput,
   Stack,
   Text,
   TextInput,
+  Title,
   Tooltip,
 } from '@mantine/core'
 import type { V2SetupCategoryDraft, V2CategoryRemovalImpact } from '../../domain/v2Setup'
 import {
-  addGroup,
   newCategoryDraft,
   removeCategory,
-  removeGroup,
   renameCategory,
-  renameGroup,
 } from './categoriesDraft'
 
 // Inline SVG icons (project does not depend on @tabler/icons-react)
@@ -40,15 +38,70 @@ function IconPlus({ size = 16 }: { size?: number }) {
     </svg>
   )
 }
+
+// ── resizeGroups helper ───────────────────────────────────────────────────────
+
+import type { V2SetupGroupDraft } from '../../domain/v2Setup'
+
+/** Returns the next unused single letter (A-Z) that is not already present in
+ *  any group name. Falls back to numeric suffixes past Z. */
+function nextUnusedLetter(groups: V2SetupGroupDraft[]): string {
+  const usedLetters = new Set(
+    groups.map((g) => g.name.trim()).filter((n) => n.length === 1 && /[A-Z]/.test(n))
+  )
+  for (let i = 0; i < 26; i++) {
+    const letter = String.fromCharCode(65 + i)
+    if (!usedLetters.has(letter)) return letter
+  }
+  // Past Z: numeric starting at 27
+  let n = 27
+  while (usedLetters.has(String(n))) n++
+  return String(n)
+}
+
+/**
+ * Returns a new groups array resized to `count` (clamped 1..5).
+ * - Increase: appends new groups using the next unused letter (no id).
+ * - Decrease: drops groups from the end. Existing groups keep ids and names.
+ * - NaN / empty input: returns groups unchanged.
+ */
+export function resizeGroups(
+  groups: V2SetupGroupDraft[],
+  count: number | string,
+): V2SetupGroupDraft[] {
+  const n = typeof count === 'string' ? parseInt(count, 10) : count
+  if (!Number.isFinite(n) || Number.isNaN(n)) return groups
+  const target = Math.min(5, Math.max(1, n))
+  if (target === groups.length) return groups
+
+  if (target < groups.length) {
+    return groups.slice(0, target)
+  }
+
+  // target > groups.length: append new groups
+  const result = [...groups]
+  while (result.length < target) {
+    const letter = nextUnusedLetter(result)
+    result.push({ name: letter })
+  }
+  return result
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
 export interface CategoriesEditorProps {
   value: V2SetupCategoryDraft[]
   onChange: (next: V2SetupCategoryDraft[]) => void
   disabled: boolean
   impact: (categoryId: string) => V2CategoryRemovalImpact
   groupPairCount: (groupId: string) => number
+  /** Returns an error string for the given field path, or undefined. */
+  errors?: (path: string) => string | undefined
+  /** Called on blur of name / count inputs. */
+  onBlurField?: (path: string) => void
 }
 
-// ── Removal confirmation modal ────────────────────────────────────────────────
+// ── Remove category modal ─────────────────────────────────────────────────────
 
 interface RemoveCategoryModalProps {
   opened: boolean
@@ -87,140 +140,152 @@ function RemoveCategoryModal({ opened, impact, onCancel, onConfirm }: RemoveCate
   )
 }
 
-// ── Single category card ──────────────────────────────────────────────────────
+// ── Reduce group count confirm modal ─────────────────────────────────────────
 
-interface CategoryCardProps {
+interface ReduceGroupsModalProps {
+  opened: boolean
+  affectedPairs: number
+  onCancel: () => void
+  onConfirm: () => void
+}
+
+function ReduceGroupsModal({ opened, affectedPairs, onCancel, onConfirm }: ReduceGroupsModalProps) {
+  return (
+    <Modal
+      opened={opened}
+      onClose={onCancel}
+      centered
+      size="sm"
+      title="¿Reducir grupos?"
+    >
+      <Stack>
+        <Text size="sm">
+          <strong>{affectedPairs} {affectedPairs === 1 ? 'pareja quedará' : 'parejas quedarán'}</strong> sin grupo al eliminar
+          {affectedPairs === 1 ? ' el grupo removido' : ' los grupos removidos'}.
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button color="red" onClick={onConfirm}>
+            Confirmar
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  )
+}
+
+// ── Single category row ───────────────────────────────────────────────────────
+
+interface CategoryRowProps {
   category: V2SetupCategoryDraft
+  index: number
   disabled: boolean
   groupPairCount: (groupId: string) => number
   onChange: (next: V2SetupCategoryDraft) => void
   onRemove: () => void
+  errors?: (path: string) => string | undefined
+  onBlurField?: (path: string) => void
 }
 
-function CategoryCard({
+function CategoryRow({
   category,
+  index,
   disabled,
   groupPairCount,
   onChange,
   onRemove,
-}: CategoryCardProps) {
-  const [pendingGroupRemoval, setPendingGroupRemoval] = useState<number | null>(null)
-  const isSingleGroup = category.groups.length === 1
+  errors,
+  onBlurField,
+}: CategoryRowProps) {
+  const [pendingCount, setPendingCount] = useState<number | null>(null)
 
-  function handleRemoveGroup(index: number) {
-    onChange(removeGroup(category, index))
-    // Indexes shift after any removal, so a pending confirmation would target another group.
-    setPendingGroupRemoval(null)
+  function applyCount(count: number) {
+    onChange({ ...category, groups: resizeGroups(category.groups, count) })
   }
 
+  function handleCountChange(val: number | string) {
+    const n = typeof val === 'string' ? parseInt(val, 10) : val
+    if (!Number.isFinite(n) || Number.isNaN(n)) return
+    const target = Math.min(5, Math.max(1, n))
+    if (target >= category.groups.length) {
+      applyCount(target)
+      return
+    }
+    // Decreasing — check if any removed group has pairs
+    const removedGroups = category.groups.slice(target)
+    const affectedPairs = removedGroups.reduce(
+      (sum, g) => sum + (g.id ? groupPairCount(g.id) : 0),
+      0,
+    )
+    if (affectedPairs > 0) {
+      setPendingCount(target)
+    } else {
+      applyCount(target)
+    }
+  }
+
+  const nameError = errors?.(`categories.${index}.name`)
+  const groupsError = errors?.(`categories.${index}.groups`)
+
   return (
-    <Card withBorder padding="md">
-      <Stack gap="sm">
-        {/* Category name + remove category button */}
-        <Group gap="sm" align="flex-end" wrap="nowrap">
-          <TextInput
-            label="Nombre de la categoría"
-            required
-            value={category.name}
-            onChange={(e) => onChange(renameCategory(category, e.target.value))}
-            disabled={disabled}
-            style={{ flex: 1 }}
-          />
-          {/* Saved categories confirm in the parent; unsaved ones are removed directly. */}
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            size={44}
-            aria-label="Eliminar categoría"
-            disabled={disabled}
-            onClick={onRemove}
-          >
-            <IconTrash size={18} />
-          </ActionIcon>
-        </Group>
-
-        {/* Groups list */}
-        <Stack gap="xs">
-          {category.groups.map((group, index) => {
-            const pairCount = group.id ? groupPairCount(group.id) : 0
-            const showWarning = pendingGroupRemoval === index && pairCount > 0
-
-            return (
-              <Stack key={group.id ?? `new-${index}`} gap={4}>
-                <Group gap="sm" align="flex-end" wrap="nowrap">
-                  <TextInput
-                    label={`Grupo ${index + 1}`}
-                    value={group.name}
-                    onChange={(e) => onChange(renameGroup(category, index, e.target.value))}
-                    disabled={disabled}
-                    style={{ flex: 1 }}
-                  />
-                  <Tooltip
-                    label="Cada categoría necesita al menos un grupo."
-                    disabled={!isSingleGroup}
-                    position="left"
-                  >
-                    <span style={{ display: 'inline-flex' }}>
-                      <ActionIcon
-                        variant="subtle"
-                        color="red"
-                        size={44}
-                        aria-label={`Eliminar grupo ${group.name}`}
-                        disabled={disabled || isSingleGroup}
-                        onClick={() => {
-                          if (pairCount > 0) {
-                            // Show inline warning first; second click confirms
-                            setPendingGroupRemoval(index)
-                          } else {
-                            handleRemoveGroup(index)
-                          }
-                        }}
-                      >
-                        <IconTrash size={18} />
-                      </ActionIcon>
-                    </span>
-                  </Tooltip>
-                </Group>
-
-                {showWarning && (
-                  <Text size="xs" c="orange">
-                    Sus {pairCount} {pairCount === 1 ? 'pareja quedará' : 'parejas quedarán'} sin asignar; se conservan sus restricciones.{' '}
-                    <Button
-                      variant="subtle"
-                      color="red"
-                      size="compact-xs"
-                      disabled={disabled}
-                      onClick={() => handleRemoveGroup(index)}
-                    >
-                      Confirmar eliminación
-                    </Button>
-                    {' '}
-                    <Button
-                      variant="subtle"
-                      size="compact-xs"
-                      onClick={() => setPendingGroupRemoval(null)}
-                    >
-                      Cancelar
-                    </Button>
-                  </Text>
-                )}
-              </Stack>
-            )
-          })}
-        </Stack>
-
-        {/* Add group button */}
-        <Button
-          variant="subtle"
-          size="sm"
-          leftSection={<IconPlus size={16} />}
+    <>
+      <Group gap="sm" align="flex-end" wrap="nowrap">
+        <TextInput
+          label="Nombre de la categoría"
+          required
+          value={category.name}
+          onChange={(e) => onChange(renameCategory(category, e.target.value))}
+          onBlur={() => onBlurField?.(`categories.${index}.name`)}
           disabled={disabled}
-          onClick={() => onChange(addGroup(category))}
+          error={nameError}
+          style={{ flex: 1 }}
+        />
+        <NumberInput
+          label="Grupos"
+          min={1}
+          max={5}
+          step={1}
+          allowDecimal={false}
+          value={category.groups.length}
+          onChange={handleCountChange}
+          onBlur={() => onBlurField?.(`categories.${index}.groups`)}
+          disabled={disabled}
+          error={groupsError}
+          style={{ width: 110 }}
+        />
+        <ActionIcon
+          variant="subtle"
+          color="red"
+          size={44}
+          aria-label="Eliminar categoría"
+          disabled={disabled}
+          onClick={onRemove}
         >
-          Agregar grupo
-        </Button>
-      </Stack>
-    </Card>
+          <IconTrash size={18} />
+        </ActionIcon>
+      </Group>
+
+      {pendingCount !== null && (() => {
+        const removedGroups = category.groups.slice(pendingCount)
+        const affectedPairs = removedGroups.reduce(
+          (sum, g) => sum + (g.id ? groupPairCount(g.id) : 0),
+          0,
+        )
+        return (
+          <ReduceGroupsModal
+            opened
+            affectedPairs={affectedPairs}
+            onCancel={() => setPendingCount(null)}
+            onConfirm={() => {
+              applyCount(pendingCount)
+              setPendingCount(null)
+            }}
+          />
+        )
+      })()}
+    </>
   )
 }
 
@@ -232,6 +297,8 @@ export function CategoriesEditor({
   disabled,
   impact,
   groupPairCount,
+  errors,
+  onBlurField,
 }: CategoriesEditorProps) {
   // { index, impact } of the saved category pending confirmation
   const [pendingRemoval, setPendingRemoval] = useState<{
@@ -260,27 +327,46 @@ export function CategoriesEditor({
     setPendingRemoval(null)
   }
 
+  const headerError = errors?.('categories')
+
   return (
     <Stack gap="md">
+      {/* Header: title + add button */}
+      <Group gap="xs" align="center">
+        <Title order={2} size="h3" style={{ flex: 1 }}>
+          Categorías
+        </Title>
+        <Tooltip label="Agregar categoría">
+          <ActionIcon
+            variant="subtle"
+            aria-label="Agregar categoría"
+            disabled={disabled}
+            onClick={() => onChange([...value, newCategoryDraft()])}
+          >
+            <IconPlus size={16} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
+      {headerError && (
+        <Text size="sm" c="red">
+          {headerError}
+        </Text>
+      )}
+
       {value.map((category, index) => (
-        <CategoryCard
+        <CategoryRow
           key={category.id ?? `new-${index}`}
           category={category}
+          index={index}
           disabled={disabled}
           groupPairCount={groupPairCount}
           onChange={(next) => handleCategoryChange(index, next)}
           onRemove={() => handleRemoveCategory(index)}
+          errors={errors}
+          onBlurField={onBlurField}
         />
       ))}
-
-      <Button
-        variant="subtle"
-        leftSection={<IconPlus size={16} />}
-        disabled={disabled}
-        onClick={() => onChange([...value, newCategoryDraft()])}
-      >
-        Agregar categoría
-      </Button>
 
       {pendingRemoval !== null && (
         <RemoveCategoryModal

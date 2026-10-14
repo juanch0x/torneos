@@ -87,7 +87,7 @@ describe('tournament configuration page server markup', () => {
     expect(saveButton).toBeDefined()
     expect(saveButton.split('>')[0]).not.toContain('disabled')
     const inputs = html.match(/<input[^>]*>/g)!
-    for (const name of ['Unique category', 'Actual group']) {
+    for (const name of ['Unique category']) {
       const input = inputs.find(input => input.includes(`value="${name}"`))
       expect(input).toContain('disabled=""')
     }
