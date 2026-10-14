@@ -36,6 +36,11 @@ export function TournamentConfigurationPage() {
   </Stack>
 }
 
+/** Draft paths that have their own input (and therefore show their error inline). */
+function hasFieldInput(path: string): boolean {
+  return !path.includes('.') || /^categories\.\d+\.(name|groups)$/.test(path)
+}
+
 type BaselineKey = 'startDate' | 'endDate' | 'opensAt' | 'closesAt' | 'tournamentOpensAt' | 'tournamentClosesAt' | 'automaticWeekdays' | 'duration'
 
 function ConfigurationForm({ tournamentId, working }: { tournamentId: string; working: Tournament }) {
@@ -61,7 +66,12 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       const result = baselineOnly
         ? await v2SessionController.saveConfiguration(baseline, expected)
         : await v2SessionController.saveSetup(value, expected)
-      if (!result.ok) { setError(result.issue ? planningIssueText(result.issue) : result.error); return }
+      if (!result.ok) {
+        // Session failures already land in the store and render in V2NavigationGuard.
+        const session = v2SessionStore.getState()
+        if (!session.saveError && !session.saveIssue) setError(result.issue ? planningIssueText(result.issue) : result.error)
+        return
+      }
       const confirmed = v2SessionStore.getState()
       if (confirmed.sourceId !== tournamentId || !confirmed.working) return
       const initial = getV2SetupDraft(confirmed.working)
@@ -84,9 +94,11 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
   const legacy = hasLegacyPlanningData(working)
   const visibleErrors = submitted ? issues : issues.filter(issue => blurred.has(issue.path))
   const errorFor = (path: string) => visibleErrors.find(issue => issue.path === path)?.message
+  // Issues without a rendered input (e.g. a blank legacy group name) go to the alert instead.
+  const orphanErrors = submitted ? issues.filter(issue => !hasFieldInput(issue.path)).map(issue => issue.message) : []
   // Field errors render under their inputs; the alert only carries errors no input can own.
   // Session save errors are rendered by V2NavigationGuard.
-  const alertMessages = [...new Set([...(submitted && stateError ? [stateError] : []), ...(error ? [error] : [])])]
+  const alertMessages = [...new Set([...orphanErrors, ...(submitted && stateError ? [stateError] : []), ...(error ? [error] : [])])]
 
   useEffect(() => { v2SessionStore.setState({ draftDirty: dirty }) }, [dirty])
   useEffect(() => () => { v2SessionStore.setState({ draftDirty: false }) }, [])
