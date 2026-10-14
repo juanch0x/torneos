@@ -83,11 +83,12 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
   // State-dependent rules (e.g. duration with existing results) are not field errors.
   const stateError = validation && !validation.ok && !locked ? validation.error : ''
   const pairCounts = groupPairCounts(working)
-  const saveError = error || (state.saveIssue ? planningIssueText(state.saveIssue) : state.saveError)
   const legacy = hasLegacyPlanningData(working)
   const visibleErrors = submitted ? issues : issues.filter(issue => blurred.has(issue.path))
   const errorFor = (path: string) => visibleErrors.find(issue => issue.path === path)?.message
-  const alertMessages = [...visibleErrors.map(issue => issue.message), ...(submitted && stateError ? [stateError] : []), ...(saveError ? [saveError] : [])]
+  // Field errors render under their inputs; the alert only carries errors no input can own.
+  // Session save errors are rendered by V2NavigationGuard.
+  const alertMessages = [...new Set([...(submitted && stateError ? [stateError] : []), ...(error ? [error] : [])])]
 
   useEffect(() => { v2SessionStore.setState({ draftDirty: dirty }) }, [dirty])
   useEffect(() => () => { v2SessionStore.setState({ draftDirty: false }) }, [])
@@ -128,8 +129,8 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       </Alert> : baselineOnly ? <Alert color="orange" title="Completá la configuración de horarios">
         El torneo ya tiene un calendario generado o resultados. Las categorías, los grupos y las parejas quedan bloqueados, pero tenés que completar la configuración de horarios que falta para abrir el calendario y editar las restricciones.
       </Alert> : <Text size="sm">Definí las categorías, el período y los horarios antes de cargar las parejas. Guardar no genera ni reprograma partidos.</Text>}
-      {!!alertMessages.length && <Alert color="red" role="alert" title={plural(alertMessages.length, 'dato para revisar', 'datos para revisar')}>
-        <List size="sm">{alertMessages.map(message => <List.Item key={message}>{message}</List.Item>)}</List>
+      {!!alertMessages.length && <Alert color="red" role="alert" title="No se puede guardar la configuración">
+        {alertMessages.length === 1 ? alertMessages[0] : <List size="sm">{alertMessages.map(message => <List.Item key={message}>{message}</List.Item>)}</List>}
       </Alert>}
 
       <CategoriesEditor value={categories} disabled={disabled || baselineOnly} onChange={value => change('categories', value)}
