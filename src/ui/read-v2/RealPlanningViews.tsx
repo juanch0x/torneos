@@ -13,7 +13,7 @@ import { v2InitialGenerationBlocked, v2RegenerationBlocked } from '../../domain/
 import { hasCompleteV2Configuration } from '../../domain/v2Configuration'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
-import { Alert, Badge, Button, Group, Modal, Paper, SimpleGrid, Stack, Tabs, Menu, Text, Title } from '@mantine/core'
+import { Alert, Button, Chip, Group, Modal, Paper, SimpleGrid, Stack, Menu, Text, Title } from '@mantine/core'
 import { getV2RestrictionConfig, toV2RestrictionDraft, validateV2DraftBounds, type V2RestrictionDraft } from '../../domain/v2Restrictions'
 import { RestrictionModal } from '../preparation-v2/RestrictionModal'
 import { PairModal, type PairModalSaveResult } from '../preparation-v2/PairModal'
@@ -44,7 +44,8 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   useEffect(() => { setMembershipAttempt(null) }, [state.epoch, tournamentId])
   const [pairId, setPairId] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ pairId: string; name: string; epoch: number; drafts: V2RestrictionDraft[]; config: NonNullable<ReturnType<typeof getV2RestrictionConfig>> } | null>(null)
-  const [notice, setNotice] = useState('Guardar restricciones actualiza este torneo; nunca cambia horarios de partidos.')
+  const [notice, setNotice] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState(0)
   // The pair id is generated when the add modal opens and reused on every retry, so an uncertain save never duplicates the pair.
   const [pairForm, setPairForm] = useState<{ mode: 'add' | 'edit'; categoryIndex: number; pairId: string; initial: V2PairNames; epoch: number } | null>(null)
   const [deleting, setDeleting] = useState<{ categoryId: string; pairId: string; label: string; message: string; epoch: number } | null>(null)
@@ -94,13 +95,15 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   const display = state.sourceId === tournamentId && state.display ? organizerDisplay(state.display) : null
   const windows = state.working?.pairUnavailableWindows?.filter(window => window.pairId === pairId) ?? []
   return <Stack className="preparation-v2" gap="lg">
-    <Text c="dimmed">Inscribí parejas, armá los grupos y registrá restricciones a medida que llegan.</Text><V2SessionStatus tournamentId={tournamentId} />
+    <V2SessionStatus tournamentId={tournamentId} />
     {display && <>
       {operationalPlanningWarning(display) && <Alert color="red" role="alert">{operationalPlanningWarning(display)}</Alert>}
       {state.working && v2StructureBlocked(state.working) && <Alert color="orange">Calendario generado: no se pueden agregar, eliminar ni mover parejas. Podés corregir nombres, editar restricciones y regenerar el calendario.</Alert>}
       <AvailabilitySummary />
-      <Tabs defaultValue="0" key={tournamentId}><Tabs.List>{display.categories.map((category, ci) => <Tabs.Tab key={ci} value={String(ci)}>{category.name}<Badge ml={6} size="sm" style={{ backgroundColor: category.color, color: '#1b2927' }}>{state.working!.categories[ci].pairs.length}</Badge></Tabs.Tab>)}</Tabs.List>
-        {display.categories.map((category, ci) => <Tabs.Panel key={ci} value={String(ci)} pt="lg"><Stack gap="md"><Group justify="space-between"><Title order={2} size="h4">{category.name} · {plural(state.working!.categories[ci].pairs.length, 'pareja', 'parejas')}</Title><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)} onClick={() => setPairForm({ mode: 'add', categoryIndex: ci, pairId: crypto.randomUUID(), initial: { player1: '', player2: '' }, epoch: state.epoch })}>Agregar pareja</Button></Group><SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+      {/* Categories filter the section's content, so they are chips rather than a second row of navigation tabs. */}
+      <Group justify="space-between" align="center" gap="sm"><Chip.Group value={String(Math.min(selectedCategory, display.categories.length - 1))} onChange={value => setSelectedCategory(Number(value))}><Group gap="xs" role="radiogroup" aria-label="Categoría">{display.categories.map((category, ci) => <Chip key={ci} value={String(ci)} styles={{ label: { borderColor: category.color } }}>{category.name} · {state.working!.categories[ci].pairs.length}</Chip>)}</Group></Chip.Group>
+        {!!display.categories.length && <Button disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)} onClick={() => setPairForm({ mode: 'add', categoryIndex: Math.min(selectedCategory, display.categories.length - 1), pairId: crypto.randomUUID(), initial: { player1: '', player2: '' }, epoch: state.epoch })}>Agregar pareja</Button>}</Group>
+        {display.categories.map((category, ci) => ci !== Math.min(selectedCategory, display.categories.length - 1) ? null : <Stack key={ci} gap="md"><SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
           {[...category.groups, { id: '', name: 'Sin grupo', pairs: category.unassigned.map(pair => ({ id: pair.id, label: `${pair.player1} / ${pair.player2}` })) }].map((group, gi) => <Paper key={gi} withBorder p="md" radius="lg"><Stack gap="md"><Group justify="space-between"><Title order={3} size="h5">{group.name}</Title><Text size="sm" c="dimmed">{plural(group.pairs.length, 'pareja', 'parejas')}</Text></Group>
             {!group.pairs.length && <Text size="sm" c="dimmed">Sin parejas asignadas.</Text>}{group.pairs.map((pair, pi) => {
               const count = state.working!.pairUnavailableWindows?.filter(window => window.pairId === pair.id).length ?? 0
@@ -112,8 +115,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
               }}>{target.name}{current ? ' · Actual' : ''}</Menu.Item> })}</Menu.Dropdown></Menu><Menu withinPortal loop position="bottom-end"><Menu.Target><Button variant="subtle" size="sm" aria-label={`Más acciones para ${pair.label}`} disabled={state.saving || state.draftDirty || state.writeUncertain}>Más…</Button></Menu.Target><Menu.Dropdown><Menu.Item onClick={() => { const record = state.working!.categories[ci].pairs.find(item => item.id === pair.id); if (record) setPairForm({ mode: 'edit', categoryIndex: ci, pairId: pair.id, initial: { player1: record.player1, player2: record.player2 }, epoch: state.epoch }) }}>Editar nombres</Menu.Item><Menu.Item color="red" disabled={!!v2StructureBlocked(state.working!)} onClick={() => requestDelete(ci, pair.id, pair.label)}>Eliminar pareja</Menu.Item></Menu.Dropdown></Menu></Group><Button disabled={state.saving || state.draftDirty || state.writeUncertain || !count && !hasCompleteV2Configuration(state.working)} size="compact-xs" variant="subtle" color={count ? 'red' : 'teal'} onClick={() => openRestrictions(pair.id)}>{count ? `${plural(count, 'restricción', 'restricciones')} · Editar / ver` : 'Agregar restricciones'}</Button>{!!conflicts.length && <Text size="xs" c="red">{plural(conflicts.length, 'conflicto', 'conflictos')} de restricción</Text>}{!!pending.length && <Text size="xs" c="orange.8">{plural(pending.length, 'partido', 'partidos')} sin validación completa</Text>}</Stack></Paper>
             })}
           </Stack></Paper>)}
-        </SimpleGrid></Stack></Tabs.Panel>)}
-      </Tabs>
+        </SimpleGrid></Stack>)}
     </>}
     <Text role="status" aria-live="polite" size="sm">{notice}</Text>
     {membershipAttempt && <Button variant="light" disabled={state.saving || state.draftDirty} onClick={() => void submitMembership(membershipAttempt)}>Reintentar la asignación pendiente</Button>}
