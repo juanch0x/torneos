@@ -1,7 +1,8 @@
-import { getV2AutomaticWindow, getV2AutomaticDay, getV2AutomaticWeekdays, validV2AutomaticWeekdays, v2AutomaticWeekday } from './v2AutomaticHours'
+import { getV2AutomaticWindow, getV2AutomaticDay, getV2AutomaticWeekdays, v2AutomaticWeekday } from './v2AutomaticHours'
 import type { Tournament } from './types'
 import { getV2RestrictionConfig, v2LocalDateTime } from './v2Restrictions'
-import { isV2Date, parseV2Timestamp, validV2Hours, v2CourtDay } from './v2Display'
+import { parseV2Timestamp, v2CourtDay } from './v2Display'
+import { v2ConfigurationDraftIssues, type V2DraftIssue } from './v2SetupSchema'
 export interface V2ConfigurationDraft { startDate: string; endDate: string; opensAt: string; closesAt: string; tournamentOpensAt: string; tournamentClosesAt: string; duration: string; automaticWeekdays: number[] }
 export function getV2ConfigurationDraft(source: Tournament): V2ConfigurationDraft {
   const automatic = source.fixtureSettings?.automaticWindow === undefined ? source.calendar?.defaultWindow : source.fixtureSettings.automaticWindow
@@ -11,13 +12,10 @@ export function hasCompleteV2Configuration(source: Tournament | null): boolean {
   const duration = source?.fixtureSettings?.matchDurationMinutes
   return !!source && !!getV2RestrictionConfig(source) && !!getV2AutomaticWindow(source) && !!getV2AutomaticWeekdays(source) && typeof duration === 'number' && Number.isInteger(duration) && duration > 0
 }
-export function applyV2Configuration(source: Tournament, draft: V2ConfigurationDraft): { ok: true; document: Tournament } | { ok: false; error: string } {
-  if (!isV2Date(draft.startDate) || !isV2Date(draft.endDate) || draft.startDate > draft.endDate) return { ok: false, error: 'Completá un período válido; el final debe ser igual o posterior al inicio.' }
-  if (!validV2Hours(draft.opensAt, draft.closesAt)) return { ok: false, error: 'Completá apertura y cierre válidos del mismo día (cierre hasta 24:00).' }
-  if (!validV2Hours(draft.tournamentOpensAt, draft.tournamentClosesAt) || draft.tournamentOpensAt < draft.opensAt || draft.tournamentClosesAt > draft.closesAt) return { ok: false, error: 'Completá un Horario del torneo válido dentro de la Disponibilidad de la cancha.' }
-  if (!validV2AutomaticWeekdays(draft.automaticWeekdays)) return { ok: false, error: 'Seleccioná al menos un Día del torneo válido (lunes a domingo, sin repeticiones).' }
+export function applyV2Configuration(source: Tournament, draft: V2ConfigurationDraft): { ok: true; document: Tournament } | { ok: false; error: string; issues?: V2DraftIssue[] } {
+  const issues = v2ConfigurationDraftIssues(draft)
+  if (issues.length > 0) return { ok: false, error: issues[0].message, issues }
   const duration = Number(draft.duration)
-  if (!draft.duration.trim() || !Number.isInteger(duration) || duration <= 0) return { ok: false, error: 'La duración debe ser una cantidad entera positiva de minutos.' }
   const overrides = source.calendar?.overrides ?? []
   const outside = overrides.find(override => override.date < draft.startDate || override.date > draft.endDate)
   if (outside) return { ok: false, error: `La excepción de cancha del ${outside.date} quedaría fuera del período. Ampliá las fechas para conservarla; no se elimina automáticamente.` }

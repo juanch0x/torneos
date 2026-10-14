@@ -4,21 +4,19 @@ import type { Tournament } from './types'
 import { applyV2Configuration } from './v2Configuration'
 import { v2StructureBlocked } from './v2Membership'
 import type { V2SetupDraft, V2SetupResult } from './v2Setup'
+import { v2SetupDraftIssues } from './v2SetupSchema'
 
 export function applyV2Setup(source: Tournament, draft: V2SetupDraft): V2SetupResult<Tournament> {
   if (v2StructureBlocked(source) !== null) {
     return { ok: false, error: 'La configuración es de solo lectura después de la primera generación del calendario.' }
   }
-  if (draft.categories.length === 0) {
-    return { ok: false, error: 'Agregá al menos una categoría.' }
-  }
+  const issues = v2SetupDraftIssues(draft)
+  if (issues.length > 0) return { ok: false, error: issues[0].message, issues }
 
   const sourceCategories = new Map(source.categories.map(category => [category.id, category]))
   const categoryIds = new Set<string>()
   const groupIds = new Set<string>()
   for (const category of draft.categories) {
-    if (!category.name.trim()) return { ok: false, error: 'Completá el nombre de cada categoría.' }
-    if (category.groups.length === 0) return { ok: false, error: 'Agregá al menos un grupo en cada categoría.' }
     if (category.id !== undefined) {
       if (!sourceCategories.has(category.id) || categoryIds.has(category.id)) {
         return { ok: false, error: 'La categoría ya no existe o está repetida. Releé el torneo.' }
@@ -27,7 +25,6 @@ export function applyV2Setup(source: Tournament, draft: V2SetupDraft): V2SetupRe
     }
     const existing = category.id === undefined ? undefined : sourceCategories.get(category.id)
     for (const group of category.groups) {
-      if (!group.name.trim()) return { ok: false, error: 'Completá el nombre de cada grupo.' }
       if (group.id !== undefined) {
         if (!existing?.groups.some(record => record.id === group.id) || groupIds.has(group.id)) {
           return { ok: false, error: 'El grupo no pertenece a la categoría o está repetido. Releé el torneo.' }
