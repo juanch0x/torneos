@@ -14,6 +14,7 @@ import {
 import type { V2SetupCategoryDraft, V2CategoryRemovalImpact } from '../../domain/v2Setup'
 import {
   newCategoryDraft,
+  nextGroupName,
   removeCategory,
   renameCategory,
 } from './categoriesDraft'
@@ -43,25 +44,9 @@ function IconPlus({ size = 16 }: { size?: number }) {
 
 import type { V2SetupGroupDraft } from '../../domain/v2Setup'
 
-/** Returns the next unused single letter (A-Z) that is not already present in
- *  any group name. Falls back to numeric suffixes past Z. */
-function nextUnusedLetter(groups: V2SetupGroupDraft[]): string {
-  const usedLetters = new Set(
-    groups.map((g) => g.name.trim()).filter((n) => n.length === 1 && /[A-Z]/.test(n))
-  )
-  for (let i = 0; i < 26; i++) {
-    const letter = String.fromCharCode(65 + i)
-    if (!usedLetters.has(letter)) return letter
-  }
-  // Past Z: numeric starting at 27
-  let n = 27
-  while (usedLetters.has(String(n))) n++
-  return String(n)
-}
-
 /**
  * Returns a new groups array resized to `count` (clamped 1..5).
- * - Increase: appends new groups using the next unused letter (no id).
+ * - Increase: appends new groups named like the domain ("Grupo C"), no id.
  * - Decrease: drops groups from the end. Existing groups keep ids and names.
  * - NaN / empty input: returns groups unchanged.
  */
@@ -81,8 +66,7 @@ export function resizeGroups(
   // target > groups.length: append new groups
   const result = [...groups]
   while (result.length < target) {
-    const letter = nextUnusedLetter(result)
-    result.push({ name: letter })
+    result.push({ name: nextGroupName(result) })
   }
   return result
 }

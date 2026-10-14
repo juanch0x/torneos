@@ -117,8 +117,8 @@ describe('CategoriesEditor SSR smoke test', () => {
 
 describe('resizeGroups', () => {
   const base = [
-    { id: 'g1', name: 'A' },
-    { id: 'g2', name: 'B' },
+    { id: 'g1', name: 'Grupo A' },
+    { id: 'g2', name: 'Grupo B' },
   ]
 
   it('returns same array when count equals current length', () => {
@@ -131,15 +131,15 @@ describe('resizeGroups', () => {
     expect(result[0]).toBe(base[0])
     expect(result[1]).toBe(base[1])
     // C and D are next unused
-    expect(result[2].name).toBe('C')
-    expect(result[3].name).toBe('D')
+    expect(result[2].name).toBe('Grupo C')
+    expect(result[3].name).toBe('Grupo D')
     expect(result[2].id).toBeUndefined()
   })
 
   it('skips letters already used by existing groups when appending', () => {
-    const groups = [{ name: 'A' }, { name: 'C' }]
+    const groups = [{ name: 'Grupo A' }, { name: 'Grupo C' }]
     const result = resizeGroups(groups, 3)
-    expect(result[2].name).toBe('B')
+    expect(result[2].name).toBe('Grupo B')
   })
 
   it('drops from the end when decreasing', () => {
@@ -151,7 +151,12 @@ describe('resizeGroups', () => {
   it('preserves id and name of kept groups', () => {
     const result = resizeGroups(base, 1)
     expect(result[0].id).toBe('g1')
-    expect(result[0].name).toBe('A')
+    expect(result[0].name).toBe('Grupo A')
+  })
+
+  it('never duplicates names when growing a new category', () => {
+    const names = resizeGroups([{ name: 'Grupo A' }], 3).map(group => group.name)
+    expect(names).toEqual(['Grupo A', 'Grupo B', 'Grupo C'])
   })
 
   it('clamps to 1 when count < 1', () => {
