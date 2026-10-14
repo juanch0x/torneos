@@ -1,8 +1,9 @@
 import { useStore } from 'zustand'
 import { useNavigate, Link } from '@tanstack/react-router'
-import { Alert, Anchor, Badge, Breadcrumbs, Button, Group, NativeSelect, Paper, Stack, Tabs, Text } from '@mantine/core'
+import { Alert, Badge, Button, Group, NativeSelect, Paper, Stack, Tabs, Text } from '@mantine/core'
 import { V2ConfigurationHeader } from './V2ConfigurationPanel'
 import { V2NavigationGuard } from './V2NavigationGuard'
+import { TournamentBreadcrumb } from '../TournamentBreadcrumb'
 import { hasCompleteV2Configuration } from '../../domain/v2Configuration'
 import { isV2SetupComplete } from '../../domain/v2Setup'
 import { v2SessionStore } from '../../store/v2Session'
@@ -29,7 +30,7 @@ function TournamentWorkspaceHeader({ view, tournamentId }: { view: 'groups' | 'c
   const navigate = useNavigate()
   const name = state.sourceId === tournamentId ? state.working?.name : undefined
   return <Stack gap="sm" onClickCapture={event => { if (state.saving) { event.preventDefault(); event.stopPropagation() } }}>
-    <Breadcrumbs><Anchor component={Link} to="/" size="sm">Torneos</Anchor><Text span size="sm">{name ?? 'Torneo'}</Text></Breadcrumbs>
+    <TournamentBreadcrumb tournamentId={tournamentId} name={name ?? 'Torneo'} />
     <V2ConfigurationHeader tournamentId={tournamentId} />
     <Tabs value={view} onChange={value => {
       if (value === 'groups') void navigate({ to: '/v2/groups', search: { tournamentId } })

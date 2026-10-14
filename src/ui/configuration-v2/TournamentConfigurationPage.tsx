@@ -16,7 +16,7 @@ import { V2SessionStatus } from '../read-v2/V2SourceControls'
 import { V2NavigationGuard } from '../read-v2/V2NavigationGuard'
 import { planningIssueText } from '../read-v2/planningIssueText'
 import { CategoriesEditor } from './CategoriesEditor'
-import { ConfigurationBreadcrumb } from './ConfigurationBreadcrumb'
+import { TournamentBreadcrumb } from '../TournamentBreadcrumb'
 import { groupPairCounts, isConfigurationDraftDirty, isSetupDraftDirty, setupPageMode } from './configurationPageModel'
 
 export function TournamentConfigurationPage() {
@@ -29,7 +29,7 @@ export function TournamentConfigurationPage() {
 
   const working = state.sourceId === tournamentId && state.status === 'loaded' ? state.working : null
   return <Stack gap="lg">
-    {working && <ConfigurationBreadcrumb tournamentId={tournamentId} name={working.name} linkTournament={isV2SetupComplete(working)} />}
+    {working && <TournamentBreadcrumb tournamentId={tournamentId} name={working.name} current="Configuración" linkTournament={isV2SetupComplete(working)} />}
     <V2NavigationGuard tournamentId={tournamentId} />
     <V2SessionStatus tournamentId={tournamentId} />
     {working && <ConfigurationForm key={`${tournamentId}:${state.draftDiscardRevision}`} tournamentId={tournamentId} working={working} />}
@@ -136,7 +136,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       if (!baselineOnly && !dirty && isV2SetupComplete(working)) { continueToTournament(); return }
       void form.handleSubmit()
     }}><Stack gap="lg">
-      <Title order={1}>Configuración del torneo</Title>
+      <Title order={1} size="h2" style={{ overflowWrap: 'anywhere' }}>Configuración: {working.name}</Title>
       {locked ? <Alert color="blue" title="Configuración de solo lectura">
         Después de la primera generación del calendario, la configuración queda en solo lectura. Solo podés editar las restricciones de las parejas y regenerar el calendario.
         <Group mt="sm">
