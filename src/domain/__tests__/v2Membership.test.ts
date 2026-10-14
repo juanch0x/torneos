@@ -19,6 +19,30 @@ describe('manual membership', () => {
   })
   it('removes only eligible obsolete crosses',()=> { const t=prepared(); t.categories[0].groups.push({id:'other',name:'Other',pairIds:['free']}); const result=applyV2Membership(t,{categoryId:'c',pairId:'a',groupId:'other'}); expect(result.ok).toBe(true); if(result.ok) {expect(result.document.categories[0].matches).toHaveLength(1); expect(result.document.categories[0].matches[0].groupId).toBe('other')} })
 })
+describe('unassignment', () => {
+  it('moves a pair back to the pool and drops its crosses', () => {
+    const t = prepared()
+    const result = applyV2Membership(t, { categoryId: 'c', pairId: 'a', groupId: null })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.document.categories[0].groups[0].pairIds).toEqual(['b'])
+    expect(result.document.categories[0].matches).toEqual([])
+  })
+  it('keeps surviving crosses with their ids', () => {
+    const t = prepared(); t.categories[0].groups[0].pairIds.push('free')
+    t.categories[0].matches.push({ id: 'm2', groupId: 'g', pairAId: 'a', pairBId: 'free', round: 2 }, { id: 'm3', groupId: 'g', pairAId: 'b', pairBId: 'free', round: 3 })
+    const result = applyV2Membership(t, { categoryId: 'c', pairId: 'free', groupId: null })
+    expect(result.ok && result.document.categories[0].matches.map(match => match.id)).toEqual(['m'])
+  })
+  it('is a no-op for an unassigned pair', () => {
+    const t = prepared()
+    expect(applyV2Membership(t, { categoryId: 'c', pairId: 'free', groupId: null })).toEqual({ ok: true, document: t })
+  })
+  it('is rejected while the structure is locked', () => {
+    const t = prepared(); t.categories[0].matches[0].scheduledAt = '2026-10-05T09:00Z'
+    expect(applyV2Membership(t, { categoryId: 'c', pairId: 'a', groupId: null }).ok).toBe(false)
+  })
+})
 describe('generation readiness',()=> {
   it('reports every unassigned pair',()=> {
     const issues = v2ReadinessData(prepared())

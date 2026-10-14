@@ -1,0 +1,1 @@
+export { personNameSchema } from './personName'

@@ -39,7 +39,7 @@ describe('tournament configuration page server markup', () => {
     const save = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!.find(button => button.includes('Guardar y continuar'))!
     expect(save.split('>')[0]).not.toContain('disabled')
     expect(html).toContain('mantine-Breadcrumbs-root')
-    expect(html).toContain('href="/tournaments/t/groups"')
+    expect(html).toContain('href="/v2/groups?tournamentId=t"')
     expect(html).not.toContain('Editar categorías y parejas')
     expect(html).toContain('Al generar el calendario por primera vez')
     expect(html.match(/mantine-Chip-input/g)).toHaveLength(7)
@@ -68,7 +68,7 @@ describe('tournament configuration page server markup', () => {
     const html = markup()
     expect(html).not.toContain('Agregá al menos una categoría.')
     expect(html).not.toContain('datos para revisar')
-    expect(html).not.toContain('href="/tournaments/t/groups"')
+    expect(html).not.toContain('href="/v2/groups?tournamentId=t"')
     expect(html).toContain('mantine-Breadcrumbs-root')
   })
 

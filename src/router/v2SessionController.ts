@@ -1,5 +1,6 @@
 import type { V2PlanningIssue } from '../domain/v2PlanningIssues'
 import { type V2MembershipRequest } from '../domain/v2Membership'
+import type { V2PairNamesRequest, V2PairRef } from '../domain/v2Pairs'
 import type { StoreApi } from 'zustand/vanilla'
 import { createV2SessionStore, emptyV2Session, v2SessionStore, type V2SessionState } from '../store/v2Session'
 import { applyV2Configuration, hasCompleteV2Configuration, type V2ConfigurationDraft } from '../domain/v2Configuration'
@@ -42,7 +43,7 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       const latest = await repository.load(expected.sourceId)
       if (token !== revision || store.getState().sourceId !== expected.sourceId || store.getState().epoch !== expected.epoch) return fail('La fuente cambió; no se guardaron los cambios.')
       if (!latest || latest.id !== expected.sourceId || (JSON.stringify(latest) !== JSON.stringify(baseline) && JSON.stringify(latest) !== JSON.stringify(uncertainAttempt))) return fail('El torneo cambió fuera de esta vista. Conservá tu borrador; releé el original y revisá los cambios antes de reintentar.')
-      const completingAttempt = (kind === 'generation' || kind === 'regeneration' || kind.startsWith('move:') || kind.startsWith('membership:')) && uncertainKind === kind && JSON.stringify(latest) === JSON.stringify(uncertainAttempt)
+      const completingAttempt = (kind === 'generation' || kind === 'regeneration' || kind.startsWith('move:') || kind.startsWith('membership:') || kind.startsWith('pair-')) && uncertainKind === kind && JSON.stringify(latest) === JSON.stringify(uncertainAttempt)
       const result: Prepared<I> = completingAttempt
         ? { ok: true, document: latest, merges: [] } : prepare(latest)
       if (!result.ok) return fail(result.error, result.issues)
@@ -60,6 +61,17 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
       return fail('No se pudo confirmar el guardado. El documento podría haberse actualizado parcialmente; conservá el borrador y reintentá para completar el guardado.')
     } finally { store.setState({ saving: false }) }
   }
+  // The kind carries the full request (including the caller-generated pair id), so an uncertain write retries exactly once.
+  function persistPairChange(request: V2PairNamesRequest | V2PairRef, expected: { sourceId: string; epoch: number }, action: 'add' | 'rename' | 'delete') {
+    const snapshot = { ...request }
+    return persistConfirmed<V2DraftIssue>(expected, latest => {
+      const staged = createV2SessionStore(); staged.getState().acceptSource(latest, expected.sourceId)
+      const token = { sourceId: expected.sourceId, epoch: staged.getState().epoch }
+      const session = staged.getState()
+      const result = action === 'delete' ? session.deletePair(snapshot, token) : action === 'add' ? session.addPair(snapshot as V2PairNamesRequest, token) : session.renamePair(snapshot as V2PairNamesRequest, token)
+      return result.ok ? { ok: true, document: staged.getState().working!, merges: [] } : result
+    }, `pair-${action}:${JSON.stringify(snapshot)}`)
+  }
   return {
     movePair(request: V2MembershipRequest, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = { ...request }
@@ -69,6 +81,16 @@ export function createV2SessionController(store: StoreApi<V2SessionState>, reade
         const result = staged.getState().movePair(snapshot, { sourceId: expected.sourceId, epoch: staged.getState().epoch })
         return result.ok ? { ok: true, document: staged.getState().working!, merges: [] } : result
       }, `membership:${JSON.stringify(snapshot)}`)
+    },
+    addPair(request: V2PairNamesRequest, expected: { sourceId: string; epoch: number }): Promise<SaveResult<V2DraftIssue>> {
+      return persistPairChange(request, expected, 'add')
+    },
+    renamePair(request: V2PairNamesRequest, expected: { sourceId: string; epoch: number }): Promise<SaveResult<V2DraftIssue>> {
+      return persistPairChange(request, expected, 'rename')
+    },
+    deletePair(request: V2PairRef, expected: { sourceId: string; epoch: number }): Promise<SaveResult<V2DraftIssue>> {
+      if (store.getState().draftDirty) return Promise.resolve<SaveResult<V2DraftIssue>>({ ok: false, error: 'Guardá o cancelá la edición antes de eliminar parejas.' })
+      return persistPairChange(request, expected, 'delete')
     },
     moveMatch(request: V2MoveRequest, expected: { sourceId: string; epoch: number }): Promise<SaveResult> {
       const snapshot = { ...request }
