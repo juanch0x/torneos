@@ -80,6 +80,12 @@ Gotchas when touching the store/router:
 - `TournamentLayout` uses `useParams({ from: '/tournaments/$id' })` (not `route.useParams()`) to avoid a circular import with `routeTree.ts`.
 - Deep links work in production via `public/_redirects` (`/* /index.html 200`, Netlify SPA fallback). Browser history is one-line switchable to hash history in `src/router/index.ts` for static hosts without a fallback (e.g. GitHub Pages).
 
+## Project skills
+
+- `scorefy-check`: read `.agents/skills/scorefy-check/SKILL.md` when the user explicitly requests a Scorefy schedule/results review. Invoke it as `$scorefy-check` in Codex or `/scorefy-check` in Claude Code; other agents can load the canonical file directly.
+- Keep the canonical implementation under `.agents/skills/scorefy-check/`; `.claude/skills/scorefy-check/SKILL.md` is only a discovery entry point. Do not duplicate the workflow or scripts.
+- This skill and its supporting documentation are maintained in Spanish at the user's explicit request. Reviews are read-only until the user approves specific changes. Each agent needs its own authorized Google Sheets connection.
+
 ## Conventions
 
 - **English for everything that lands in the GitHub repo** — commit messages, PR titles and descriptions, issue text, branch names, and repository docs (README, this file). This holds regardless of the language used in chat.

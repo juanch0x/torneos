@@ -1,0 +1,109 @@
+{
+  "nombre": "Clausura Club Social Maipu — octubre de 2026",
+  "zona_horaria": "America/Argentina/Mendoza",
+  "google_sheet_url": "https://docs.google.com/spreadsheets/d/1VrGpxbpXjuC1WxEKF84nmwKJuZqerheTalTFXOsoOI4/edit",
+  "pestanas": {
+    "parejas": "parejas",
+    "partidos": "partidos"
+  },
+  "fase_incluida": "grupo",
+  "fuentes": [
+    {
+      "categoria": "Primera",
+      "fixture_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-P-M-CSM-2026/fixture",
+      "resultados_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-P-M-CSM-2026/results",
+      "equipo_scorefy_a_pareja_sheet": {
+        "cmun5xps5000rp43pzpqk43q9": "1A-2",
+        "cmvd21cab02hlp45g14b0d83k": "1A-3",
+        "cmun5x2ia000pp43p7sl8h486": "1A-1",
+        "cmvd234as02hsp45g0xtm2ebz": "1A-4"
+      }
+    },
+    {
+      "categoria": "Segunda",
+      "fixture_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-SE-M-CSM-2026/fixture",
+      "resultados_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-SE-M-CSM-2026/results",
+      "equipo_scorefy_a_pareja_sheet": {
+        "cmvd3ihxz02k4p45gh2a1djm9": "2A-2",
+        "cmvd3jtu302k8p45gr35h1fjz": "2A-4",
+        "cmvd3mm0x02kgp45g3dha76gb": "2B-4",
+        "cmvd3m31u02kep45gdjjc3e5l": "2B-3",
+        "cmvd3ku0002kap45ggz7fjry9": "2B-1",
+        "cmvd3ldsp02kcp45goiw4daq9": "2B-2",
+        "cmvd2nvkn02iop45guxb5rokr": "2A-5",
+        "cmvd3j1as02k6p45gnsqzs3tt": "2A-3",
+        "cmvd3hhpk02k2p45gndpa0edu": "2A-1"
+      }
+    },
+    {
+      "categoria": "Tercera",
+      "fixture_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-TE-M-CSM-2026/fixture",
+      "resultados_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-TE-M-CSM-2026/results",
+      "equipo_scorefy_a_pareja_sheet": {
+        "cmvd2uopt02j0p45gp3fyif8c": "3A-3",
+        "cmvd2w3po02j4p45gof0m9b1u": "3A-5",
+        "cmvd2nvkn02iop45guxb5rokr": "3A-1",
+        "cmvd2vm0h02j2p45gzsu55bdo": "3A-4",
+        "cmvd2u0sa02iyp45gonm0flrn": "3A-2"
+      }
+    },
+    {
+      "categoria": "Cuarta",
+      "fixture_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-CU-M-CSM-2026/fixture",
+      "resultados_url": "https://scorefy.app/pelotapaleta/mendoza/federacion-mendocina-de-pelota/FMP-CU-M-CSM-2026/results",
+      "equipo_scorefy_a_pareja_sheet": {
+        "cmvd474vr02lkp45gts558bc2": "4B-3",
+        "cmvd4655h02lgp45gmfk90umx": "4B-1",
+        "cmvd45ngo02lep45g14wptpmi": "4A-3",
+        "cmvd44c1402lap45gdkuqxyfi": "4A-1",
+        "cmvd46naf02lip45g6tlvb3be": "4B-2",
+        "cmvd453uc02lcp45g5ach4rqy": "4A-2"
+      }
+    }
+  ],
+  "partido_scorefy_a_id_sheet": {
+    "cmvd2de3k02i1p45gva8jpv1p": 1,
+    "cmvd3uckl02klp45gqv6pnkxi": 2,
+    "cmvd3uckl02kmp45gj46detzz": 3,
+    "cmvd4b9qa02lrp45gtukrzewr": 4,
+    "cmvd3uckl02knp45ggxtk00it": 5,
+    "cmvd3uckl02kop45gs8yy41k1": 6,
+    "cmvd355c602jdp45gewug4i8s": 7,
+    "cmvd3uckl02kpp45gstjxtzpb": 8,
+    "cmvd355c602jep45gt7p0mfbx": 9,
+    "cmvd4b9qa02lsp45gu06afi20": 10,
+    "cmvd2de3k02i2p45gb4h878g8": 11,
+    "cmvd3uckl02kqp45gb45p89ag": 12,
+    "cmvd4b9qa02ltp45gmfndqk1r": 13,
+    "cmvd355c602jfp45g2656as7b": 14,
+    "cmvd3uckl02krp45ge5lsh81j": 15,
+    "cmvd2de3k02i3p45g2ejjzz91": 16,
+    "cmvd3uckl02ksp45g1qz9yzly": 17,
+    "cmvd355c602jgp45gp7pv033e": 18,
+    "cmvd4b9qa02lup45gfvhtayfr": 19,
+    "cmvd3uckl02ktp45g1p9bx1o9": 20,
+    "cmvd3uckl02kup45gvu93g2zl": 21,
+    "cmvd355c602jhp45gnwcxnibc": 22,
+    "cmvd2de3l02i4p45glr72r1dq": 23,
+    "cmvd4b9qa02lvp45gkfpf37s5": 24,
+    "cmvd3uckl02kvp45gis10i9mk": 25,
+    "cmvd2de3l02i5p45g6bup1ujn": 26,
+    "cmvd355c602jip45gj9nslsny": 27,
+    "cmvd3uckl02kwp45gbeqaurxg": 28,
+    "cmvd4b9qa02lwp45g7wte32py": 29,
+    "cmvd355c602jjp45g8dbjg9bn": 30,
+    "cmvd3uckl02kxp45g01h3oblh": 31,
+    "cmvd355c602jkp45g1e7acnce": 32,
+    "cmvd355c602jlp45gti92nvnb": 33,
+    "cmvd3uckl02kyp45g95p71x5b": 34,
+    "cmvd3uckl02kzp45gcwozbi8v": 35,
+    "cmvd3uckl02l0p45gkrzo5rwc": 36,
+    "cmvd2de3l02i6p45ggcm9qx9p": 37,
+    "cmvd355c602jmp45gwydbjj7y": 38
+  },
+  "advertencias": [
+    "Verifica la configuración contra la hoja y las fuentes actuales antes de usarla.",
+    "El formato de sets de Scorefy aún requiere validación con un resultado real.",
+    "Las correspondencias pertenecen únicamente a esta edición; no las copies a otro torneo sin verificarlas."
+  ]
+}
