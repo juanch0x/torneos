@@ -29,7 +29,6 @@ export function validateV2Move(source: Tournament, request: V2MoveRequest): V2Mo
   const records = source.categories.flatMap(c => c.matches.map(match => ({ category: c,match }))).filter(entry => entry.match.id === request.matchId)
   if (records.length !== 1) return fail({ code: 'move-identity' })
   const { match,category } = records[0]
-  if (match.result !== undefined) return fail({ code: 'move-played' })
   const original = match.scheduledAt && parseV2Timestamp(match.scheduledAt); const target = parseV2Timestamp(request.to)
   if (!original || !target || match.scheduledAt !== request.from) return fail({ code: 'move-stale' })
   if (original.instant === target.instant) return { ok: false,noop: true,error: { code: 'move-noop' } }
@@ -68,7 +67,7 @@ export function applyV2Move(source: Tournament, request: V2MoveRequest): { ok: t
   if (existing) existing.matchId = request.matchId
   else {
     const prefix = `${source.id}:v2:move:${request.matchId}:${target}`; let id = prefix; let suffix = 0
-    const used = new Set([source.id,...source.slots.map(s => s.id),...(source.pairUnavailableWindows ?? []).map(w => w.id),...source.categories.flatMap(c => [c.id,...c.pairs.map(p => p.id),...c.groups.map(g => g.id),...c.matches.map(m => m.id),...(c.playoffs?.rounds.flatMap(r => [r.id,...r.slots.map(s => s.id)]) ?? [])])])
+    const used = new Set([source.id,...source.slots.map(s => s.id),...(source.pairUnavailableWindows ?? []).map(w => w.id),...source.categories.flatMap(c => [c.id,...c.pairs.map(p => p.id),...c.groups.map(g => g.id),...c.matches.map(m => m.id)])])
     while (used.has(id)) id = `${prefix}:${++suffix}`
     slots.push({ id,startsAt: request.to,matchId: request.matchId })
   }

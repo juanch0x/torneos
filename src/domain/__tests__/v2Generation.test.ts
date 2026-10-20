@@ -35,20 +35,18 @@ describe('initial complete-first V2 calendar', () => {
     t.categories[0].pairs.push({ id: 'free', player1: 'X', player2: 'Y' }); t.categories[0].groups[0].pairIds.push('free'); const before = structuredClone(t)
     expect(generateV2Calendar(t).ok).toBe(false); expect(t).toEqual(before)
   })
-  it('rejects existing schedules, results, assigned slots, malformed/orphan/duplicate pairings and empty groups', () => {
+  it('rejects existing schedules, assigned slots, malformed/orphan/duplicate pairings and empty groups', () => {
     expect(generateV2Calendar(sample()).ok).toBe(false)
     for (const change of [t => { t.slots = [{ id: 'slot', startsAt: '2026-10-05T09:00Z', matchId: 'x' }] }, t => { t.categories[0].matches = [{ id: 'm', groupId: 'g', pairAId: 'a', pairBId: 'a', round: 1 }] }, t => { t.categories[0].groups[0].pairIds = [] } ] as ((t: ReturnType<typeof emptySchedule>) => void)[]) { const t = emptySchedule(); change(t); expect(generateV2Calendar(t).ok).toBe(false) }
   })
-  it('rejects duplicate/orphan semantic matches, invalid windows and preserves unassigned slots/playoffs/windows', () => {
+  it('rejects duplicate/orphan semantic matches, invalid windows and preserves unassigned slots/windows', () => {
     const t = emptySchedule(); const m = { id: 'm', groupId: 'g', pairAId: 'a', pairBId: 'b', round: 1 }
     t.categories[0].matches = [m, { ...m, id: 'duplicate' }]; expect(generateV2Calendar(t).ok).toBe(false)
     t.categories[0].matches = [{ ...m, groupId: 'orphan' }]; expect(generateV2Calendar(t).ok).toBe(false)
     t.categories[0].matches = []; t.pairUnavailableWindows = [{ id: 'invalid', pairId: 'a', startsAt: '2026-02-30T09:00Z', endsAt: '2026-10-05T10:00Z' }]; expect(generateV2Calendar(t).ok).toBe(false)
     t.pairUnavailableWindows = []; t.slots = [{ id: 'old-slot', startsAt: new Date('2026-10-05T09:00').toISOString() }]; Object.assign(t.slots[0], { opaque: { x: true } })
-    t.categories[0].playoffs = { rounds: [{ id: 'r', name: 'Semis', slots: [{ id: 'bracket', pairAId: 'a' }] }] }
     const before = structuredClone(t); const result = generateV2Calendar(t); expect(result.ok).toBe(true)
-    if (result.ok) { expect(result.document.slots[0]).toMatchObject(before.slots[0]); expect(result.document.slots).toHaveLength(1); expect(result.document.categories[0].playoffs).toEqual(before.categories[0].playoffs); expect(result.document.pairUnavailableWindows).toEqual([]) }
-    t.categories[0].playoffs.rounds[0].slots[0].result = { scoreA: 1, scoreB: 0 }; expect(generateV2Calendar(t).ok).toBe(false)
+    if (result.ok) { expect(result.document.slots[0]).toMatchObject(before.slots[0]); expect(result.document.slots).toHaveLength(1); expect(result.document.pairUnavailableWindows).toEqual([]) }
   })
   it('a partial restriction of either pair blocks the full match interval; adjacency remains free', () => {
     const t = emptySchedule(); t.calendar!.defaultWindow = { startsAt: '09:00', endsAt: '10:00' }

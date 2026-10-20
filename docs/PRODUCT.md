@@ -2,12 +2,14 @@
 
 **Help a club organizer plan the entire group stage, then adjust it without losing control
 of the schedule already communicated to players.** Do this one job well; do not turn the
-product into an all-purpose tournament management system.
+product into an all-purpose tournament management system. Once the fixture is exported,
+the organizer continues the tournament manually in a spreadsheet (Excel or Google Sheets).
 
 This document is the product compass: the problem, user, decisions and scope. Read it
 before proposing features or auditing UX. Architecture belongs in [README.md](../README.md);
 implementation and acceptance evidence belong in the linked plans below. This vision
-supersedes the earlier results/standings/knockout-led roadmap.
+supersedes the earlier results/standings/knockout-led roadmap: those features were
+removed from the codebase and will not return (see [Non-goals](#non-goals)).
 
 ## The problem and the user
 
@@ -34,16 +36,16 @@ planning experience. Players receive the schedule; they are not co-editors in th
 
 | Topic | Direction |
 |-------|-----------|
-| Focus | Plan the group stage, from pairs and groups to a complete, editable schedule. |
+| Focus | Plan the group stage, from pairs and groups to a complete, editable schedule, then hand it off as a spreadsheet. |
 | Categories and groups | Categories are known, not inferred from player level. The organizer assigns pairs to groups; automatic group shuffling is not the core solution. |
 | Court | One shared court across all categories. Matches cannot overlap. |
-| Duration | One organizer-configured match duration for planning; often 45 minutes, never a hardcoded product rule or a promised per-category duration system. |
+| Duration | One organizer-configured match duration shared by all categories; often 45 minutes, never a hardcoded product rule. Per-category durations are not supported for now. |
 | Availability | Pair-level, dated periods when the pair **cannot** play. The rest of the applicable court availability is considered available. Collect these before generation; later exceptions remain possible. |
 | Preferences | Do not negotiate “20:00 is better than 20:30.” Soft preferences and complex recurrence rules are outside the current scope. |
 | Schedule stability | Make individual changes visible and deliberate. Minimize disruption to already communicated matches rather than regenerate everything after every exception. |
 | Interaction | A clear weekly calendar with configured time slots, readable match details, drag-and-drop and an accessible explicit move action. Desktop first; essential phone actions remain usable. |
 | Persistence | Save accepted changes directly to the local tournament. Draft cancellation and save/retry states must be honest; no mandatory backup/adoption workflow. |
-| Sharing | Export a confirmed planning snapshot to XLSX for distribution, including via WhatsApp. An export is a snapshot, not a live published calendar. |
+| Sharing and hand-off | Export a confirmed planning snapshot to XLSX (opens in Excel or Google Sheets) for distribution, including via WhatsApp. The export is where the app's job ends: the organizer records results and runs the rest of the tournament manually in the spreadsheet. An export is a snapshot, not a live published calendar. |
 
 Availability collection is an organizer responsibility for now. The restriction editor
 makes recording it easier; it does not claim to automate conversations with players.
@@ -51,9 +53,9 @@ Model pair unavailability, not individual-player cross-category conflict detecti
 
 ## The organizer's path
 
-1. **Configure the tournament.** Define categories (name and groups), the period, court
-   availability, tournament hours, tournament days and match duration on a dedicated
-   page right after creation. Preparation stays unavailable until this configuration
+1. **Create and configure the tournament.** Define categories (name and group count), the
+   period, court availability, tournament hours, tournament days and the shared match
+   duration on a dedicated page right after creation. Preparation stays unavailable until this configuration
    is complete and saved.
 2. **Capture pairs.** Add pairs to the configured categories; a pair may remain unassigned at this step.
 3. **Prepare groups and availability.** Use the category → group → pair view to assign
@@ -61,9 +63,13 @@ Model pair unavailability, not individual-player cross-category conflict detecti
    assignment itself does not require schedule configuration.
 4. **Generate the group-stage schedule.** All participating pairs must belong to exactly
    one valid group, with at least two pairs in each group.
-5. **Review and adjust visually.** Inspect details, move a match within or across weeks,
-   review the proposed change, cancel or apply it, and undo an eligible movement.
-6. **Export and communicate.** Download the confirmed schedule and send it to players.
+5. **Re-flow when restrictions change.** When a restriction is added or changed, surface the
+   affected matches and let the organizer re-flow the fixture: move matches visually
+   (inspect, review, cancel or apply, undo) or run a confirmed regeneration. Moving a match
+   into a window where one of its pairs is unavailable is rejected. A later iteration will
+   suggest alternative slots for conflicting matches; the organizer still reviews and applies them.
+6. **Export and hand off.** Download the confirmed schedule, send it to players and continue
+   the tournament manually in Excel or Google Sheets.
 
 The existing first capture screen is retained during incremental integration. The real V2
 preparation and calendar screens follow it. **V2 is the replacement direction, not a
@@ -116,21 +122,34 @@ notification of changes are not implemented promises.
 
 ## Current scope and safety
 
-**In scope:** pair/category capture, manual group membership, pair restrictions,
-tournament configuration, complete group-stage generation, visual manual adjustment,
-confirmed persistence and planning-only XLSX export.
+**In scope:** tournament creation, category capture with group count, pair capture,
+manual group membership, pair restrictions, tournament configuration with a single shared
+duration, complete group-stage generation, re-flowing the fixture after restriction
+changes, confirmed persistence and planning-only XLSX export.
 
-**Out of scope:** result entry, standings, qualification rules, automated repechage or
-knockout brackets, multi-court scheduling, rankings/player history, soft availability
-preferences, and self-service availability collection from players. Existing results or
-knockout records are compatibility data to protect, not a commitment to those workflows.
+**Out of scope for now:** multi-court scheduling, per-category match durations, soft
+availability preferences, and self-service availability collection from players.
+
+### Non-goals
+
+The following **will not exist in this project**. They were removed from the codebase and
+must not be proposed again as features:
+
+- Result entry or result display of any kind.
+- Standings, leaderboards, automatic positions or tie-break rules.
+- Qualification rules, repechage, brackets or any knockout/elimination stage.
+- A public viewer that shows results or standings.
+- Rankings or player history across tournaments.
+
+Tournaments saved by older versions may still contain result or playoff data; it is
+ignored on load and never shown or edited.
 
 The product is **local-first and single-writer**. IndexedDB data belongs to one browser;
 there is no cross-device sync, shared backend, concurrent editing guarantee or public
 live link today. Phone usability does not imply a desktop tournament appears on a phone.
 
-Structural edits after scheduling or existing group/playoff results are currently blocked
-conservatively; safe name correction remains possible. The permanent policy for changing
+Structural edits after scheduling (any assigned slot or scheduled match) are currently
+blocked conservatively; safe name correction remains possible. The permanent policy for changing
 participants/groups after scheduling is **unresolved**. Do not invent a reset/reflow policy
 or delete history to make editing convenient.
 
@@ -146,12 +165,11 @@ is no unlock, reset or clear-calendar action in this version.
 |---------|-------|
 | **Now** | Maintain the connected capture → preparation → calendar → XLSX flow. Functional verification and scoped browser acceptance are recorded in the closeout plan; they are not proof of every possible dataset or device. |
 | **Next** | Audit the real flow and simplify pair/group loading and navigation, then refine the application-wide UX and visual design without widening functional scope. Preserve tested persistence and scheduling behavior. |
-| **Possible later — not committed** | A live read-only schedule link with highlighted changes; easier dated holiday/daily-hour configuration; optional capacity blocks or manual support for later stages; bulk input if it demonstrably reduces organizer effort; editing structure after generation. |
+| **Possible later — not committed** | A live read-only schedule link (schedule only, never results) with highlighted changes; easier dated holiday/daily-hour configuration; per-category match durations; bulk input if it demonstrably reduces organizer effort; editing structure after generation. |
 
-Excel input was explored, not selected as the required ingestion method. Reserving court
-blocks for eliminations would reserve capacity, not guarantee the future qualifiers can
-play then. Neither idea commits the product to automating later phases. Results/standings,
-backend migration and bracket automation are not implicit roadmap milestones.
+Excel input was explored, not selected as the required ingestion method. Later phases of a
+tournament (results, standings, eliminations) happen outside the app, in the exported
+spreadsheet. Backend migration is not an implicit roadmap milestone.
 
 ## Success criteria
 
@@ -163,7 +181,9 @@ The current product succeeds when an organizer can:
   schedule was saved.
 - Apply a deliberate exception without silently changing unrelated communicated matches.
 - Refresh/reopen and find confirmed information intact, with clear recovery from save failures.
-- Export a trustworthy XLSX whose local dates/times match the calendar.
+- Export a trustworthy XLSX whose local dates/times match the calendar and that is ready to
+  continue the tournament manually in Excel or Google Sheets.
+- Never be asked to enter results or read standings in the app.
 - Perform essential emergency actions on a phone without relying on hover or right-click.
 
 The next UX audit should prioritize fewer steps, clearer actions and lower organizer

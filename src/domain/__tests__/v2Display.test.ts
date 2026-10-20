@@ -6,7 +6,7 @@ describe('V2 read-only adapter', () => {
     const source = sample(); const before = structuredClone(source)
     const display = adaptV2Tournament(source)
     expect(display.matches.map(m => [m.id, m.status])).toEqual([['m', 'scheduled'], ['u', 'unscheduled']])
-    expect(display.matches[0]).toMatchObject({ pairA: 'Ada / Luz', pairB: 'Leo / Sol', categoryName: 'Unique category', categoryColor: '#123456', played: true })
+    expect(display.matches[0]).toMatchObject({ pairA: 'Ada / Luz', pairB: 'Leo / Sol', categoryName: 'Unique category', categoryColor: '#123456' })
     expect(display.duration).toBe(30); expect(display.calendar).toEqual(source.calendar)
     expect(display.categories[0].unassigned.map(p => p.id)).toEqual(['free'])
     expect(display.diagnostics).not.toEqual(expect.arrayContaining([expect.objectContaining({ code: 'slot-mismatch' })]))

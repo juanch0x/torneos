@@ -42,7 +42,7 @@ export function operationalPlanningWarning(display: V2Display): string | null {
   if (!blocking) return null
   const nextStep = 'Revisá grupos, restricciones y configuración; si el problema persiste, solicitá una revisión de los datos de este torneo.'
   return hasScheduledMatch
-    ? `El calendario tiene datos o franjas inconsistentes. No se pueden mover ni exportar partidos hasta revisarlos. ${nextStep} Los horarios y resultados se conservan.`
+    ? `El calendario tiene datos o franjas inconsistentes. No se pueden mover ni exportar partidos hasta revisarlos. ${nextStep} Los horarios se conservan.`
     : `El torneo tiene datos inconsistentes. No se puede generar ni exportar hasta revisarlos. ${nextStep} No se cambió ningún registro.`
 }
 
@@ -87,6 +87,6 @@ export function configurationIssueText(source: Tournament, issue: V2Configuratio
     case 'automatic-hours': return `La cancha no cubre el horario del torneo el ${formatFullDate(issue.id)}. Ajustá la configuración para generar partidos ese día.`
     case 'automatic-weekdays': return `${matchName} está programado en fin de semana. Se conserva; habilitá ese día si querés incluirlo en futuras generaciones.`
     case 'invalid-match': return `El horario de ${matchName} no se puede validar. Revisá el partido en el calendario; no se modificó.`
-    case 'match-hours': return `${matchName} está fuera del período u horario de cancha. Revisá el calendario; su horario se conserva${match?.entry.result ? ' y el resultado queda protegido' : ''}.`
+    case 'match-hours': return `${matchName} está fuera del período u horario de cancha. Revisá el calendario; su horario se conserva.`
   }
 }

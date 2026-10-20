@@ -4,8 +4,8 @@ import { generateRoundRobin } from './roundRobin'
 
 export interface V2MembershipRequest { categoryId: string; pairId: string; groupId: string | null }
 export function v2StructureBlocked(source: Tournament): string | null {
-  return source.slots.some(slot => slot.matchId !== undefined) || source.categories.some(category => category.matches.some(match => match.scheduledAt !== undefined || match.result !== undefined) || category.playoffs?.rounds.some(round => round.slots.some(slot => slot.result !== undefined)))
-    ? 'Los grupos y las parejas están protegidos porque hay horarios, franjas asignadas o resultados. No se pueden agregar, eliminar ni mover parejas; podés corregir nombres y editar restricciones.' : null
+  return source.slots.some(slot => slot.matchId !== undefined) || source.categories.some(category => category.matches.some(match => match.scheduledAt !== undefined))
+    ? 'Los grupos y las parejas están protegidos porque hay horarios o franjas asignadas. No se pueden agregar, eliminar ni mover parejas; podés corregir nombres y editar restricciones.' : null
 }
 const semantic = (match: Pick<Match, 'groupId' | 'pairAId' | 'pairBId'>) => JSON.stringify([match.groupId, ...[match.pairAId, match.pairBId].sort()])
 const roundRobinOf = (groups: Group[]) => {
@@ -41,7 +41,7 @@ export function checkV2StructureSource(source: Tournament, categoryId: string): 
 
 /** Collects every record id in the document, so generated ids never collide. */
 export function v2DocumentIds(source: Tournament) {
-  return new Set([source.id, ...source.slots.map(slot => slot.id), ...(source.pairUnavailableWindows ?? []).map(window => window.id), ...source.categories.flatMap(c => [c.id,...c.pairs.map(p=>p.id),...c.groups.map(g=>g.id),...c.matches.map(m=>m.id),...(c.playoffs?.rounds.flatMap(r=>[r.id,...r.slots.map(s=>s.id)])??[])])])
+  return new Set([source.id, ...source.slots.map(slot => slot.id), ...(source.pairUnavailableWindows ?? []).map(window => window.id), ...source.categories.flatMap(c => [c.id,...c.pairs.map(p=>p.id),...c.groups.map(g=>g.id),...c.matches.map(m=>m.id)])])
 }
 
 /** Reconcile the category's crosses with new groups: keep surviving ids, drop obsolete crosses, add missing ones. */

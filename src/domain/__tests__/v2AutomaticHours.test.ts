@@ -18,7 +18,7 @@ describe('physical court vs automatic tournament hours', () => {
     const invalid = source(); invalid.fixtureSettings!.automaticWindow = { startsAt: '14:00', endsAt: '23:00' }; expect(getV2ConfigurationDraft(invalid)).toMatchObject({ tournamentOpensAt: '14:00', tournamentClosesAt: '23:00' }); expect(hasCompleteV2Configuration(invalid)).toBe(false)
     const t = source(); Object.assign(t.fixtureSettings!, { automaticWindow: null }); expect(hasCompleteV2Configuration(t)).toBe(false); expect(getV2AutomaticWindow(t)).toBeNull()
   })
-  it('saves only explicit config while retaining opaque settings/overrides/raw windows/schedule/results', () => {
+  it('saves only explicit config while retaining opaque settings/overrides/raw windows/schedule', () => {
     const t = sample(); Object.assign(t.fixtureSettings!, { opaque: 42, automaticWindow: { startsAt: '09:00', endsAt: '16:00', opaqueWindow: 'keep' } }); Object.assign(t, { pairUnavailableWindows: [{ id: 'w', pairId: 'a', startsAt: '2026-10-05T15:07:12.123-03:00', endsAt: '2026-10-05T16:00-03:00' }] })
     const before = structuredClone(t); const r = applyV2Configuration(t, draft); expect(r.ok).toBe(true); if (!r.ok) return
     expect(r.document.fixtureSettings).toMatchObject({ opaque: 42, automaticWindow: { startsAt: '18:00', endsAt: '22:00', opaqueWindow: 'keep' } }); expect(r.document.categories).toEqual(before.categories); expect(r.document.slots).toEqual(before.slots); expect(r.document.pairUnavailableWindows).toEqual(before.pairUnavailableWindows); expect(r.document.calendar!.overrides).toEqual(before.calendar!.overrides)

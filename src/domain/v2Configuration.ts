@@ -19,8 +19,6 @@ export function applyV2Configuration(source: Tournament, draft: V2ConfigurationD
   const overrides = source.calendar?.overrides ?? []
   const outside = overrides.find(override => override.date < draft.startDate || override.date > draft.endDate)
   if (outside) return { ok: false, error: `La excepción de cancha del ${outside.date} quedaría fuera del período. Ampliá las fechas para conservarla; no se elimina automáticamente.` }
-  const played = source.categories.some(category => category.matches.some(match => match.result) || category.playoffs?.rounds.some(round => round.slots.some(slot => slot.result)))
-  if (played && duration !== source.fixtureSettings?.matchDurationMinutes) return { ok: false, error: 'No se puede cambiar ni inferir la duración con resultados existentes: no conocemos la duración histórica de cada partido. Se conserva el historial.' }
   const document = { ...source, calendar: { ...source.calendar, startDate: draft.startDate, endDate: draft.endDate, defaultWindow: { ...source.calendar?.defaultWindow, startsAt: draft.opensAt, endsAt: draft.closesAt }, overrides }, fixtureSettings: { ...source.fixtureSettings, automaticWeekdays: [...draft.automaticWeekdays].sort((a,b) => a-b), matchDurationMinutes: duration, automaticWindow: { ...source.fixtureSettings?.automaticWindow, startsAt: draft.tournamentOpensAt, endsAt: draft.tournamentClosesAt } } }
   if (!hasCompleteV2Configuration(document)) return { ok: false, error: 'Hay fechas o excepciones de cancha inválidas. Revisá la configuración; esta pantalla no elimina ni modifica excepciones.' }
   return { ok: true, document }
@@ -53,7 +51,7 @@ export function v2ConfigurationIssues(source: Tournament): V2ConfigurationIssue[
     const start = parseV2Timestamp(match.scheduledAt)
     if (source.fixtureSettings?.automaticWeekdays === undefined && start && [0,6].includes(new Date(start.instant).getDay())) issues.push({ kind: 'automatic-weekdays',id: match.id,message: `Partido ${match.id} programado en fin de semana: se conserva intacto. Sin Días del torneo guardados, la nueva generación usa lunes a viernes; seleccioná sábado/domingo si los necesitás. Los movimientos manuales siguen sujetos solo a la disponibilidad física.` })
     if (!start || typeof duration !== 'number' || !Number.isInteger(duration) || duration <= 0) issues.push({ kind: 'invalid-match', id: match.id, message: `Partido ${match.id}: intervalo sin validar; no se modifica.` })
-    else if (start.instant < lower || start.instant + duration * 60000 > upper || !withinCourt(start.instant, start.instant + duration * 60000)) issues.push({ kind: 'match-hours', id: match.id, message: `Partido ${match.id}${match.result ? ' con resultado' : ''} fuera del período/horario de cancha. Horario intacto; requiere revisión separada${match.result ? ', no se infiere ni modifica su duración histórica' : ''}.` })
+    else if (start.instant < lower || start.instant + duration * 60000 > upper || !withinCourt(start.instant, start.instant + duration * 60000)) issues.push({ kind: 'match-hours', id: match.id, message: `Partido ${match.id} fuera del período/horario de cancha. Horario intacto; requiere revisión separada.` })
   }
   return issues
 }

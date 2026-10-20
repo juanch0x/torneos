@@ -120,16 +120,15 @@ describe('fillSchedule', () => {
     expect(after.slots.filter((s) => s.matchId).length).toBe(1)
   })
 
-  it('un partido jugado no se reasigna y conserva su franja', () => {
+  it('un partido que ya ocupa una franja no se reasigna', () => {
     const t = tournament(
       [
-        slot('s1', '2026-06-20T09:00:00.000Z', 'mPlayed'),
+        slot('s1', '2026-06-20T09:00:00.000Z', 'mFixed'),
         slot('s2', '2026-06-20T10:00:00.000Z'),
       ],
       [
         category('cat1', 'Núcleo', [
-          match('mPlayed', 'g', 1, {
-            result: { scoreA: 3, scoreB: 1 },
+          match('mFixed', 'g', 1, {
             scheduledAt: '2026-06-20T09:00:00.000Z',
           }),
           match('mPending', 'g', 2),
@@ -137,8 +136,8 @@ describe('fillSchedule', () => {
       ],
     )
     const after = fillSchedule(t)
-    // La franja del jugado no cambia.
-    expect(after.slots.find((s) => s.id === 's1')!.matchId).toBe('mPlayed')
+    // La franja ya ocupada no cambia.
+    expect(after.slots.find((s) => s.id === 's1')!.matchId).toBe('mFixed')
     // El pendiente toma la franja libre.
     expect(after.slots.find((s) => s.id === 's2')!.matchId).toBe('mPending')
   })
@@ -278,28 +277,20 @@ describe('generateFixture', () => {
     expect(assigned.map((s) => s.startsAt)).toEqual([isoAt(0), isoAt(DAY)])
   })
 
-  it('conserva el resultado ya cargado al regenerar', () => {
+  it('regenerar reasigna todos los horarios y conserva los ids de los partidos', () => {
     const t = tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2'])])
     const first = generateFixture(t, {
       calendar: calendarFromLegacy(START, 45, 100),
       matchDurationMinutes: 45,
     })
-    // Cargamos resultado en el único partido.
-    const withResult: Tournament = {
-      ...first,
-      categories: first.categories.map((c) => ({
-        ...c,
-        matches: c.matches.map((m) => ({ ...m, result: { scoreA: 6, scoreB: 3 } })),
-      })),
-    }
-    const regenerated = generateFixture(withResult, {
+    const regenerated = generateFixture(first, {
       calendar: calendarFromLegacy('2026-06-21T15:00:00.000Z', 30, 100),
       matchDurationMinutes: 30,
     })
-    // El resultado sobrevive y el horario queda como hard lock.
     const m = regenerated.categories[0].matches[0]
-    expect(m.result).toEqual({ scoreA: 6, scoreB: 3 })
-    expect(m.scheduledAt).toBe(START)
+    expect(m.id).toBe(first.categories[0].matches[0].id)
+    expect(m.scheduledAt).toBe('2026-06-21T15:00:00.000Z')
+    expect(regenerated.fixtureSettings?.matchDurationMinutes).toBe(30)
   })
 
   it('asigna número de partido 1..N en orden de juego', () => {
@@ -478,7 +469,6 @@ describe('generateFixture', () => {
       pairBId: 'p2',
       round: 3,
       scheduledAt: START,
-      result: { scoreA: 6, scoreB: 0 },
     }
     const flexible: Match = { id: 'flexible', groupId: 'cat1-g', pairAId: 'p1', pairBId: 'p3', round: 2 }
     const blocked: Match = { id: 'blocked', groupId: 'cat1-g', pairAId: 'p2', pairBId: 'p3', round: 1 }
@@ -507,7 +497,6 @@ describe('generateFixture', () => {
       pairBId: 'p2',
       round: 3,
       scheduledAt: START,
-      result: { scoreA: 6, scoreB: 0 },
     }
     const fallback: Match = { id: 'fallback', groupId: 'cat1-g', pairAId: 'p1', pairBId: 'p3', round: 2 }
     const blocked: Match = { id: 'blocked', groupId: 'cat1-g', pairAId: 'p2', pairBId: 'p3', round: 1 }
@@ -549,27 +538,6 @@ describe('generateFixture', () => {
     expect(after.slots.filter((s) => s.matchId)).toHaveLength(0)
     expect(after.categories[0].matches[0].scheduledAt).toBeUndefined()
   })
-
-  it('preserves result matches as hard locks during regeneration', () => {
-    const first = generateFixture(
-      tournament([], [categoryWithPairs('cat1', 'Núcleo', ['p1', 'p2', 'p3'])]),
-      { calendar: calendarFromLegacy('2026-06-20T11:00:00.000Z', 45, 100), matchDurationMinutes: 45 },
-    )
-    const playedId = first.slots[0].matchId!
-    const t = {
-      ...first,
-      slots: first.slots.map((s, index) => index === 0 ? { ...s, id: 'locked-slot' } : s),
-      categories: first.categories.map((c) => ({
-        ...c,
-        matches: c.matches.map((m) => m.id === playedId ? { ...m, result: { scoreA: 6, scoreB: 2 } } : m),
-      })),
-    }
-
-    const after = generateFixture(t, { calendar: calendarFromLegacy(START, 45, 100), matchDurationMinutes: 45 })
-
-    expect(after.slots.find((s) => s.id === 'locked-slot')).toEqual({ id: 'locked-slot', startsAt: '2026-06-20T11:00:00.000Z', matchId: playedId })
-    expect(findMatch(after, playedId)?.scheduledAt).toBe('2026-06-20T11:00:00.000Z')
-  })
 })
 
 describe('availability reflow', () => {
@@ -577,7 +545,7 @@ describe('availability reflow', () => {
     const invalid = { ...match('invalid', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
     const b2b = { ...match('b2b', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
     const preferred = { ...match('preferred', 'g', 1), pairAId: 'p5', pairBId: 'p6', scheduledAt: isoAt(90 * MIN) }
-    const anchor = { ...match('anchor', 'g', 1), pairAId: 'p3', pairBId: 'p9', scheduledAt: isoAt(-45 * MIN), result: { scoreA: 6, scoreB: 0 } }
+    const anchor = { ...match('anchor', 'g', 1), pairAId: 'p3', pairBId: 'p9', scheduledAt: isoAt(-45 * MIN) }
     const t: Tournament = {
       ...tournament(
         [
@@ -602,7 +570,7 @@ describe('availability reflow', () => {
   it('allows re-flow back-to-back placement when it is the only valid slot', () => {
     const invalid = { ...match('invalid', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
     const fallback = { ...match('fallback', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
-    const anchor = { ...match('anchor', 'g', 1), pairAId: 'p3', pairBId: 'p9', scheduledAt: isoAt(-45 * MIN), result: { scoreA: 6, scoreB: 0 } }
+    const anchor = { ...match('anchor', 'g', 1), pairAId: 'p3', pairBId: 'p9', scheduledAt: isoAt(-45 * MIN) }
     const t: Tournament = {
       ...tournament(
         [
@@ -616,6 +584,8 @@ describe('availability reflow', () => {
       pairUnavailableWindows: [
         { id: 'w1', pairId: 'p1', startsAt: START, endsAt: isoAt(45 * MIN) },
         { id: 'w2', pairId: 'p1', startsAt: isoAt(90 * MIN), endsAt: '2100-01-01T00:00:00.000Z' },
+        // Keeps the anchor in its own slot so it acts as a fixed neighbour, not a replacement.
+        { id: 'w3', pairId: 'p9', startsAt: START, endsAt: '2100-01-01T00:00:00.000Z' },
       ],
     }
 
@@ -643,10 +613,10 @@ describe('availability reflow', () => {
   it('reorders adjacent pending matches while retaining the original slot times', () => {
     const moved = { ...match('moved', 'g', 1), pairAId: 'p1', pairBId: 'p2', scheduledAt: START }
     const displaced = { ...match('displaced', 'g', 1), pairAId: 'p3', pairBId: 'p4', scheduledAt: isoAt(45 * MIN) }
-    const played = { ...match('played', 'g', 1), pairAId: 'p5', pairBId: 'p6', scheduledAt: isoAt(90 * MIN), result: { scoreA: 6, scoreB: 1 } }
+    const later = { ...match('later', 'g', 1), pairAId: 'p5', pairBId: 'p6', scheduledAt: isoAt(90 * MIN) }
     const t = tournament(
-      [slot('s1', START, 'moved'), slot('s2', isoAt(45 * MIN), 'displaced'), slot('s3', isoAt(90 * MIN), 'played')],
-      [category('cat1', 'Núcleo', [moved, displaced, played])],
+      [slot('s1', START, 'moved'), slot('s2', isoAt(45 * MIN), 'displaced'), slot('s3', isoAt(90 * MIN), 'later')],
+      [category('cat1', 'Núcleo', [moved, displaced, later])],
     )
 
     const outcome = reorderMatchInSlots(t, 'moved', 's2')
@@ -705,21 +675,6 @@ describe('availability reflow', () => {
     const after = reorderMatchInSlots(t, 'moved', 's1').tournament
 
     expect(assignmentByTime(after).map((entry) => entry.matchId)).toEqual(['moved', 'early', 'middle', undefined])
-  })
-
-  it('blocks a move that crosses a played match', () => {
-    const moving = { ...match('moving', 'g', 1), scheduledAt: START }
-    const played = { ...match('played', 'g', 1), scheduledAt: isoAt(45 * MIN), result: { scoreA: 6, scoreB: 1 } }
-    const t = tournament(
-      [slot('s1', START, 'moving'), slot('s2', isoAt(45 * MIN), 'played'), slot('s3', isoAt(90 * MIN))],
-      [category('cat1', 'Núcleo', [moving, played])],
-    )
-
-    const outcome = reorderMatchInSlots(t, 'moving', 's3')
-
-    expect(outcome.status).toBe('blocked')
-    expect(outcome.reason).toBe('played-match')
-    expect(outcome.tournament).toBe(t)
   })
 
   it('blocks a move when any shifted match is unavailable at its new slot', () => {
@@ -793,11 +748,13 @@ describe('availability reflow', () => {
   })
 })
 
-describe('played slot protection', () => {
-  it('does not remove a slot containing a result', () => {
-    const played = match('played', 'g', 1, { result: { scoreA: 6, scoreB: 3 } })
-    const t = tournament([slot('played-slot', START, 'played')], [category('cat1', 'Núcleo', [played])])
-    expect(removeFixtureSlot(t, 'played-slot')).toEqual(t)
+describe('removeFixtureSlot', () => {
+  it('removes the slot and leaves its match unscheduled', () => {
+    const scheduled = match('scheduled', 'g', 1, { scheduledAt: START })
+    const t = tournament([slot('slot', START, 'scheduled')], [category('cat1', 'Núcleo', [scheduled])])
+    const after = removeFixtureSlot(t, 'slot')
+    expect(after.slots).toEqual([])
+    expect(findMatch(after, 'scheduled')?.scheduledAt).toBeUndefined()
   })
 })
 
@@ -873,43 +830,6 @@ describe('calendar windows', () => {
     })
     expect(after.categories[0].matches[0].scheduledAt).toBeUndefined()
     expect(after.slots.filter((slot) => !slot.matchId)).toHaveLength(2)
-  })
-
-  it('removes generated slots that overlap a played lock after the duration changes', () => {
-    const played: Match = { id: 'played', groupId: 'cat1-g', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 2 } }
-    const pending: Match = { id: 'pending', groupId: 'cat1-g', pairAId: 'c', pairBId: 'd', round: 2 }
-    const startsAt = localIso('2026-06-20', '09:00')
-    const cat = { ...categoryWithPairs('cat1', 'Núcleo', ['a', 'b', 'c', 'd']), matches: [played, pending] }
-    const after = generateFixture({
-      ...tournament([slot('played-slot', startsAt, 'played')], [cat]),
-      fixtureSettings: { matchDurationMinutes: 60 },
-    }, {
-      calendar: { startDate: '2026-06-20', endDate: '2026-06-20', defaultWindow: { startsAt: '09:00', endsAt: '11:00' }, overrides: [] },
-      matchDurationMinutes: 30,
-    })
-    expect(after.fixtureSettings?.matchDurationMinutes).toBe(60)
-    expect(after.slots.some((item) => item.startsAt === localIso('2026-06-20', '09:30'))).toBe(false)
-    expect(after.slots.find((item) => item.matchId === 'played')?.startsAt).toBe(startsAt)
-  })
-
-
-  it('keeps every regenerated pending slot outside a played lock at the unchanged duration', () => {
-    const calendar = { startDate: '2026-06-20', endDate: '2026-06-20', defaultWindow: { startsAt: '09:00', endsAt: '12:00' }, overrides: [] }
-    const first = generateFixture(tournament([], [categoryWithPairs('cat1', 'Núcleo', ['a', 'b', 'c'])]), { calendar, matchDurationMinutes: 45 })
-    const playedId = first.slots.find((slot) => slot.matchId)?.matchId!
-    const withResult: Tournament = {
-      ...first,
-      categories: first.categories.map((category) => ({ ...category, matches: category.matches.map((match) => match.id === playedId ? { ...match, result: { scoreA: 6, scoreB: 2 } } : match) })),
-    }
-    const regenerated = generateFixture(withResult, { calendar, matchDurationMinutes: 45 })
-    const regeneratedAgain = generateFixture(regenerated, { calendar, matchDurationMinutes: 45 })
-    const playedSlot = regeneratedAgain.slots.find((slot) => slot.matchId === playedId)!
-    expect(playedSlot.startsAt).toBe(regenerated.slots.find((slot) => slot.matchId === playedId)?.startsAt)
-    const playedInterval = { startsAt: playedSlot.startsAt, endsAt: new Date(new Date(playedSlot.startsAt).getTime() + 45 * MIN).toISOString() }
-    for (const slot of regeneratedAgain.slots.filter((slot) => slot.id !== playedSlot.id)) {
-      const slotInterval = { startsAt: slot.startsAt, endsAt: new Date(new Date(slot.startsAt).getTime() + 45 * MIN).toISOString() }
-      expect(intervalOverlaps(slotInterval, playedInterval)).toBe(false)
-    }
   })
 
 })

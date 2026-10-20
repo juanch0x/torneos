@@ -75,7 +75,7 @@ src/ui/           consumes the store. Knows no persistence.
 
 ### Two concepts that are easy to conflate
 
-- **Pairings** (who plays whom) are **per category** — round-robin per group, in `domain/roundRobin.ts` + `domain/reconcile.ts`. `reconcilePairings` reconciles (does NOT delete-and-recompute) by semantic identity `(groupId, {pairA, pairB})`, is **idempotent**, and **preserves already-played matches** (those with a `result`).
+- **Pairings** (who plays whom) are **per category** — round-robin per group, in `domain/roundRobin.ts` + `domain/reconcile.ts`. `reconcilePairings` reconciles (does NOT delete-and-recompute) by semantic identity `(groupId, {pairA, pairB})`, is **idempotent**, and **keeps the `id` and `scheduledAt` of surviving matches**. There are no results: result entry, standings and playoffs were removed permanently (see `docs/PRODUCT.md`).
 - **The schedule** (when each match is played) is **global cross-category** — one shared court. `domain/schedule.ts` `generateFixture(tournament, options)` is THE button: it reconciles every category's crosses and schedules them all in sequence from a start date.
 
 ### Persistence swap point

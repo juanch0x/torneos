@@ -3,7 +3,7 @@ import type { DailyTimeWindow, PairUnavailableWindow } from './types'
 
 /** Planning failures carry facts; presentation and local date formatting belong to the UI. */
 export type V2PlanningIssue = V2ReadinessIssue
-  | { code: 'initial-generation-blocked' | 'configuration-required' | 'match-limit' | 'duplicate-slots' | 'generation-limit' | 'slot-limit' | 'search-limit' | 'assignment-unverified' | 'regeneration-blocked' | 'move-identity' | 'move-played' | 'move-stale' | 'move-noop' | 'move-configuration' | 'move-inconsistent' | 'move-duplicate-slots' | 'move-period' | 'court-closed' | 'move-court-hours' | 'move-occupied' | 'undo-slot-stale' }
+  | { code: 'initial-generation-blocked' | 'configuration-required' | 'match-limit' | 'duplicate-slots' | 'generation-limit' | 'slot-limit' | 'search-limit' | 'assignment-unverified' | 'move-identity' | 'move-stale' | 'move-noop' | 'move-configuration' | 'move-inconsistent' | 'move-duplicate-slots' | 'move-period' | 'court-closed' | 'move-court-hours' | 'move-occupied' | 'undo-slot-stale' }
   | { code: 'category-format'; category: string }
   | { code: 'group-limit'; group: string }
   | { code: 'unexpected-match'; category: string; matchId: string }

@@ -2,24 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { buildFixtureWorkbookSheet, buildGroupsWorkbookSheet } from '../xlsxWriter'
 
 describe('buildGroupsWorkbookSheet', () => {
-  it('uses a high-contrast category title row plus full-width centered group rows for result sections', () => {
+  it('uses a high-contrast category title row plus centered group rows with a pair column', () => {
     const sheet = buildGroupsWorkbookSheet([
       {
         categoryName: 'Primera',
         groupName: 'Grupo A',
-        includeStandings: true,
-        rows: [
-          {
-            pair: 'Ana/Ada',
-            rank: 1,
-            played: 2,
-            won: 2,
-            lost: 0,
-            scoredFor: 12,
-            scoredAgainst: 5,
-            pointDiff: 7,
-          },
-        ],
+        rows: [{ pair: 'Ana/Ada' }],
       },
     ])
 
@@ -30,7 +18,7 @@ describe('buildGroupsWorkbookSheet', () => {
         fontWeight: 'bold',
         fontSize: 16,
         align: 'center',
-        columnSpan: 8,
+        columnSpan: 1,
         backgroundColor: '#000000',
         textColor: '#ffffff',
       },
@@ -41,47 +29,11 @@ describe('buildGroupsWorkbookSheet', () => {
         fontWeight: 'bold',
         fontSize: 14,
         align: 'center',
-        columnSpan: 8,
-      },
-    ])
-    expect(sheet.data[2]).toEqual([
-      { value: 'Pareja', fontWeight: 'bold' },
-      { value: 'Posición', fontWeight: 'bold' },
-      { value: 'Jugados', fontWeight: 'bold' },
-      { value: 'Ganados', fontWeight: 'bold' },
-      { value: 'Perdidos', fontWeight: 'bold' },
-      { value: 'Puntos +', fontWeight: 'bold' },
-      { value: 'Puntos -', fontWeight: 'bold' },
-      { value: 'Puntos diff', fontWeight: 'bold' },
-    ])
-    expect(sheet.data[3]).toEqual(['Ana/Ada', 1, 2, 2, 0, 12, 5, 7])
-  })
-
-  it('keeps setup-only group tables to the pair column only', () => {
-    const sheet = buildGroupsWorkbookSheet([
-      {
-        categoryName: 'Segunda',
-        groupName: 'Grupo B',
-        includeStandings: false,
-        rows: [
-          {
-            pair: 'Bia/Bea',
-          },
-        ],
-      },
-    ])
-
-    expect(sheet.data[1]).toEqual([
-      {
-        value: 'Grupo B',
-        fontWeight: 'bold',
-        fontSize: 14,
-        align: 'center',
-        columnSpan: 8,
+        columnSpan: 1,
       },
     ])
     expect(sheet.data[2]).toEqual([{ value: 'Pareja', fontWeight: 'bold' }])
-    expect(sheet.data[3]).toEqual(['Bia/Bea'])
+    expect(sheet.data[3]).toEqual(['Ana/Ada'])
   })
 })
 
@@ -95,7 +47,6 @@ describe('buildFixtureWorkbookSheet', () => {
         group: 'Grupo A',
         pairA: 'Ana/Ada',
         pairB: 'Bia/Bea',
-        result: '',
       },
     ])
 
@@ -107,7 +58,6 @@ describe('buildFixtureWorkbookSheet', () => {
       { value: 'Grupo', fontWeight: 'bold' },
       { value: 'Pareja A', fontWeight: 'bold' },
       { value: 'Pareja B', fontWeight: 'bold' },
-      { value: 'Resultado', fontWeight: 'bold' },
     ])
     expect(sheet.data[1]).toEqual([
       4,
@@ -117,7 +67,6 @@ describe('buildFixtureWorkbookSheet', () => {
       'Grupo A',
       'Ana/Ada',
       'Bia/Bea',
-      '',
     ])
   })
 
@@ -129,13 +78,12 @@ describe('buildFixtureWorkbookSheet', () => {
         group: 'Grupo C',
         pairA: 'Ana/Ada',
         pairB: 'Bia/Bea',
-        result: '',
       },
     ])
 
-    expect(sheet.data[0]).toHaveLength(8)
-    expect(sheet.data[0]).not.toContainEqual({ value: 'Estado', fontWeight: 'bold' })
-    expect(sheet.data[1]).toEqual([7, undefined, undefined, 'Primera', 'Grupo C', 'Ana/Ada', 'Bia/Bea', ''])
+    expect(sheet.data[0]).toHaveLength(7)
+    expect(sheet.data[0]).not.toContainEqual({ value: 'Resultado', fontWeight: 'bold' })
+    expect(sheet.data[1]).toEqual([7, undefined, undefined, 'Primera', 'Grupo C', 'Ana/Ada', 'Bia/Bea'])
   })
 
   it('neutralizes formula-like user labels before writing workbook cells', () => {
@@ -143,7 +91,6 @@ describe('buildFixtureWorkbookSheet', () => {
       {
         categoryName: ' =HYPERLINK("http://bad")',
         groupName: '+Grupo A',
-        includeStandings: false,
         rows: [{ pair: '\t@Ana/=cmd' }],
       },
     ])
@@ -155,7 +102,6 @@ describe('buildFixtureWorkbookSheet', () => {
         group: ' @Grupo B',
         pairA: '=Ana/Ada',
         pairB: '+Bia/Bea',
-        result: '',
       },
     ])
 
@@ -165,7 +111,7 @@ describe('buildFixtureWorkbookSheet', () => {
         fontWeight: 'bold',
         fontSize: 16,
         align: 'center',
-        columnSpan: 8,
+        columnSpan: 1,
         backgroundColor: '#000000',
         textColor: '#ffffff',
       },
@@ -176,10 +122,10 @@ describe('buildFixtureWorkbookSheet', () => {
         fontWeight: 'bold',
         fontSize: 14,
         align: 'center',
-        columnSpan: 8,
+        columnSpan: 1,
       },
     ])
     expect(groupsSheet.data[3]).toEqual(["'\t@Ana/=cmd"])
-    expect(fixtureSheet.data[1]).toEqual([8, undefined, undefined, "'-Primera", "' @Grupo B", "'=Ana/Ada", "'+Bia/Bea", ''])
+    expect(fixtureSheet.data[1]).toEqual([8, undefined, undefined, "'-Primera", "' @Grupo B", "'=Ana/Ada", "'+Bia/Bea"])
   })
 })

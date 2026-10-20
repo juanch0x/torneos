@@ -89,7 +89,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
   const issues: V2DraftIssue[] = locked ? [] : baselineOnly ? v2ConfigurationDraftIssues(baselineDraft) : v2SetupDraftIssues(draft)
   const validation = issues.length ? null : baselineOnly ? applyV2Configuration(working, baselineDraft) : applyV2Setup(working, draft)
   const impacts = validation?.ok ? v2ConfigurationIssues(validation.document) : []
-  // State-dependent rules (e.g. duration with existing results) are not field errors.
+  // State-dependent rules are not field errors.
   const stateError = validation && !validation.ok && !locked ? validation.error : ''
   const pairCounts = groupPairCounts(working)
   const legacy = hasLegacyPlanningData(working)
@@ -144,7 +144,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
           <Button variant="light" renderRoot={props => <Link {...props} to="/v2/calendar" search={{ tournamentId }} />}>Ver calendario</Button>
         </Group>
       </Alert> : baselineOnly ? <Alert color="orange" title="Completá la configuración de horarios">
-        El torneo ya tiene un calendario generado o resultados. Las categorías, los grupos y las parejas quedan bloqueados, pero tenés que completar la configuración de horarios que falta para abrir el calendario y editar las restricciones.
+        El torneo ya tiene un calendario generado. Las categorías, los grupos y las parejas quedan bloqueados, pero tenés que completar la configuración de horarios que falta para abrir el calendario y editar las restricciones.
       </Alert> : <Text size="sm">Definí las categorías, el período y los horarios antes de cargar las parejas. Guardar no genera ni reprograma partidos.</Text>}
       {!!alertMessages.length && <Alert color="red" role="alert" title="No se puede guardar la configuración">
         {alertMessages.length === 1 ? alertMessages[0] : <List size="sm">{alertMessages.map(message => <List.Item key={message}>{message}</List.Item>)}</List>}
@@ -169,7 +169,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
         <Title order={2} size="h3">Duración de cada partido</Title>
         {field('duration', 'Duración de cada partido (minutos)', 'number')}
       </Stack>
-      <Text size="xs" c="dimmed">Las excepciones de cancha existentes se preservan, sin editor en esta etapa. Con resultados existentes no se permite cambiar ni inferir una duración histórica.</Text>
+      <Text size="xs" c="dimmed">Las excepciones de cancha existentes se preservan, sin editor en esta etapa.</Text>
       {!!impacts.length && <Alert color="orange">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisá el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
       {mode === 'edit' && <Text size="sm" c="dimmed">Al generar el calendario por primera vez, la configuración, las categorías, los grupos y las parejas quedan bloqueados.</Text>}
       <Group justify="flex-end">

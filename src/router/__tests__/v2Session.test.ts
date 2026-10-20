@@ -19,7 +19,7 @@ describe('detached V2 session', () => {
     await controller.open('t')
     expect(store.getState().working).toBe(working); expect(store.getState().baseline).toBe(baseline)
     expect(working).toEqual(source); expect(working).not.toBe(baseline)
-    expect(Object.isFrozen(working!.categories[0].matches[0].result)).toBe(true)
+    expect(Object.isFrozen(working!.categories[0].matches[0])).toBe(true)
     expect(repository.load).toHaveBeenCalledTimes(1)
     expect(repository.save).not.toHaveBeenCalled(); expect(repository.remove).not.toHaveBeenCalled()
     expect(useTournamentStore.getState().current).toBe(current)
@@ -94,7 +94,7 @@ it('shares source identity through actual memory-router groups/calendar navigati
   expect(repository.load).toHaveBeenCalledTimes(1); expect(repository.save).not.toHaveBeenCalled()
 })
 
-it('saves only selected pair restrictions, preserves schedules/results/opaque fields, and rejects stale dialogs', async () => {
+it('saves only selected pair restrictions, preserves schedules/opaque fields, and rejects stale dialogs', async () => {
   const { store, controller, repository, source } = setup(); await controller.open('t')
   const { toV2RestrictionDraft } = await import('../../domain/v2Restrictions')
   const before = structuredClone(store.getState().working!); const epoch = store.getState().epoch

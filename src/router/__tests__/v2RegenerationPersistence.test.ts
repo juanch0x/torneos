@@ -5,7 +5,7 @@ import { useTournamentStore } from '../../store/tournamentStore'
 import { createV2Reader } from '../v2ReadService'
 import { createV2SessionController } from '../v2SessionController'
 function setup() {
-  let source = sample(); source.categories[0].matches = [{ ...source.categories[0].matches[0],scheduledAt: new Date('2026-10-05T15:00').toISOString(),result: undefined }]; source.slots[0].startsAt = source.categories[0].matches[0].scheduledAt!
+  let source = sample(); source.categories[0].matches = [{ ...source.categories[0].matches[0],scheduledAt: new Date('2026-10-05T15:00').toISOString() }]; source.slots[0].startsAt = source.categories[0].matches[0].scheduledAt!
   Object.assign(source,{ opaque: 'retained' })
   const repository = { list: vi.fn().mockResolvedValue([]),load: vi.fn(async () => structuredClone(source)),save: vi.fn(async (document: typeof source) => { source = structuredClone(document) }) }
   const reader = createV2Reader(repository); const store = createV2SessionStore(); const controller = createV2SessionController(store,reader,repository)
@@ -20,13 +20,11 @@ describe('confirmed durable whole-calendar regeneration', () => {
     expect(fresh.getState().working).toEqual(store.getState().working); expect(fresh.getState().working).toMatchObject({ opaque: 'retained' }); expect(fresh.getState().working!.categories[0].matches[0].id).toBe('m')
     expect(fresh.getState().working!.categories[0].matches[0].scheduledAt).not.toBe(before.categories[0].matches[0].scheduledAt); expect(useTournamentStore.getState().current).toBe(v1)
   })
-  it('infeasible replacement/played source/draft make zero writes and keep old baseline/working intact', async () => {
+  it('infeasible replacement/draft make zero writes and keep old baseline/working intact', async () => {
     const { repository,store,controller,expected } = setup(); const original = await repository.load(); original.calendar!.defaultWindow.endsAt = '09:15'; repository.load.mockResolvedValue(original)
     await controller.open('t'); const before = store.getState().working; const baseline = store.getState().baseline
     expect((await controller.regenerateCalendar(expected())).ok).toBe(false); expect(repository.save).not.toHaveBeenCalled(); expect(store.getState().working).toBe(before); expect(store.getState().baseline).toBe(baseline)
     store.setState({ draftDirty: true }); expect((await controller.regenerateCalendar(expected())).ok).toBe(false); expect(repository.save).not.toHaveBeenCalled()
-    const played = setup(); const history = await played.repository.load(); history.categories[0].matches[0].result = { scoreA: 3,scoreB: 0 }; played.repository.load.mockResolvedValue(history); await played.controller.open('t')
-    expect((await played.controller.regenerateCalendar(played.expected())).ok).toBe(false); expect(played.repository.save).not.toHaveBeenCalled()
   })
   it('partial document/index failure leaves visible original and retries the identical attempt IDs/timestamp', async () => {
     const { repository,store,controller,expected } = setup(); await controller.open('t'); const original = store.getState().working; const token = expected(); const normal = repository.save.getMockImplementation()!

@@ -21,7 +21,7 @@ import {
 } from '../domain/schedule'
 import type { FixtureOptions, ManualReorderOutcome } from '../domain/schedule'
 import { buildMockTournament } from '../mock/fmpTournament'
-import type { Category, ID, MatchResult, PairUnavailableWindow, Tournament, TournamentCalendar } from '../domain/types'
+import type { Category, ID, PairUnavailableWindow, Tournament, TournamentCalendar } from '../domain/types'
 import { repo } from '../persistence/repo'
 import type { TournamentMeta } from '../domain/types'
 
@@ -67,7 +67,6 @@ export interface TournamentState {
   movePairToGroup: (categoryId: ID, pairId: ID, toGroupId: ID) => void
   regeneratePairings: (categoryId: ID) => void
   regenerateSchedule: (categoryId: ID) => void
-  setMatchResult: (categoryId: ID, matchId: ID, result: MatchResult | undefined) => void
   setMatchSchedule: (categoryId: ID, matchId: ID, scheduledAt: string) => void
 }
 
@@ -99,20 +98,21 @@ export const useTournamentStore = create<TournamentState>()(
       }))
     }
 
-    function hasPlayedMatch(tournament: Tournament): boolean {
+    // Structure (categories, groups, pairs, crosses) is locked once any match is scheduled.
+    function isStructureLocked(tournament: Tournament): boolean {
       return !!v2StructureBlocked(tournament)
     }
 
-    function mutateCategoryUnlessPlayed(categoryId: ID, fn: (c: Category) => Category): void {
-      mutate((t) => hasPlayedMatch(t) ? t : {
+    function mutateCategoryUnlessLocked(categoryId: ID, fn: (c: Category) => Category): void {
+      mutate((t) => isStructureLocked(t) ? t : {
         ...t,
         categories: t.categories.map((c) => (c.id === categoryId ? fn(c) : c)),
       })
     }
 
-    function mutateCategoryStructureUnlessPlayed(categoryId: ID, fn: (c: Category) => Category): void {
+    function mutateCategoryStructureUnlessLocked(categoryId: ID, fn: (c: Category) => Category): void {
       mutate((t) => {
-        if (hasPlayedMatch(t)) return t
+        if (isStructureLocked(t)) return t
         const category = t.categories.find((item) => item.id === categoryId)
         if (!category) return t
         const obsoleteMatchIds = new Set(category.matches.map((match) => match.id))
@@ -163,12 +163,7 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       generateFixture(options) {
-        mutate((t) => {
-          const hasPlayedMatch = t.categories.some((category) => category.matches.some((match) => match.result != null))
-          const currentDuration = t.fixtureSettings?.matchDurationMinutes
-          if (hasPlayedMatch && currentDuration != null && currentDuration !== options.matchDurationMinutes) return t
-          return buildFixture(t, options)
-        })
+        mutate((t) => buildFixture(t, options))
       },
 
       setFixtureCalendar(calendar) {
@@ -194,9 +189,7 @@ export const useTournamentStore = create<TournamentState>()(
       assignMatchToSlot(slotId, matchId) {
         mutate((t) => {
           const target = t.slots.find((slot) => slot.id === slotId)
-          const moving = matchId ? t.categories.flatMap((category) => category.matches).find((match) => match.id === matchId) : undefined
-          const targetMatch = target?.matchId ? t.categories.flatMap((category) => category.matches).find((match) => match.id === target.matchId) : undefined
-          if (!target || targetMatch?.result != null || moving?.result != null) return t
+          if (!target) return t
           return {
             ...t,
             slots: t.slots.map((s) => {
@@ -218,8 +211,6 @@ export const useTournamentStore = create<TournamentState>()(
           if (index < 0 || swapWith < 0 || swapWith >= ordered.length) return t
           const a = ordered[index]
           const b = ordered[swapWith]
-          const matchById = new Map(t.categories.flatMap((category) => category.matches).map((match) => [match.id, match]))
-          if (matchById.get(a.matchId ?? '')?.result != null || matchById.get(b.matchId ?? '')?.result != null) return t
           const slots = t.slots.map((s) => {
             if (s.id === a.id) return { ...s, matchId: b.matchId }
             if (s.id === b.id) return { ...s, matchId: a.matchId }
@@ -259,7 +250,7 @@ export const useTournamentStore = create<TournamentState>()(
 
       addCategory(name, numGroups) {
         mutate((t) => {
-          if (hasPlayedMatch(t)) return t
+          if (isStructureLocked(t)) return t
           const existingColors = t.categories.map((c) => c.color)
           const color = pickUnusedCategoryColor(existingColors)
           return {
@@ -274,7 +265,7 @@ export const useTournamentStore = create<TournamentState>()(
       // Cambiar los grupos invalida los cruces → se limpian (regenerás después).
       setCategoryGroupCount(categoryId, count) {
         const target = Math.max(1, Math.floor(count))
-        mutateCategoryStructureUnlessPlayed(categoryId, (c) => {
+        mutateCategoryStructureUnlessLocked(categoryId, (c) => {
           let groups = c.groups
           if (target > groups.length) {
             const extra = Array.from({ length: target - groups.length }, (_, i) =>
@@ -296,20 +287,20 @@ export const useTournamentStore = create<TournamentState>()(
       // Re-reparte las parejas al azar entre los grupos actuales. Limpia los
       // cruces (cambió la composición de los grupos → hay que regenerar).
       shuffleGroups(categoryId) {
-        mutateCategoryStructureUnlessPlayed(categoryId, (c) => distributePairs({ ...c, matches: [] }))
+        mutateCategoryStructureUnlessLocked(categoryId, (c) => distributePairs({ ...c, matches: [] }))
       },
 
       addPair(categoryId, player1, player2) {
-        mutateCategoryUnlessPlayed(categoryId, (c) => ({
+        mutateCategoryUnlessLocked(categoryId, (c) => ({
           ...c,
           pairs: [...c.pairs, createPair(player1, player2)],
         }))
       },
 
       // Corrige los nombres de una pareja sin alterar su identidad ni las
-      // referencias existentes en grupos, cruces, calendario o playoffs.
+      // referencias existentes en grupos, cruces o calendario.
       updatePair(categoryId, pairId, player1, player2) {
-        mutateCategoryUnlessPlayed(categoryId, (c) => ({
+        mutateCategoryUnlessLocked(categoryId, (c) => ({
           ...c,
           pairs: c.pairs.map((pair) =>
             pair.id === pairId ? { ...pair, player1, player2 } : pair,
@@ -319,7 +310,7 @@ export const useTournamentStore = create<TournamentState>()(
 
       // Agrega la pareja al grupo (si no estaba). No la saca de ningún otro lado.
       assignPairToGroup(categoryId, pairId, groupId) {
-        mutateCategoryStructureUnlessPlayed(categoryId, (c) => ({
+        mutateCategoryStructureUnlessLocked(categoryId, (c) => ({
           ...c,
           groups: c.groups.map((g) =>
             g.id === groupId && !g.pairIds.includes(pairId)
@@ -331,7 +322,7 @@ export const useTournamentStore = create<TournamentState>()(
 
       // La saca de cualquier grupo donde esté y la agrega al destino.
       movePairToGroup(categoryId, pairId, toGroupId) {
-        mutateCategoryStructureUnlessPlayed(categoryId, (c) => ({
+        mutateCategoryStructureUnlessLocked(categoryId, (c) => ({
           ...c,
           groups: c.groups.map((g) => {
             const without = g.pairIds.filter((id) => id !== pairId)
@@ -342,18 +333,11 @@ export const useTournamentStore = create<TournamentState>()(
       },
 
       regeneratePairings(categoryId) {
-        mutateCategoryUnlessPlayed(categoryId, reconcilePairings)
+        mutateCategoryUnlessLocked(categoryId, reconcilePairings)
       },
 
       regenerateSchedule(categoryId) {
-        mutateCategoryUnlessPlayed(categoryId, regenerateSchedule)
-      },
-
-      setMatchResult(categoryId, matchId, result) {
-        mutateCategory(categoryId, (c) => ({
-          ...c,
-          matches: c.matches.map((m) => (m.id === matchId ? { ...m, result } : m)),
-        }))
+        mutateCategoryUnlessLocked(categoryId, regenerateSchedule)
       },
 
       setMatchSchedule(categoryId, matchId, scheduledAt) {

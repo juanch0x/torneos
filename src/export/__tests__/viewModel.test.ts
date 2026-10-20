@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Category, Match, MatchResult, Pair, Tournament } from '../../domain/types'
+import type { Category, Match, Pair, Tournament } from '../../domain/types'
 import { buildFixtureSheet, buildGroupsSheet } from '../viewModel'
 
 function makePair(id: string, player1: string, player2: string): Pair {
@@ -15,7 +15,6 @@ function makeMatch(
     number?: number
     round?: number
     scheduledAt?: string
-    result?: MatchResult
   } = {},
 ): Match {
   return {
@@ -26,7 +25,6 @@ function makeMatch(
     round: options.round ?? 1,
     number: options.number,
     scheduledAt: options.scheduledAt,
-    result: options.result,
   }
 }
 
@@ -48,7 +46,7 @@ function makeTournament(categories: Category[]): Tournament {
 }
 
 describe('buildGroupsSheet', () => {
-  it('keeps setup-only groups simple and adds standings only for groups with results', () => {
+  it('lists each group with its pairs in membership order', () => {
     const alphaA = makePair('alpha-a', 'Ana', 'Ada')
     const alphaB = makePair('alpha-b', 'Bia', 'Bea')
     const alphaC = makePair('alpha-c', 'Cora', 'Ceci')
@@ -68,9 +66,7 @@ describe('buildGroupsSheet', () => {
           { id: 'group-b', name: 'Grupo B', pairIds: [alphaD.id, alphaC.id] },
         ],
         matches: [
-          makeMatch('match-1', 'group-b', alphaC.id, alphaD.id, {
-            result: { scoreA: 6, scoreB: 4 },
-          }),
+          makeMatch('match-1', 'group-b', alphaC.id, alphaD.id),
         ],
       },
       {
@@ -93,49 +89,14 @@ describe('buildGroupsSheet', () => {
       'Beta:Grupo C',
     ])
 
-    expect(sections[0].includeStandings).toBe(false)
-    expect(sections[0].rows).toEqual([
-      {
-        pair: 'Ana/Ada',
-      },
-      {
-        pair: 'Bia/Bea',
-      },
-    ])
-
-    expect(sections[1].includeStandings).toBe(true)
-    expect(sections[1].rows).toEqual([
-      {
-        pair: 'Cora/Ceci',
-        rank: 1,
-        played: 1,
-        won: 1,
-        lost: 0,
-        scoredFor: 6,
-        scoredAgainst: 4,
-        pointDiff: 2,
-      },
-      {
-        pair: 'Dani/Dora',
-        rank: 2,
-        played: 1,
-        won: 0,
-        lost: 1,
-        scoredFor: 4,
-        scoredAgainst: 6,
-        pointDiff: -2,
-      },
-    ])
-
-    expect(sections[2].includeStandings).toBe(false)
-    expect(sections[2].rows[0]).toEqual({
-      pair: 'Eva/Eli',
-    })
+    expect(sections[0].rows).toEqual([{ pair: 'Ana/Ada' }, { pair: 'Bia/Bea' }])
+    expect(sections[1].rows).toEqual([{ pair: 'Dani/Dora' }, { pair: 'Cora/Ceci' }])
+    expect(sections[2].rows).toEqual([{ pair: 'Eva/Eli' }, { pair: 'Fiona/Feli' }])
   })
 })
 
 describe('buildFixtureSheet', () => {
-  it('returns scheduled rows first, leaves unscheduled rows at the end, and formats results', () => {
+  it('returns scheduled rows first and leaves unscheduled rows at the end', () => {
     const pairA = makePair('pair-a', 'Ana', 'Ada')
     const pairB = makePair('pair-b', 'Bia', 'Bea')
     const pairC = makePair('pair-c', 'Cora', 'Ceci')
@@ -153,7 +114,6 @@ describe('buildFixtureSheet', () => {
           makeMatch('match-2', 'group-b', pairC.id, pairD.id, {
             number: 2,
             scheduledAt: '2026-07-02T10:00:00.000Z',
-            result: { scoreA: 7, scoreB: 5 },
           }),
         ],
       },
@@ -186,7 +146,6 @@ describe('buildFixtureSheet', () => {
         group: 'Grupo A',
         pairA: 'Ana/Ada',
         pairB: 'Bia/Bea',
-        result: '',
       },
       {
         matchNumber: 2,
@@ -195,7 +154,6 @@ describe('buildFixtureSheet', () => {
         group: 'Grupo B',
         pairA: 'Cora/Ceci',
         pairB: 'Dani/Dora',
-        result: '7-5',
       },
       {
         matchNumber: 3,
@@ -203,7 +161,6 @@ describe('buildFixtureSheet', () => {
         group: 'Grupo A',
         pairA: 'Ana/Ada',
         pairB: 'Bia/Bea',
-        result: '',
       },
     ])
   })

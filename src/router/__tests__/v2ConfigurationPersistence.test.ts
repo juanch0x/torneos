@@ -8,7 +8,7 @@ const values = { startDate: '2026-10-05', endDate: '2026-10-06', opensAt: '09:00
 function setup() {
   const missing = sample(); delete missing.calendar; delete missing.fixtureSettings
   missing.slots.forEach(slot => { delete slot.matchId })
-  missing.categories.forEach(cat => { cat.matches.forEach(m => { delete m.scheduledAt; delete m.result }) })
+  missing.categories.forEach(cat => { cat.matches.forEach(m => { delete m.scheduledAt }) })
   let source = missing
   const repository = { list: vi.fn().mockResolvedValue([]), load: vi.fn(async () => structuredClone(source)), save: vi.fn(async (document: typeof source) => { source = structuredClone(document) }) }
   const store = createV2SessionStore(); const reader = createV2Reader(repository); const controller = createV2SessionController(store, reader, repository)

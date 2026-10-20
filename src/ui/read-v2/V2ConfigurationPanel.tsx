@@ -11,7 +11,7 @@ import type { Tournament } from '../../domain/types'
 import { isV2SetupLocked } from '../../domain/v2Setup'
 
 export function hasLegacyPlanningData(source: Tournament): boolean {
-  return source.slots.length > 0 || !!source.pairUnavailableWindows?.length || !!source.calendar?.overrides.length || source.categories.some(category => category.matches.some(match => match.scheduledAt !== undefined || match.result !== undefined))
+  return source.slots.length > 0 || !!source.pairUnavailableWindows?.length || !!source.calendar?.overrides.length || source.categories.some(category => category.matches.some(match => match.scheduledAt !== undefined))
 }
 
 export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }) {

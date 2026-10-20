@@ -96,8 +96,6 @@ export function buildCalendarSlots(calendar: TournamentCalendar, matchDurationMi
 
 function allMatches(tournament: Tournament): Match[] { return tournament.categories.flatMap((category) => category.matches) }
 function findMatch(tournament: Tournament, matchId: ID | undefined): Match | undefined { return matchId ? allMatches(tournament).find((match) => match.id === matchId) : undefined }
-function isResultMatch(tournament: Tournament, matchId: ID | undefined): boolean { return findMatch(tournament, matchId)?.result != null }
-export function isMovableMatch(match: Match): boolean { return match.result == null }
 
 export function isMatchAvailableForSlot(match: Match, startsAt: string, durationMinutes: number, tournament: Tournament): boolean {
   const slotInterval = { startsAt, endsAt: endsAt(startsAt, durationMinutes) }
@@ -139,8 +137,7 @@ function syncScheduledState(tournament: Tournament): Tournament {
     matches: category.matches.map((match) => {
       const scheduledAt = timeByMatch.get(match.id)
       if (scheduledAt != null) return { ...match, scheduledAt }
-      if (match.result == null) return { ...match, scheduledAt: undefined, number: undefined }
-      return match
+      return { ...match, scheduledAt: undefined, number: undefined }
     }),
   }))
   return syncNumbers({ ...tournament, categories })
@@ -155,7 +152,6 @@ function bestCandidateForSlot(
 ): Match | undefined {
   const slot = slots[slotIndex]
   return allMatches(tournament)
-    .filter((match) => match.result == null)
     .filter((match) => !excluded.has(match.id))
     .filter((match) => isMatchAvailableForSlot(match, slot.startsAt, durationMinutes, tournament))
     .sort((a, b) => compareMatchesForSlot(tournament, slots, slotIndex, a, b))[0]
@@ -172,7 +168,7 @@ function fillEmptyAvailabilitySlots(tournament: Tournament, durationMinutes: num
     const assigned = new Set(slots.map((slot) => slot.matchId).filter((id): id is ID => id != null))
     const slot = slots[slotIndex]
     const candidate = allMatches(tournament)
-      .filter((match) => match.result == null && !assigned.has(match.id))
+      .filter((match) => !assigned.has(match.id))
       .filter((match) => isMatchAvailableForSlot(match, slot.startsAt, durationMinutes, tournament))
       .sort((a, b) => compareMatchesForSlot(tournament, slots, slotIndex, a, b))[0]
     if (!candidate) continue
@@ -202,15 +198,14 @@ export function syncScheduleTimes(tournament: Tournament): Tournament {
 
 /**
  * EL botón. Dado un torneo con grupos/parejas definidos:
- * 1. Reconcilia los cruces (round-robin) de cada categoría — preserva bloqueados.
+ * 1. Reconcilia los cruces (round-robin) de cada categoría — conserva sus ids.
  * 2. Junta TODOS los partidos de TODAS las categorías y los ordena por ronda.
  * 3. Les asigna horario en SECUENCIA desde `startsAt` (una sola cancha): cada
  *    partido empieza `matchDurationMinutes` después del anterior; al llegar al
  *    tope diario (`matchesPerDay`) sigue al día siguiente a la misma hora.
  *
  * Genera de cero el calendario completo (slots + scheduledAt de cada match).
- * Regenera todo: volver a apretarlo reasigna los horarios (los resultados ya
- * cargados se conservan, solo cambia la logística de horarios).
+ * Regenera todo: volver a apretarlo reasigna los horarios de todos los partidos.
  *
  * PURA: recibe el torneo, devuelve uno nuevo.
  */
@@ -222,9 +217,6 @@ export function generateFixture(tournament: Tournament, options: FixtureOptions)
   const calendar = options.calendar ?? tournament.calendar
   const calendarError = !calendar ? 'Configurá el calendario del torneo.' : validateTournamentCalendar(calendar)
   if (calendarError || !Number.isFinite(options.matchDurationMinutes) || options.matchDurationMinutes <= 0) return tournament
-  const hasPlayedMatch = allMatches(tournament).some((match) => match.result != null)
-  const currentDuration = tournament.fixtureSettings?.matchDurationMinutes
-  if (hasPlayedMatch && currentDuration != null && currentDuration !== options.matchDurationMinutes) return tournament
 
   const categories = tournament.categories.map(reconcilePairings)
   const withReconciledCategories = { ...tournament, categories }
@@ -238,23 +230,8 @@ export function generateFixture(tournament: Tournament, options: FixtureOptions)
       ...(options.calendar ? {} : { fixtureSettings: { matchDurationMinutes: options.matchDurationMinutes } }),
     })
   }
-  const lockedSlots = tournament.slots.filter((slot) => isResultMatch(withReconciledCategories, slot.matchId))
-  const lockedDuration = tournament.fixtureSettings?.matchDurationMinutes ?? options.matchDurationMinutes
-  const slots = buildCalendarSlots(calendar!, options.matchDurationMinutes).filter((generated) =>
-    !lockedSlots.some((locked) => intervalOverlaps(
-      { startsAt: generated.startsAt, endsAt: endsAt(generated.startsAt, options.matchDurationMinutes) },
-      { startsAt: locked.startsAt, endsAt: endsAt(locked.startsAt, lockedDuration) },
-    )),
-  )
-
-  // Results are immutable, even if an organizer later narrows the calendar.
-  for (const locked of lockedSlots) {
-    const index = slots.findIndex((slot) => slot.startsAt === locked.startsAt)
-    if (index >= 0) slots[index] = { ...slots[index], id: locked.id, matchId: locked.matchId }
-    else slots.push({ ...locked })
-  }
-
-  const scheduledIds = new Set(slots.map((slot) => slot.matchId).filter((id): id is ID => id != null))
+  const slots = buildCalendarSlots(calendar!, options.matchDurationMinutes)
+  const scheduledIds = new Set<ID>()
   for (const candidate of orderedCandidates) {
     if (scheduledIds.has(candidate.match.id)) continue
     const openSlots = slots
@@ -281,7 +258,7 @@ export function generateFixture(tournament: Tournament, options: FixtureOptions)
  * franjas son secuenciales y cada una aloja un único partido de cualquier
  * categoría.
  *
- * `fillSchedule` toma todos los partidos PENDIENTES (sin resultado) de todas las
+ * `fillSchedule` toma todos los partidos SIN FRANJA de todas las
  * categorías y los asigna a las franjas LIBRES, en orden cronológico de franja
  * y por ronda creciente de partido (las rondas 1 de todas las categorías primero,
  * luego las 2, etc.), para que el torneo avance parejo.
@@ -290,7 +267,6 @@ export function generateFixture(tournament: Tournament, options: FixtureOptions)
  *
  * Respeta el trabajo manual:
  * - Las franjas ya ocupadas (con `matchId`) se conservan.
- * - Los partidos jugados (con `result`) no se reasignan.
  * - Las franjas que apuntaban a un partido inexistente (ej: borrado al regenerar
  *   el fixture) se liberan.
  *
@@ -325,10 +301,10 @@ export function fillSchedule(tournament: Tournament): Tournament {
   const occupied = new Set<ID>()
   for (const slot of cleanedSlots) if (slot.matchId) occupied.add(slot.matchId)
 
-  // Candidatos a agendar: sin resultado y todavía sin franja.
+  // Candidatos a agendar: todavía sin franja.
   const candidates: Candidate[] = []
   for (const candidate of existing.values()) {
-    if (candidate.match.result == null && !occupied.has(candidate.match.id)) {
+    if (!occupied.has(candidate.match.id)) {
       candidates.push(candidate)
     }
   }
@@ -363,13 +339,13 @@ export function fillSchedule(tournament: Tournament): Tournament {
   }
 
   // Aplicar a los partidos: los agendados toman la hora de su franja; los
-  // pendientes que quedaron sin franja pierden la hora vieja; los jugados, intactos.
+  // que quedaron sin franja pierden la hora vieja.
   const categories = tournament.categories.map((category) => ({
     ...category,
     matches: category.matches.map((match) => {
       const scheduledAt = scheduledAtByMatch.get(match.id)
       if (scheduledAt != null) return { ...match, scheduledAt }
-      if (match.result == null && match.scheduledAt != null) {
+      if (match.scheduledAt != null) {
         return { ...match, scheduledAt: undefined }
       }
       return match
@@ -385,7 +361,7 @@ export function reflowUnavailableMatches(tournament: Tournament): Tournament {
   let slots = [...tournament.slots]
   const affected = orderedSlots.filter((slot) => {
     const scheduled = findMatch(tournament, slot.matchId)
-    if (!scheduled || scheduled.result != null) return false
+    if (!scheduled) return false
     return !isMatchAvailableForSlot(scheduled, slot.startsAt, duration, tournament)
   })
 
@@ -412,15 +388,14 @@ export function reflowUnavailableMatches(tournament: Tournament): Tournament {
 
 export function removeFixtureSlot(tournament: Tournament, slotId: ID): Tournament {
   const slot = tournament.slots.find((item) => item.id === slotId)
-  if (!slot || isResultMatch(tournament, slot.matchId)) return tournament
+  if (!slot) return tournament
   return syncScheduledState({ ...tournament, slots: tournament.slots.filter((item) => item.id !== slotId) })
 }
 
 export function moveMatchToSlot(tournament: Tournament, matchId: ID, targetSlotId: ID): Tournament {
   const moving = findMatch(tournament, matchId)
   const target = tournament.slots.find((slot) => slot.id === targetSlotId)
-  if (!moving || !target || moving.result != null) return tournament
-  if (isResultMatch(tournament, target.matchId)) return tournament
+  if (!moving || !target) return tournament
 
   const duration = tournament.fixtureSettings?.matchDurationMinutes ?? 45
   if (!isMatchAvailableForSlot(moving, target.startsAt, duration, tournament)) return tournament
@@ -436,7 +411,6 @@ export function moveMatchToSlot(tournament: Tournament, matchId: ID, targetSlotI
 export type ManualReorderBlockReason =
   | 'missing-match-or-slot'
   | 'match-is-unscheduled'
-  | 'played-match'
   | 'availability-conflict'
 
 export interface ManualReorderOutcome {
@@ -475,7 +449,7 @@ function backToBackPairings(tournament: Tournament): Set<string> {
  * This is intentionally local: the target time is kept, occupants in the
  * crossed range are shifted by one slot, and no availability filler or global
  * optimizer runs afterwards. A blank target simply travels back to the source
- * slot. Played matches and availability conflicts make the entire move invalid.
+ * slot. Availability conflicts make the entire move invalid.
  */
 export function reorderMatchInSlots(
   tournament: Tournament,
@@ -500,14 +474,6 @@ export function reorderMatchInSlots(
   const rangeStart = Math.min(sourceIndex, targetIndex)
   const rangeEnd = Math.max(sourceIndex, targetIndex)
   const range = orderedSlots.slice(rangeStart, rangeEnd + 1)
-  const affectedMatches = range
-    .map((slot) => findMatch(tournament, slot.matchId))
-    .filter((match): match is Match => match != null)
-
-  if (affectedMatches.some((match) => match.result != null)) {
-    return { tournament, status: 'blocked', reason: 'played-match', shiftedMatchCount: 0, createsBackToBack: false }
-  }
-
   const duration = tournament.fixtureSettings?.matchDurationMinutes ?? 45
 
   if (orderedSlots[targetIndex].matchId == null) {

@@ -69,10 +69,6 @@ describe('deleteV2Pair', () => {
     const result = deleteV2Pair(t, { categoryId: 'c', pairId: 'free' })
     expect(result.ok && category(result.document).matches).toEqual(t.categories[0].matches)
   })
-  it('rejects a pair referenced by a playoff slot', () => {
-    const t = prepared(); t.categories[0].playoffs = { rounds: [{ id: 'r', name: 'Final', slots: [{ id: 's1', pairAId: 'free' }] }] }
-    expect(deleteV2Pair(t, { categoryId: 'c', pairId: 'free' }).ok).toBe(false)
-  })
   it('rejects unknown pairs and a locked structure', () => {
     expect(deleteV2Pair(prepared(), { categoryId: 'c', pairId: 'nope' }).ok).toBe(false)
     expect(deleteV2Pair(locked(), { categoryId: 'c', pairId: 'a' }).ok).toBe(false)

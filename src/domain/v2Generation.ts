@@ -10,8 +10,7 @@ export type V2GenerationResult = { ok: true; document: Tournament } | { ok: fals
 const failure = (issues: V2PlanningIssue[]): V2GenerationResult => ({ ok: false, error: issues[0], issues })
 export function v2InitialGenerationBlocked(source: Tournament): V2PlanningIssue | null {
   return source.slots.some(slot => slot.matchId !== undefined) || source.categories.some(category =>
-    category.matches.some(match => match.scheduledAt !== undefined || match.result !== undefined) ||
-    category.playoffs?.rounds.some(round => round.slots.some(slot => slot.result !== undefined)))
+    category.matches.some(match => match.scheduledAt !== undefined))
     ? { code: 'initial-generation-blocked' } : null
 }
 
@@ -26,7 +25,7 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
   // Read adapter detects opaque duplicate IDs/references without repairing the source.
   for (const issue of adaptV2Tournament(source).diagnostics) if (!['timezone-ambiguity'].includes(issue.code)) issues.push({ code: 'source-diagnostic', diagnostic: issue })
   if (!source.categories.length) issues.push({ code: 'no-categories' })
-  const usedIds = new Set([source.id, ...source.slots.map(s => s.id), ...(source.pairUnavailableWindows ?? []).map(w => w.id), ...source.categories.flatMap(c => [c.id, ...c.pairs.map(p => p.id), ...c.groups.map(g => g.id), ...c.matches.map(m => m.id), ...(c.playoffs?.rounds.flatMap(r => [r.id, ...r.slots.map(s => s.id)]) ?? [])])])
+  const usedIds = new Set([source.id, ...source.slots.map(s => s.id), ...(source.pairUnavailableWindows ?? []).map(w => w.id), ...source.categories.flatMap(c => [c.id, ...c.pairs.map(p => p.id), ...c.groups.map(g => g.id), ...c.matches.map(m => m.id)])])
   let sequence = 0
   const id = (kind: string) => { let value: string; do { value = `${source.id}:v2:${kind}:${++sequence}` } while (usedIds.has(value)); usedIds.add(value); return value }
   const planned: { ci: number; order: number; match: Match; label: string }[] = []
@@ -133,14 +132,8 @@ export function generateV2Calendar(source: Tournament): V2GenerationResult {
 }
 
 
-export function v2RegenerationBlocked(source: Tournament): V2PlanningIssue | null {
-  return source.categories.some(category => category.matches.some(match => match.result !== undefined) ||
-    category.playoffs?.rounds.some(round => round.slots.some(slot => slot.result !== undefined)))
-    ? { code: 'regeneration-blocked' } : null
-}
-/** Clear only detached unplayed schedule links; commit nothing unless full generation succeeds. */
+/** Clear every schedule link and regenerate from scratch; commit nothing unless full generation succeeds. */
 export function regenerateV2Calendar(source: Tournament): V2GenerationResult {
-  const blocked = v2RegenerationBlocked(source); if (blocked) return failure([blocked])
   const diagnostics = adaptV2Tournament(source).diagnostics.filter(issue => issue.code !== 'timezone-ambiguity')
   if (diagnostics.length) return failure(diagnostics.map(issue => ({ code: 'source-diagnostic', diagnostic: issue })))
   const attempt = structuredClone(source)

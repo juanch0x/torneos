@@ -88,16 +88,16 @@ describe('reconcilePairings', () => {
     expect(findMatch(after, 'gA', 'p6', 'p3')).toBeDefined()
   })
 
-  it('(c) mover una pareja entre grupos preserva resultados/horarios de las demás', () => {
+  it('(c) mover una pareja entre grupos preserva ids/horarios de las demás', () => {
     let cat = reconcilePairings(baseCategory())
 
-    // Cargamos resultado y horario en p1 vs p2 (grupo A), que NO involucra a p3.
+    // Cargamos horario en p1 vs p2 (grupo A), que NO involucra a p3.
     const p1p2 = findMatch(cat, 'gA', 'p1', 'p2')!
     cat = {
       ...cat,
       matches: cat.matches.map((m) =>
         m.id === p1p2.id
-          ? { ...m, result: { scoreA: 3, scoreB: 1 }, scheduledAt: '2026-06-19T10:00:00.000Z' }
+          ? { ...m, scheduledAt: '2026-06-19T10:00:00.000Z' }
           : m,
       ),
     }
@@ -114,10 +114,9 @@ describe('reconcilePairings', () => {
 
     const after = reconcilePairings(moved)
 
-    // El partido p1 vs p2 (ajeno al movimiento) conserva id, resultado y horario.
+    // El partido p1 vs p2 (ajeno al movimiento) conserva id y horario.
     const p1p2After = findMatch(after, 'gA', 'p1', 'p2')!
     expect(p1p2After.id).toBe(p1p2.id)
-    expect(p1p2After.result).toEqual({ scoreA: 3, scoreB: 1 })
     expect(p1p2After.scheduledAt).toBe('2026-06-19T10:00:00.000Z')
 
     // p3 ya no enfrenta a nadie en A...
@@ -127,13 +126,13 @@ describe('reconcilePairings', () => {
     expect(findMatch(after, 'gB', 'p3', 'p5')).toBeDefined()
   })
 
-  it('descarta un match con resultado si su identidad ya no es canónica (pareja sacada del grupo)', () => {
+  it('descarta un match con horario si su identidad ya no es canónica (pareja sacada del grupo)', () => {
     let cat = reconcilePairings(baseCategory())
     const p3p1 = findMatch(cat, 'gA', 'p3', 'p1')!
     cat = {
       ...cat,
       matches: cat.matches.map((m) =>
-        m.id === p3p1.id ? { ...m, result: { scoreA: 2, scoreB: 0 } } : m,
+        m.id === p3p1.id ? { ...m, scheduledAt: '2026-06-19T10:00:00.000Z' } : m,
       ),
     }
 
@@ -165,58 +164,50 @@ describe('reconcilePairings', () => {
     }
   })
 
-  it('un match JUGADO conserva id, round, result y scheduledAt tal cual', () => {
+  it('un match existente conserva id y scheduledAt, pero recalcula round', () => {
     let cat = reconcilePairings(baseCategory())
     const p1p2 = findMatch(cat, 'gA', 'p1', 'p2')!
+    const canonicalRound = p1p2.round
     cat = {
       ...cat,
       matches: cat.matches.map((m) =>
-        m.id === p1p2.id
-          ? {
-              ...m,
-              result: { scoreA: 6, scoreB: 2 },
-              round: 99,
-              scheduledAt: '2026-06-19T12:00:00.000Z',
-            }
-          : m,
+        m.id === p1p2.id ? { ...m, round: 99, scheduledAt: '2026-06-19T12:00:00.000Z' } : m,
       ),
     }
 
     const after = reconcilePairings(cat)
     const p1p2After = findMatch(after, 'gA', 'p1', 'p2')!
     expect(p1p2After.id).toBe(p1p2.id)
-    expect(p1p2After.round).toBe(99) // round preservado, NO recalculado
+    expect(p1p2After.round).toBe(canonicalRound)
     expect(p1p2After.scheduledAt).toBe('2026-06-19T12:00:00.000Z')
   })
 })
 
 describe('regenerateSchedule', () => {
-  it('(e) un match con resultado sobrevive intacto a la regeneración', () => {
+  it('(e) conserva id y scheduledAt al recalcular la ronda', () => {
     let cat = reconcilePairings(baseCategory())
     const p1p2 = findMatch(cat, 'gA', 'p1', 'p2')!
     cat = {
       ...cat,
       matches: cat.matches.map((m) =>
-        m.id === p1p2.id
-          ? { ...m, result: { scoreA: 3, scoreB: 2 }, round: 42, scheduledAt: '2026-06-19T09:00:00.000Z' }
-          : m,
+        m.id === p1p2.id ? { ...m, round: 42, scheduledAt: '2026-06-19T09:00:00.000Z' } : m,
       ),
     }
 
     const after = regenerateSchedule(cat)
     const p1p2After = findMatch(after, 'gA', 'p1', 'p2')!
-    expect(p1p2After.result).toEqual({ scoreA: 3, scoreB: 2 })
-    expect(p1p2After.round).toBe(42) // jugado → round NO se toca
+    expect(p1p2After.id).toBe(p1p2.id)
+    expect(p1p2After.round).toBe(p1p2.round)
     expect(p1p2After.scheduledAt).toBe('2026-06-19T09:00:00.000Z')
   })
 
-  it('recalcula la ronda de los partidos NO jugados según el canónico', () => {
+  it('recalcula la ronda de todos los partidos según el canónico', () => {
     let cat = reconcilePairings(baseCategory())
-    // Ensuciamos las rondas de todos los no jugados.
+    // Ensuciamos las rondas de todos los partidos.
     cat = { ...cat, matches: cat.matches.map((m) => ({ ...m, round: 0 })) }
 
     const after = regenerateSchedule(cat)
-    // Ningún match no jugado queda en round 0 (todos recalculados ≥ 1).
+    // Ningún match queda en round 0 (todos recalculados ≥ 1).
     for (const m of after.matches) expect(m.round).toBeGreaterThanOrEqual(1)
   })
 

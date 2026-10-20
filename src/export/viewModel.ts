@@ -4,25 +4,16 @@ import { hasCompleteV2Configuration } from '../domain/v2Configuration'
 import { deriveV2Conflicts, v2LocalDateTime } from '../domain/v2Restrictions'
 import { parseV2Timestamp, v2CourtDay } from '../domain/v2Display'
 import { generateRoundRobin } from '../domain/roundRobin'
-import { computeGroupStandings } from '../domain/standings'
 import type { Category, Group, Match, Pair, Tournament } from '../domain/types'
 
 export interface GroupsSheetSection {
   categoryName: string
   groupName: string
   rows: GroupsSheetRow[]
-  includeStandings: boolean
 }
 
 export interface GroupsSheetRow {
   pair: string
-  rank?: number
-  played?: number
-  won?: number
-  lost?: number
-  scoredFor?: number
-  scoredAgainst?: number
-  pointDiff?: number
 }
 
 export interface FixtureSheetRow {
@@ -32,7 +23,6 @@ export interface FixtureSheetRow {
   group: string
   pairA: string
   pairB: string
-  result: string
 }
 
 export function buildGroupsSheet(tournament: Tournament): GroupsSheetSection[] {
@@ -52,44 +42,13 @@ export function buildFixtureSheet(tournament: Tournament): FixtureSheetRow[] {
 }
 
 function buildGroupSection(category: Category, group: Group): GroupsSheetSection {
-  const hasResults = category.matches.some(
-    (match) => match.groupId === group.id && match.result !== undefined,
-  )
-
   const pairMap = new Map(category.pairs.map((pair) => [pair.id, pair]))
-  const standingsList = hasResults ? computeGroupStandings(group, category.matches) : undefined
-  const standings = standingsList
-    ? new Map(standingsList.map((standing) => [standing.pairId, standing]))
-    : undefined
-  const orderedPairIds = standingsList?.map((standing) => standing.pairId) ?? group.pairIds
-
   return {
     categoryName: category.name,
     groupName: group.name,
-    includeStandings: hasResults,
-    rows: orderedPairIds.flatMap((pairId) => {
+    rows: group.pairIds.flatMap((pairId) => {
       const pair = pairMap.get(pairId)
-      if (!pair) return []
-
-      const baseRow: GroupsSheetRow = {
-        pair: formatPairLabel(pair),
-      }
-
-      const standing = standings?.get(pair.id)
-      if (!standing) return [baseRow]
-
-      return [
-        {
-          ...baseRow,
-          rank: standing.rank,
-          played: standing.played,
-          won: standing.won,
-          lost: standing.lost,
-          scoredFor: standing.scoredFor,
-          scoredAgainst: standing.scoredAgainst,
-          pointDiff: standing.pointDiff,
-        },
-      ]
+      return pair ? [{ pair: formatPairLabel(pair) }] : []
     }),
   }
 }
@@ -107,7 +66,6 @@ function buildFixtureRow(
     group: groupMap.get(match.groupId) ?? match.groupId,
     pairA: formatPairLabel(pairMap.get(match.pairAId), match.pairAId),
     pairB: formatPairLabel(pairMap.get(match.pairBId), match.pairBId),
-    result: formatResult(match),
   }
 }
 
@@ -142,15 +100,9 @@ function formatPairLabel(pair: Pair | undefined, fallback?: string): string {
   return `${pair.player1}/${pair.player2}`
 }
 
-function formatResult(match: Match): string {
-  if (!match.result) return ''
-  return `${match.result.scoreA}-${match.result.scoreB}`
-}
-
-/** A projection, never a mutation: planning excludes all scores and derived standings. */
+/** A projection, never a mutation: planning exports groups and scheduled matches only. */
 export function buildPlanningProjection(tournament: Tournament) {
-  const planning = { ...tournament, categories: tournament.categories.map(category => ({ ...category, matches: category.matches.map(match => ({ ...match, result: undefined })), playoffs: undefined })) }
-  return { groups: buildGroupsSheet(planning), fixture: buildFixtureSheet(planning).filter(row => row.scheduledAt) }
+  return { groups: buildGroupsSheet(tournament), fixture: buildFixtureSheet(tournament).filter(row => row.scheduledAt) }
 }
 
 export function planningExportIssues(source: Tournament): string[] {

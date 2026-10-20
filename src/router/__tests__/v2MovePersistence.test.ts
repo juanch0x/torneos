@@ -6,7 +6,7 @@ import { createV2Reader } from '../v2ReadService'
 import { createV2SessionController } from '../v2SessionController'
 const at = (clock: string) => new Date(`2026-10-05T${clock}`).toISOString()
 function setup() {
-  let source = sample(); source.calendar!.defaultWindow = { startsAt: '15:00', endsAt: '22:00' }; source.categories[0].matches = [{ ...source.categories[0].matches[0], scheduledAt: at('18:00'), result: undefined }]; source.slots = [{ id: 'old', startsAt: at('18:00'), matchId: 'm' }]
+  let source = sample(); source.calendar!.defaultWindow = { startsAt: '15:00', endsAt: '22:00' }; source.categories[0].matches = [{ ...source.categories[0].matches[0], scheduledAt: at('18:00') }]; source.slots = [{ id: 'old', startsAt: at('18:00'), matchId: 'm' }]
   const repository = { list: vi.fn().mockResolvedValue([]),load: vi.fn(async () => structuredClone(source)),save: vi.fn(async (doc: typeof source) => { source = structuredClone(doc) }) }
   const store = createV2SessionStore(); const reader = createV2Reader(repository); const controller = createV2SessionController(store,reader,repository)
   const expected = () => ({ sourceId: 't',epoch: store.getState().epoch })

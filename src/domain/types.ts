@@ -58,7 +58,6 @@ export interface Category {
   pairs: Pair[]
   groups: Group[]
   matches: Match[] // partidos de fase de grupos (derivados + overrides)
-  playoffs?: Bracket // llaves, llenado manual en v1
 }
 
 export interface CategoryConfig {
@@ -90,44 +89,6 @@ export interface Match {
   // si comparten groupId y el mismo conjunto {pairA, pairB}.
   round: number // ronda calculada por el round-robin
   scheduledAt?: string // ISO datetime, horario asignado (lo pone el calendario global)
-  result?: MatchResult // si está cargado, el partido se considera jugado
-}
-
-export interface MatchResult {
-  scoreA: number
-  scoreB: number
-}
-
-// Llaves / playoffs: estructura para llenado MANUAL en v1. Sin seeding automático.
-export interface Bracket {
-  rounds: BracketRound[]
-}
-
-export interface BracketRound {
-  id: ID
-  name: string // "Cuartos", "Semifinal", "Final"
-  slots: BracketSlot[]
-}
-
-export interface BracketSlot {
-  id: ID
-  pairAId?: ID // se completan a mano
-  pairBId?: ID
-  result?: MatchResult
-  nextSlotId?: ID // a qué slot avanza el ganador (opcional, manual)
-}
-
-// Per-pair standing in a round-robin group leaderboard.
-// Produced by computeGroupStandings in standings.ts (pure, no store/react deps).
-export interface Standing {
-  pairId: ID
-  played: number
-  won: number
-  lost: number         // strict losses; tied scores count as neither won nor lost
-  scoredFor: number
-  scoredAgainst: number
-  pointDiff: number    // scoredFor - scoredAgainst
-  rank: number         // standard-competition ranking (1,2,2,4 — not 1,2,2,3)
 }
 
 // Metadata liviana para la pantalla de lista (índice)

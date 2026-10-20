@@ -11,7 +11,7 @@ import {
 
 function unlockedSample(): Tournament {
   const t = sample()
-  // sample() has a slot with matchId: 'm', matches[0] with scheduledAt and result
+  // sample() has a slot with matchId: 'm' and matches[0] with scheduledAt
   t.slots = t.slots.map(s => {
     const copy = { ...s }
     delete copy.matchId
@@ -22,7 +22,6 @@ function unlockedSample(): Tournament {
     matches: c.matches.map(m => {
       const copy = { ...m }
       delete copy.scheduledAt
-      delete copy.result
       return copy
     }),
   }))
@@ -40,26 +39,6 @@ describe('V2 setup predicates (T1)', () => {
     it('is locked when match has scheduledAt', () => {
       const t = unlockedSample()
       t.categories[0].matches[0].scheduledAt = '2026-10-05T09:00:00-03:00'
-      expect(isV2SetupLocked(t)).toBe(true)
-    })
-
-    it('is locked when match has result', () => {
-      const t = unlockedSample()
-      t.categories[0].matches[0].result = { scoreA: 4, scoreB: 1 }
-      expect(isV2SetupLocked(t)).toBe(true)
-    })
-
-    it('is locked when playoff slot has result', () => {
-      const t = unlockedSample()
-      t.categories[0].playoffs = {
-        rounds: [
-          {
-            id: 'r1',
-            name: 'Final',
-            slots: [{ id: 'ps1', result: { scoreA: 6, scoreB: 4 } }],
-          },
-        ],
-      }
       expect(isV2SetupLocked(t)).toBe(true)
     })
 

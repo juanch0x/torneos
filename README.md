@@ -30,10 +30,10 @@ ui          ──>  consumes the store. Knows no persistence.
 - **`types.ts`** — the contract. A tournament is **a document (aggregate root)**: the whole hierarchy (categories → groups → pairs → matches) lives nested inside it.
 - **`roundRobin.ts`** — `generateRoundRobin(pairIds)`: all-play-all fixture via the **circle method**. Pure and deterministic. Phantom bye for odd counts.
 - **`reconcile.ts`** — the critical piece of the pairings:
-  - `reconcilePairings(category)`: **reconciles** (does not "delete and recompute") the canonical match set against the existing one, matching by **semantic identity** `(groupId, {pairA, pairB})` (unordered). Preserves already-played matches. **Idempotent**.
-  - `regenerateSchedule(category)`: reassigns the round only to **unplayed** matches.
+  - `reconcilePairings(category)`: **reconciles** (does not "delete and recompute") the canonical match set against the existing one, matching by **semantic identity** `(groupId, {pairA, pairB})` (unordered). Surviving matches keep their `id` and `scheduledAt`; only `round` is recomputed. **Idempotent**.
+  - `regenerateSchedule(category)`: reassigns the canonical round to every existing match (adds/removes none).
 - **`schedule.ts`** — the **GLOBAL cross-category calendar**:
-  - `generateFixture(tournament, options)` — **THE button**. Reconciles the (round-robin) crosses of every category, gathers ALL matches, orders them by round and **schedules them in sequence** from a start date: each match `matchDurationMinutes` after the previous one, rolling over to the next day when it hits the daily cap. A single court → everything chained. Builds the full calendar from scratch; already-entered results are preserved.
+  - `generateFixture(tournament, options)` — **THE button**. Reconciles the (round-robin) crosses of every category, gathers ALL matches, orders them by round and **schedules them in sequence** from a start date: each match `matchDurationMinutes` after the previous one, rolling over to the next day when it hits the daily cap. A single court → everything chained. Builds the full calendar from scratch; match IDs are preserved, every time is reassigned.
   - `fillSchedule(tournament)` — variant to fill pre-existing slots by hand (kept available for one-off adjustments).
 - **`factories.ts`** — constructors with `crypto.randomUUID()` and timestamps.
 
@@ -55,16 +55,16 @@ ui          ──>  consumes the store. Knows no persistence.
 
 Navigation uses TanStack Router. The URL is the navigation signal; the store's `current` is just a data cache. Routes: `/` (list), `/tournaments/:id/groups`, `/tournaments/:id/fixture`. The `/tournaments/:id` layout route owns loading and the not-found guard.
 
-The UI is minimal, meant to exercise the core: tournament list, adding categories/pairs, assigning to groups via `<select>`, regenerating crosses per category, a single "Generate fixture" button (crosses + times), and a match table with result entry.
+The UI is minimal, meant to exercise the core: tournament list, adding categories/pairs, assigning to groups via `<select>`, regenerating crosses per category, a single "Generate fixture" button (crosses + times), and the scheduled match table with XLSX export. The app does not handle results or standings: the exported fixture is continued manually in a spreadsheet (see [docs/PRODUCT.md](docs/PRODUCT.md)).
 
 ## Policy decisions (current defaults)
 
-1. **Immune to pairings regeneration** = a match already **played** (with a `result` entered). `scheduledAt` alone does not protect it (but it is kept if the match survives).
-2. Moving a pair that orphans an **already-played** match → that result **is discarded** (consistency with current membership).
-3. Unlocked matches that survive regeneration → **keep their `scheduledAt`**; only `round` is recomputed. New ones are born without a time.
-4. `regenerateSchedule` acts **only on matches without a `result`**.
+1. Matches that survive pairings regeneration → **keep their `id` and `scheduledAt`**; only `round` is recomputed. New ones are born without a time.
+2. Moving a pair that orphans a match → that match **is discarded** (consistency with current membership).
+3. **Structural lock:** once any slot is assigned or any match has a `scheduledAt`, categories, groups, membership and pair creation/deletion are read-only (`v2StructureBlocked`). Restrictions and confirmed regeneration stay available.
+4. **No results:** matches carry no result. Documents saved by older versions may contain `match.result` / `category.playoffs`; `LocalRepository.load` strips them, without bumping storage keys.
 5. Default group names: "Grupo A", "Grupo B", … (alphabetical).
 
 ## Out of scope for this core
 
-Automatic playoff seeding, drag & drop, a real backend, auth/sync/realtime, polished UI, cross-tournament statistics.
+A real backend, auth/sync/realtime, cross-tournament statistics. Result entry, standings, tie-breaks and playoffs/brackets are permanent non-goals (see [docs/PRODUCT.md](docs/PRODUCT.md)).

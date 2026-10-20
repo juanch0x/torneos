@@ -29,8 +29,6 @@ import { exportTournamentXlsx } from '../export'
 import { useTournamentStore } from '../store/tournamentStore'
 import { createExportXlsxController, initialExportXlsxState } from './exportXlsxController'
 import { MobileMatchCard } from './MobileMatchCard'
-import { ResultTriggerButton } from './ResultTriggerButton'
-import { ResultDrawer } from './ResultDrawer'
 import { formatShortDate, formatDayDateTime, formatTimeRange } from './format'
 import { getMutedSurfaceStyle } from './surfaceStyles'
 
@@ -41,11 +39,6 @@ interface MatchInfo {
   categoryId: ID
   labelA: string
   labelB: string
-}
-
-export function isFixtureDurationLocked(tournament: Tournament): boolean {
-  return tournament.fixtureSettings?.matchDurationMinutes != null
-    && tournament.categories.some((category) => category.matches.some((match) => match.result != null))
 }
 
 export function withCalendarOverride(calendar: TournamentCalendar, override: CalendarDayOverride | null, date: string): TournamentCalendar {
@@ -224,7 +217,6 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const moveMatchToSlot = useTournamentStore((s) => s.moveMatchToSlot)
   const addPairUnavailableWindow = useTournamentStore((s) => s.addPairUnavailableWindow)
   const removePairUnavailableWindow = useTournamentStore((s) => s.removePairUnavailableWindow)
-  const setMatchResult = useTournamentStore((s) => s.setMatchResult)
 
   const persistedCalendar = tournament.calendar ?? {
     startDate: '',
@@ -240,7 +232,6 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const [exceptionEndsAt, setExceptionEndsAt] = useState(calendar.defaultWindow.endsAt)
   const [calendarError, setCalendarError] = useState<string | null>(null)
   const [exceptionsOpened, setExceptionsOpened] = useState(false)
-  const [openMatch, setOpenMatch] = useState<MatchInfo | null>(null)
   const [draggedMatchId, setDraggedMatchId] = useState<ID | null>(null)
   const [dropTargetId, setDropTargetId] = useState<ID | null>(null)
   const [reorderFeedback, setReorderFeedback] =
@@ -281,14 +272,13 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
 
   const unscheduledMatches = useMemo(
     () => [...matches.values()]
-      .filter((info) => info.match.result == null && info.match.scheduledAt == null)
+      .filter((info) => info.match.scheduledAt == null)
       .sort((a, b) => a.label.localeCompare(b.label)),
     [matches],
   )
 
   const openSlots = data.filter((slot) => !slot.matchId)
   const scheduledMatchesCount = data.length - openSlots.length
-  const durationLocked = isFixtureDurationLocked(tournament)
 
   function handleReorder(matchId: ID, slotId: ID) {
     const outcome = moveMatchToSlot(matchId, slotId)
@@ -315,7 +305,6 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
     const messages = {
       'missing-match-or-slot': 'No se encontró el partido o la franja de destino.',
       'match-is-unscheduled': 'Solo se pueden reordenar partidos que ya tienen horario.',
-      'played-match': 'No se puede mover ni cruzar un partido que ya tiene resultado.',
       'availability-conflict': 'El movimiento entra en conflicto con una restricción de una pareja.',
     }
     setReorderFeedback({ color: 'red', message: messages[outcome.reason ?? 'missing-match-or-slot'] })
@@ -344,26 +333,12 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           return info ? (
             <Group gap="xs" wrap="nowrap">
               <Text size="sm">{info.label}</Text>
-              {info.match.result == null && <Badge size="xs" variant="light">Arrastrable</Badge>}
+              <Badge size="xs" variant="light">Arrastrable</Badge>
             </Group>
           ) : (
             <Text span c="dimmed">
               — libre —
             </Text>
-          )
-        },
-      }),
-      columnHelper.display({
-        id: 'resultado',
-        header: 'Resultado',
-        cell: ({ row }) => {
-          const info = row.original.matchId ? matches.get(row.original.matchId) : undefined
-          if (!info) return null
-          return (
-            <ResultTriggerButton
-              result={info.match.result}
-              onOpen={() => setOpenMatch(info)}
-            />
           )
         },
       }),
@@ -409,14 +384,10 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       columnHelper.display({
         id: 'acciones',
         header: '',
-        cell: ({ row }) => {
-          const match = row.original.matchId ? matches.get(row.original.matchId)?.match : undefined
-          if (match?.result != null) return <Text size="xs" c="dimmed">Resultado bloqueado</Text>
-          return <Button size="xs" variant="subtle" color="red" onClick={() => removeSlot(row.original.id)}>Quitar</Button>
-        },
+        cell: ({ row }) => <Button size="xs" variant="subtle" color="red" onClick={() => removeSlot(row.original.id)}>Quitar</Button>,
       }),
     ],
-    [matches, data, removeSlot, setOpenMatch, tournament],
+    [matches, data, removeSlot, tournament],
   )
 
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
@@ -432,10 +403,6 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
 
   function handleGenerate() {
     const calendar = currentCalendar()
-    if (durationLocked && duration !== tournament.fixtureSettings?.matchDurationMinutes) {
-      setCalendarError('La duración no puede cambiar después de cargar resultados.')
-      return
-    }
     const error = validateTournamentCalendar(calendar)
     if (error) { setCalendarError(error); return }
     if (!hasScheduleableMatches(tournament)) {
@@ -493,12 +460,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           metaLabel={info.label}
           teamA={info.labelA}
           teamB={info.labelB}
-          score={info.match.result}
-          statusLabel={info.match.result ? 'Jugado' : 'Pendiente'}
-          actionLabel={info.match.result ? 'Editar resultado' : 'Cargar resultado'}
-          actionVariant={info.match.result ? 'light' : 'filled'}
           accentColor={info.color}
-          onOpenResult={() => setOpenMatch(info)}
         />
       )
     }
@@ -548,11 +510,11 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               <TextInput label="Hasta" type="date" value={calendar.endDate} onInput={(e) => persistCalendar({ ...currentCalendar(), endDate: e.currentTarget.value })} />
               <TextInput label="Horario habitual desde" type="time" value={calendar.defaultWindow.startsAt} onInput={(e) => persistCalendar({ ...currentCalendar(), defaultWindow: { ...currentCalendar().defaultWindow, startsAt: e.currentTarget.value } })} />
               <TextInput label="Hasta" type="time" value={calendar.defaultWindow.endsAt} onInput={(e) => persistCalendar({ ...currentCalendar(), defaultWindow: { ...currentCalendar().defaultWindow, endsAt: e.currentTarget.value } })} />
-              <NumberInput label="Duración (min)" min={1} disabled={durationLocked} style={{ width: '7rem' }} value={duration} onChange={(value) => setDuration(Math.max(1, typeof value === 'number' ? value || 1 : 1))} />
+              <NumberInput label="Duración (min)" min={1} style={{ width: '7rem' }} value={duration} onChange={(value) => setDuration(Math.max(1, typeof value === 'number' ? value || 1 : 1))} />
               <Button onClick={handleGenerate}>⚡ Generar calendario</Button>
               <Button type="button" variant="default" onClick={() => void handleExportXlsx()} disabled={exportState.isExporting} loading={exportState.isExporting}>Export XLSX</Button>
             </Group>
-            <Text c="dimmed" size="sm">{durationLocked ? 'La duración queda fija porque ya hay resultados cargados. Podés seguir ajustando días y horarios.' : 'Elegí un rango y un horario habitual. Solo cargá excepciones cuando un día sea distinto.'}</Text>
+            <Text c="dimmed" size="sm">Elegí un rango y un horario habitual. Solo cargá excepciones cuando un día sea distinto.</Text>
             <Button type={CALENDAR_DISCLOSURE_BUTTON_TYPE} variant="subtle" size="compact-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setExceptionsOpened((opened) => !opened)}>
               {exceptionsOpened ? 'Ocultar cambios por día' : 'Cambiar horario de un día'}
             </Button>
@@ -734,14 +696,14 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                   return (
                     <Table.Tr
                       key={row.id}
-                      draggable={Boolean(info && info.match.result == null)}
+                      draggable={Boolean(info)}
                       title={draggedMatchId
                         ? (dropPreview?.status === 'moved'
                           ? 'Soltá para reordenar esta franja'
                           : 'Esta franja no admite el movimiento')
-                        : (info?.match.result == null ? 'Arrastrá para reordenar' : undefined)}
+                        : (info ? 'Arrastrá para reordenar' : undefined)}
                       onDragStart={(event) => {
-                        if (!info || info.match.result != null) return
+                        if (!info) return
                         event.dataTransfer.effectAllowed = 'move'
                         event.dataTransfer.setData('text/plain', info.match.id)
                         setDraggedMatchId(info.match.id)
@@ -770,7 +732,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                         ...(info ? { boxShadow: `inset 4px 0 0 ${info.color}` } : {}),
                         ...(isDropTarget ? { backgroundColor: theme.colors.courtTeal[1], outline: `2px solid ${theme.colors.courtTeal[6]}` } : {}),
                         ...(isInvalidTarget ? { opacity: 0.55 } : {}),
-                        ...(info?.match.result == null ? { cursor: 'grab' } : {}),
+                        ...(info ? { cursor: 'grab' } : {}),
                       }}
                     >
                       {row.getVisibleCells().map((cell) => (
@@ -786,17 +748,6 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           </Table.ScrollContainer>
         )}
       </Stack>
-
-      <ResultDrawer
-        match={openMatch?.match ?? null}
-        opened={openMatch !== null}
-        onClose={() => setOpenMatch(null)}
-        onSubmit={(result) => {
-          if (openMatch) setMatchResult(openMatch.categoryId, openMatch.match.id, result)
-        }}
-        labelA={openMatch?.labelA ?? ''}
-        labelB={openMatch?.labelB ?? ''}
-      />
     </Paper>
   )
 }

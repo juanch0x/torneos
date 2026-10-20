@@ -90,7 +90,7 @@ describe('deriveCockpitGuidance', () => {
     })
   })
 
-  it('promotes in-app result entry first when the fixture exists but no scheduled match has a result', () => {
+  it('points to the fixture for XLSX export once matches are scheduled', () => {
     const match = makeMatch('match-1', 'group-1', 'pair-1', 'pair-2')
     const tournament = {
       ...makeTournament(makeCategory({ matches: [match] })),
@@ -99,68 +99,18 @@ describe('deriveCockpitGuidance', () => {
 
     const guidance = deriveCockpitGuidance(tournament)
 
-    expect(guidance.stage).toBe('no-results')
+    expect(guidance.stage).toBe('scheduled')
     expect(guidance.scheduledMatchCount).toBe(1)
-    expect(guidance.playedScheduledCount).toBe(0)
-    expect(guidance.pendingScheduledCount).toBe(1)
-    expect(guidance.primaryAction.label).toBe('Cargar el primer resultado')
-    expect(guidance.secondaryAction?.label).toBe('Abrir calendario para exportar XLSX')
-  })
-
-  it('shows partial progress when some scheduled matches are played and others remain pending', () => {
-    const played = makeMatch('match-1', 'group-1', 'pair-1', 'pair-2', {
-      result: { scoreA: 21, scoreB: 18 },
-    })
-    const pending = makeMatch('match-2', 'group-1', 'pair-2', 'pair-3')
-    const tournament = {
-      ...makeTournament(
-        makeCategory({
-          pairs: [makePair('pair-1'), makePair('pair-2'), makePair('pair-3')],
-          groups: [makeGroup('group-1', ['pair-1', 'pair-2', 'pair-3'])],
-          matches: [played, pending],
-        }),
-      ),
-      slots: [
-        { id: 'slot-1', startsAt: '2026-07-07T10:00:00.000Z', matchId: played.id },
-        { id: 'slot-2', startsAt: '2026-07-07T11:00:00.000Z', matchId: pending.id },
-      ],
-    }
-
-    const guidance = deriveCockpitGuidance(tournament)
-
-    expect(guidance.stage).toBe('partial-results')
-    expect(guidance.playedScheduledCount).toBe(1)
-    expect(guidance.pendingScheduledCount).toBe(1)
-    expect(guidance.primaryAction.label).toBe('Seguir cargando resultados')
-  })
-
-  it('sends the organizer to standings when every scheduled match already has a result', () => {
-    const finished = makeMatch('match-1', 'group-1', 'pair-1', 'pair-2', {
-      result: { scoreA: 21, scoreB: 14 },
-    })
-    const tournament = {
-      ...makeTournament(makeCategory({ matches: [finished] })),
-      slots: [{ id: 'slot-1', startsAt: '2026-07-07T10:00:00.000Z', matchId: finished.id }],
-    }
-
-    const guidance = deriveCockpitGuidance(tournament)
-
-    expect(guidance.stage).toBe('standings-ready')
-    expect(guidance.playedScheduledCount).toBe(1)
-    expect(guidance.pendingScheduledCount).toBe(0)
     expect(guidance.primaryAction).toEqual({
-      label: 'Revisar resultados y posiciones',
-      to: '/tournaments/$id/results',
+      label: 'Abrir calendario para exportar XLSX',
+      to: '/tournaments/$id/fixture',
       params: { id: 't-1' },
-      search: { categoryId: undefined },
     })
-    expect(guidance.secondaryAction?.label).toBe('Abrir calendario para exportar XLSX')
   })
 
   it('falls back to scheduledAt matches when legacy data has no slot references', () => {
     const scheduled = makeMatch('match-1', 'group-1', 'pair-1', 'pair-2', {
       scheduledAt: '2026-07-07T10:00:00.000Z',
-      result: { scoreA: 21, scoreB: 17 },
     })
     const pending = makeMatch('match-2', 'group-1', 'pair-2', 'pair-3', {
       scheduledAt: '2026-07-07T11:00:00.000Z',
@@ -175,9 +125,7 @@ describe('deriveCockpitGuidance', () => {
 
     const guidance = deriveCockpitGuidance(tournament)
 
-    expect(guidance.stage).toBe('partial-results')
+    expect(guidance.stage).toBe('scheduled')
     expect(guidance.scheduledMatchCount).toBe(2)
-    expect(guidance.playedScheduledCount).toBe(1)
-    expect(guidance.pendingScheduledCount).toBe(1)
   })
 })
