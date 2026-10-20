@@ -55,7 +55,6 @@ const textMuted = '#5d6d69'
 const shellHeaderBackground = 'rgba(255, 253, 249, 0.92)'
 const surfaceOverlayStrong = 'rgba(255, 253, 249, 0.88)'
 const surfaceOverlaySoft = 'rgba(255, 253, 249, 0.82)'
-const playedRowBackground = 'rgba(31, 168, 158, 0.08)'
 const leadingRowBackground = 'rgba(224, 114, 52, 0.08)'
 
 // Mantine's default dimmed grey (#868e96) is 2.95:1 on the page background and
@@ -119,7 +118,6 @@ export const theme = createTheme({
     surfaceOverlaySoft,
     borderSubtle,
     textMuted,
-    playedRowBackground,
     leadingRowBackground,
   },
   components: {

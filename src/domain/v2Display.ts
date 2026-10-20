@@ -3,7 +3,7 @@ import type { Tournament, Pair, TournamentCalendar } from './types'
 export interface V2Diagnostic { code: string; path: string; message: string }
 export interface V2DisplayMatch {
   key: string; id: string; categoryName: string; categoryColor: string; group: string; pairA: string; pairB: string
-  scheduledAt?: string; instant: number | null; status: 'scheduled' | 'unscheduled' | 'invalid'; played: boolean
+  scheduledAt?: string; instant: number | null; status: 'scheduled' | 'unscheduled' | 'invalid'
 }
 export function isV2Date(value: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
@@ -87,7 +87,7 @@ export function adaptV2Tournament(source: Tournament) {
       if (group.length !== 1) issue('missing-reference', matchPath, `Grupo ausente o ambiguo: ${match.groupId}.`)
       if (group[0] && (!group[0].pairIds.includes(match.pairAId) || !group[0].pairIds.includes(match.pairBId))) issue('membership-mismatch', matchPath, 'El partido incluye una pareja fuera de su grupo.')
       const instant = match.scheduledAt === undefined ? null : timestamp(match.scheduledAt, `${matchPath}.scheduledAt`)
-      matches.push({ key: matchPath, id: match.id, categoryName: category.name, categoryColor: category.color, group: group[0]?.name ?? `Grupo no encontrado (${match.groupId})`, pairA: lookupPair(match.pairAId, matchPath), pairB: lookupPair(match.pairBId, matchPath), scheduledAt: match.scheduledAt, instant, status: match.scheduledAt === undefined ? 'unscheduled' : instant === null ? 'invalid' : 'scheduled', played: match.result !== undefined })
+      matches.push({ key: matchPath, id: match.id, categoryName: category.name, categoryColor: category.color, group: group[0]?.name ?? `Grupo no encontrado (${match.groupId})`, pairA: lookupPair(match.pairAId, matchPath), pairB: lookupPair(match.pairBId, matchPath), scheduledAt: match.scheduledAt, instant, status: match.scheduledAt === undefined ? 'unscheduled' : instant === null ? 'invalid' : 'scheduled' })
     }
     return { id: category.id, name: category.name, color: category.color, groups, unassigned: category.pairs.filter(pair => !members.has(pair.id)) }
   })

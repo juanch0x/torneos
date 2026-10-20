@@ -7,15 +7,15 @@ function prepared() { const t=sample(); t.slots=[]; t.categories[0].matches=[{id
 describe('manual membership', () => {
   it('assigns unassigned and preserves surviving records and windows', () => { const t=prepared(); t.pairUnavailableWindows=[{id:'w',pairId:'free',startsAt:'2026-10-05T10:00:00Z',endsAt:'2026-10-05T11:00:00Z'}]; const result=applyV2Membership(t,{categoryId:'c',pairId:'free',groupId:'g'}); expect(result.ok).toBe(true); if(result.ok) { expect(result.document.categories[0].matches[0]).toEqual(t.categories[0].matches[0]); expect(result.document.categories[0].matches).toHaveLength(3); expect(result.document.pairUnavailableWindows).toEqual(t.pairUnavailableWindows); expect(t.categories[0].groups[0].pairIds).toEqual(['a','b']) } })
   it('same membership is a no-op',()=> {const t=prepared(); expect(applyV2Membership(t,{categoryId:'c',pairId:'a',groupId:'g'})).toEqual({ok:true,document:t})})
-  it('rejects schedule, assigned slots, playoff history and duplicate crosses', () => {
+  it('rejects schedule, assigned slots and duplicate crosses', () => {
     const scheduled = prepared(); scheduled.categories[0].matches[0].scheduledAt = '2026-10-05T09:00Z'
     const assigned = prepared(); assigned.slots = [{ id: 'slot', startsAt: '2026-10-05T09:00Z', matchId: 'm' }]
-    const history = prepared(); history.categories[0].playoffs = { rounds: [{ id: 'round', name: 'Final', slots: [{ id: 'final', result: { scoreA: 1, scoreB: 0 } }] }] }
     const duplicate = prepared(); duplicate.categories[0].matches.push({ ...duplicate.categories[0].matches[0], id: 'duplicate' })
-    for (const source of [scheduled, assigned, history, duplicate]) {
+    for (const source of [scheduled, assigned, duplicate]) {
       expect(applyV2Membership(source, { categoryId: 'c', pairId: 'free', groupId: 'g' }).ok).toBe(false)
     }
-    expect(v2StructureBlocked(history)).not.toBeNull()
+    expect(v2StructureBlocked(scheduled)).not.toBeNull()
+    expect(v2StructureBlocked(assigned)).not.toBeNull()
   })
   it('removes only eligible obsolete crosses',()=> { const t=prepared(); t.categories[0].groups.push({id:'other',name:'Other',pairIds:['free']}); const result=applyV2Membership(t,{categoryId:'c',pairId:'a',groupId:'other'}); expect(result.ok).toBe(true); if(result.ok) {expect(result.document.categories[0].matches).toHaveLength(1); expect(result.document.categories[0].matches[0].groupId).toBe('other')} })
 })

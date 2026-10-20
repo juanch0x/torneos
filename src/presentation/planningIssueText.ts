@@ -4,7 +4,7 @@ import { plural } from '../domain/text'
 import { formatDateRange, formatDayDate, formatTimeRange, tryFormatDayDateTime } from './format'
 
 const staticMessages: Record<StaticPlanningCode, string> = {
-  "initial-generation-blocked": "Este torneo ya tiene horarios, franjas asignadas o resultados. La generación inicial no los reemplaza; usá Regenerar calendario con confirmación si no hay resultados.",
+  "initial-generation-blocked": "Este torneo ya tiene horarios o franjas asignadas. La generación inicial no los reemplaza; usá Regenerar calendario con confirmación.",
   "configuration-required": "Completá y guardá período, Disponibilidad de la cancha, Horario del torneo, Días del torneo y duración antes de generar.",
   "match-limit": "Los partidos superan el límite de 1000 partidos de esta generación. No se evaluó su factibilidad.",
   "no-categories": "No hay categorías ni grupos para planificar.",
@@ -13,9 +13,7 @@ const staticMessages: Record<StaticPlanningCode, string> = {
   "slot-limit": "Se superó el límite de 20000 franjas; no se evaluó la factibilidad. Reducí el período o revisá la duración.",
   "search-limit": "Se superó el límite de búsqueda (2 millones de alternativas); no se evaluó la factibilidad. Reducí el período.",
   "assignment-unverified": "No se pudo verificar la asignación completa; no se aplicó ningún cambio.",
-  "regeneration-blocked": "No se puede regenerar un torneo con resultados de grupos o eliminatorias. Se protege todo el historial; esta etapa no reprograma alrededor de partidos jugados.",
   "move-identity": "Identidad de partido ausente o ambigua. Releé el torneo.",
-  "move-played": "Un partido con resultado no se puede mover. Se conserva su horario.",
   "move-stale": "El horario del partido cambió o es inválido. Releé antes de moverlo.",
   "move-noop": "El partido conserva su horario.",
   "move-configuration": "Completá la configuración válida antes de mover partidos.",

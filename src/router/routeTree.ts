@@ -3,7 +3,6 @@ import { FlowRouteError } from './FlowRouteError'
 import { createRootRoute, createRoute, lazyRouteComponent, redirect } from '@tanstack/react-router'
 import { TournamentList } from '../ui/TournamentList'
 import { FixturePage } from '../ui/FixturePage'
-import { ResultsPage } from '../ui/ResultsPage'
 import { RootLayout } from './RootLayout'
 import { TournamentLayout } from './TournamentLayout'
 import { NotFound } from './NotFound'
@@ -44,15 +43,6 @@ const fixtureRoute = createRoute({
   getParentRoute: () => tournamentRoute,
   path: 'fixture',
   component: FixturePage,
-})
-
-const resultsRoute = createRoute({
-  getParentRoute: () => tournamentRoute,
-  path: 'results',
-  component: ResultsPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    categoryId: typeof search.categoryId === 'string' ? search.categoryId : undefined,
-  }),
 })
 
 const validateV2Search = (search: Record<string, unknown>): { tournamentId?: string } => ({
@@ -123,5 +113,5 @@ export const routeTree = rootRoute.addChildren([
   groupsV2Route,
   configurationV2Route,
   readV2Route,
-  tournamentRoute.addChildren([groupsRoute, fixtureRoute, resultsRoute]),
+  tournamentRoute.addChildren([groupsRoute, fixtureRoute]),
 ])

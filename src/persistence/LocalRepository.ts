@@ -24,13 +24,36 @@ function toMeta(t: Tournament): TournamentMeta {
 }
 
 /**
+ * Documents saved before results/standings/playoffs were removed from the
+ * product may still carry `match.result` and `category.playoffs`. They are
+ * dropped on read so the rest of the app never sees them; the stored document
+ * is only rewritten by the next regular save. Everything else is untouched.
+ */
+export function stripRemovedFields(tournament: Tournament): Tournament {
+  const categories = tournament.categories as Array<Tournament['categories'][number] & { playoffs?: unknown }>
+  const hasLegacy = categories.some((category) =>
+    'playoffs' in category || category.matches.some((match) => 'result' in match))
+  if (!hasLegacy) return tournament
+  return {
+    ...tournament,
+    categories: categories.map(({ playoffs: _playoffs, ...category }) => ({
+      ...category,
+      matches: category.matches.map((match) => {
+        const { result: _result, ...rest } = match as typeof match & { result?: unknown }
+        return rest
+      }),
+    })),
+  }
+}
+
+/**
  * Persistencia local con idb-keyval. Toda la lógica del índice vive acá adentro:
  * la app solo ve load / save / list / remove.
  */
 export class LocalRepository implements TournamentRepository {
   async load(id: ID): Promise<Tournament | null> {
     const doc = await get<Tournament>(docKey(id))
-    return doc ?? null
+    return doc ? stripRemovedFields(doc) : null
   }
 
   async save(tournament: Tournament): Promise<void> {

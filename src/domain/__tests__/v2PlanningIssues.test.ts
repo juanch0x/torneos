@@ -38,7 +38,6 @@ describe('structured validation codes preserve rejection behavior', () => {
   }
   it.each([
     ['move-identity', (t: ReturnType<typeof source>) => { t.categories[0].matches = [] }],
-    ['move-played', (t: ReturnType<typeof source>) => { t.categories[0].matches[0].result = { scoreA: 1, scoreB: 0 } }],
     ['move-stale', (t: ReturnType<typeof source>) => { t.categories[0].matches[0].scheduledAt = at('09:30') }],
     ['move-configuration', (t: ReturnType<typeof source>) => { t.calendar = undefined }],
     ['move-inconsistent', (t: ReturnType<typeof source>) => { t.slots = [] }],
@@ -67,15 +66,6 @@ describe('structured validation codes preserve rejection behavior', () => {
   ])('returns generation %s with no source mutation', (code, mutate) => {
     const t = source(); mutate(t); const before = structuredClone(t)
     expect(generateV2Calendar(t)).toMatchObject({ ok: false, error: { code } }); expect(t).toEqual(before)
-  })
-
-  it('rejects moving a played match with move-played', () => {
-    const t = moving()
-    t.categories[0].matches[0].result = { scoreA: 1, scoreB: 0 }
-    expect(validateV2Move(t, { matchId: 'm', from: at('09:00'), to: at('10:00'), grid: 'automatic' })).toEqual({
-      ok: false,
-      error: { code: 'move-played' },
-    })
   })
 
   it('rejects moving when match schedule is stale with move-stale', () => {

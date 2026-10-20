@@ -11,6 +11,28 @@ beforeEach(() => {
   vi.mocked(get).mockImplementation(async key => documents.get(String(key)))
   vi.mocked(set).mockImplementation(async (key, value) => { documents.set(String(key), value) })
 })
+describe('legacy result data', () => {
+  it('drops stored match results and playoffs on load without touching other data or rewriting storage', async () => {
+    const repo = new LocalRepository()
+    const base = createTournament('Legacy')
+    const stored = {
+      ...base,
+      categories: [{
+        id: 'c', name: 'Cat', color: '#eee', config: { numGroups: 1, format: 'round-robin' },
+        pairs: [], groups: [{ id: 'g', name: 'Grupo A', pairIds: ['a', 'b'] }],
+        matches: [{ id: 'm', groupId: 'g', pairAId: 'a', pairBId: 'b', round: 1, scheduledAt: '2026-10-12T12:00:00.000Z', result: { scoreA: 6, scoreB: 4 } }],
+        playoffs: { rounds: [{ id: 'r', name: 'Final', slots: [{ id: 's', result: { scoreA: 1, scoreB: 0 } }] }] },
+      }],
+    }
+    documents.set(`tournament:v2:${base.id}`, structuredClone(stored))
+    const loaded = await repo.load(base.id)
+    expect(loaded?.categories[0]).not.toHaveProperty('playoffs')
+    expect(loaded?.categories[0].matches[0]).toEqual({ id: 'm', groupId: 'g', pairAId: 'a', pairBId: 'b', round: 1, scheduledAt: '2026-10-12T12:00:00.000Z' })
+    expect(documents.get(`tournament:v2:${base.id}`)).toEqual(stored)
+    expect(set).not.toHaveBeenCalled()
+  })
+})
+
 describe('calendar period metadata', () => {
   it('saves no period until configured and projects both calendar dates afterward', async () => {
     const repo = new LocalRepository()

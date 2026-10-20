@@ -1,10 +1,10 @@
 import type { Tournament } from '../domain/types'
 import writeXlsxFile, { type Cell, type Sheet, type SheetData } from 'write-excel-file/browser'
-import type { FixtureSheetRow, GroupsSheetSection, GroupsSheetRow } from './viewModel'
+import type { FixtureSheetRow, GroupsSheetSection } from './viewModel'
 
 const DATE_FORMAT = 'dd/mm/yyyy'
 const TIME_FORMAT = 'hh:mm'
-const GROUPS_STANDINGS_COLUMN_COUNT = 8
+const GROUPS_COLUMN_COUNT = 1
 const GROUP_TITLE_FONT_SIZE = 14
 const CATEGORY_TITLE_FONT_SIZE = 16
 const FORMULA_PREFIX_PATTERN = /^\s*[=+\-@]/
@@ -34,10 +34,10 @@ export function buildGroupsWorkbookSheet(groups: GroupsSheetSection[]): Sheet<Bl
     }
 
     data.push([groupTitleCell(section.groupName)])
-    data.push(buildGroupsHeaderRow(section.includeStandings))
+    data.push([headerCell('Pareja')])
 
     for (const row of section.rows) {
-      data.push(buildGroupsDataRow(row, section.includeStandings))
+      data.push([safeSpreadsheetText(row.pair)])
     }
 
     data.push([])
@@ -46,16 +46,7 @@ export function buildGroupsWorkbookSheet(groups: GroupsSheetSection[]): Sheet<Bl
   return {
     sheet: 'Grupos',
     data,
-    columns: [
-      { width: 22 },
-      { width: 8 },
-      { width: 10 },
-      { width: 10 },
-      { width: 10 },
-      { width: 10 },
-      { width: 12 },
-      { width: 14 },
-    ],
+    columns: [{ width: 28 }],
   }
 }
 
@@ -71,7 +62,6 @@ export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blo
         headerCell('Grupo'),
         headerCell('Pareja A'),
         headerCell('Pareja B'),
-        headerCell('Resultado'),
       ],
       ...fixture.map((row) => [
         row.matchNumber,
@@ -81,7 +71,6 @@ export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blo
         safeSpreadsheetText(row.group),
         safeSpreadsheetText(row.pairA),
         safeSpreadsheetText(row.pairB),
-        safeSpreadsheetText(row.result),
       ]),
     ],
     columns: [
@@ -92,45 +81,10 @@ export function buildFixtureWorkbookSheet(fixture: FixtureSheetRow[]): Sheet<Blo
       { width: 16 },
       { width: 18 },
       { width: 18 },
-      { width: 12 },
     ],
     stickyRowsCount: 1,
     dateFormat: DATE_FORMAT,
   }
-}
-
-function buildGroupsHeaderRow(includeStandings: boolean): Cell[] {
-  const header = [headerCell('Pareja')]
-
-  if (!includeStandings) return header
-
-  return [
-    ...header,
-    headerCell('Posición'),
-    headerCell('Jugados'),
-    headerCell('Ganados'),
-    headerCell('Perdidos'),
-    headerCell('Puntos +'),
-    headerCell('Puntos -'),
-    headerCell('Puntos diff'),
-  ]
-}
-
-function buildGroupsDataRow(row: GroupsSheetRow, includeStandings: boolean): Cell[] {
-  const dataRow: Cell[] = [safeSpreadsheetText(row.pair)]
-
-  if (!includeStandings) return dataRow
-
-  return [
-    ...dataRow,
-    row.rank,
-    row.played,
-    row.won,
-    row.lost,
-    row.scoredFor,
-    row.scoredAgainst,
-    row.pointDiff,
-  ]
 }
 
 function buildExportFilename(tournamentName: string): string {
@@ -161,7 +115,7 @@ function titleCell(value: string, fontSize: number, highContrast = false): Cell 
     fontWeight: 'bold',
     fontSize,
     align: 'center',
-    columnSpan: GROUPS_STANDINGS_COLUMN_COUNT,
+    columnSpan: GROUPS_COLUMN_COUNT,
     ...(highContrast
       ? {
           backgroundColor: '#000000',

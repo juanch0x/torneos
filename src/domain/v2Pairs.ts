@@ -44,7 +44,6 @@ export function deleteV2Pair(source: Tournament, request: V2PairRef): V2PairResu
   const { category } = checked
   if (!category.pairs.some(pair => pair.id === request.pairId)) return fail(missing)
   const blocked = v2StructureBlocked(source); if (blocked) return fail(blocked)
-  if (category.playoffs?.rounds.some(round => round.slots.some(slot => slot.pairAId === request.pairId || slot.pairBId === request.pairId))) return fail('La pareja está cargada en las llaves de playoffs. Quitala de las llaves antes de eliminarla.')
   const groups = category.groups.map(group => group.pairIds.includes(request.pairId) ? { ...group, pairIds: group.pairIds.filter(id => id !== request.pairId) } : group)
   const reconciled = reconcileV2Category(source, category, groups, category.pairs.filter(pair => pair.id !== request.pairId))
   const windows = source.pairUnavailableWindows

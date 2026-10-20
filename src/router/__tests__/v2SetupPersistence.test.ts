@@ -25,7 +25,6 @@ function unlockedSample() {
   s.categories.forEach(cat => {
     cat.matches.forEach(m => {
       delete m.scheduledAt
-      delete m.result
     })
   })
   return s
@@ -95,7 +94,7 @@ describe('V2 setup persistence controller', () => {
   })
 
   it('locked tournament rejects saveSetup and saveConfiguration with ok: false and saves nothing', async () => {
-    const locked = sample() // sample() has slot.matchId and match.scheduledAt / result -> locked
+    const locked = sample() // sample() has slot.matchId and match.scheduledAt -> locked
     expect(isV2SetupLocked(locked)).toBe(true)
     const { repository, controller, expected } = setup(locked)
     await controller.open('t')
@@ -173,16 +172,6 @@ describe('V2 setup persistence controller', () => {
     const draft = { ...getV2SetupDraft(locked), ...baselineConfig }
     const result = await controller.saveSetup(draft, expected())
     expect(result).toMatchObject({ ok: false, error: 'La configuración es de solo lectura después de la primera generación del calendario.' })
-    expect(repository.save).not.toHaveBeenCalled()
-  })
-
-  it('preserves the domain prohibition on duration changes with results during baseline completion', async () => {
-    const locked = sample()
-    delete locked.calendar
-    const { repository, controller, expected } = setup(locked)
-    await controller.open('t')
-    const result = await controller.saveConfiguration({ ...baselineConfig, duration: '45' }, expected())
-    expect(result).toMatchObject({ ok: false, error: expect.stringContaining('No se puede cambiar ni inferir la duración con resultados existentes') })
     expect(repository.save).not.toHaveBeenCalled()
   })
 

@@ -4,7 +4,7 @@ import { applyV2Move, validateV2Move, v2MoveViewBounds } from '../v2Moves'
 const at = (clock: string) => new Date(`2026-10-05T${clock}`).toISOString()
 export function movable() {
   const t = sample(); t.calendar!.defaultWindow = { startsAt: '15:00', endsAt: '24:00' }; t.fixtureSettings = { matchDurationMinutes: 30, automaticWindow: { startsAt: '18:00', endsAt: '22:00' } }
-  t.categories[0].matches = [{ ...t.categories[0].matches[0], scheduledAt: at('18:00'), result: undefined }]; t.slots = [{ id: 'original-slot', startsAt: at('18:00'), matchId: 'm' }]
+  t.categories[0].matches = [{ ...t.categories[0].matches[0], scheduledAt: at('18:00') }]; t.slots = [{ id: 'original-slot', startsAt: at('18:00'), matchId: 'm' }]
   return t
 }
 const request = (to: string) => ({ matchId: 'm', from: at('18:00'), to: at(to), grid: 'court' as const })
@@ -23,12 +23,12 @@ describe('explicit isolated real group-match moves', () => {
 
   it('moves before automatic hours within physical court, preserves fields, slot IDs and source immutable', () => {
     const t = movable(); Object.assign(t.categories[0].matches[0], { opaque: 1 }); Object.assign(t.slots[0], { opaque: 2 }); t.categories[0].groups[0].pairIds.push('free')
-    t.categories[0].matches.push({ id: 'played',groupId: 'g',pairAId: 'a',pairBId: 'free',round: 2,scheduledAt: at('20:00'),result: { scoreA: 7,scoreB: 1 } }); t.slots.push({ id: 'played-slot',startsAt: at('20:00'),matchId: 'played' })
+    t.categories[0].matches.push({ id: 'other',groupId: 'g',pairAId: 'a',pairBId: 'free',round: 2,scheduledAt: at('20:00') }); t.slots.push({ id: 'other-slot',startsAt: at('20:00'),matchId: 'other' })
     t.pairUnavailableWindows = [{ id: 'keep',pairId: 'b',startsAt: at('21:00'),endsAt: at('22:00'),reason: 'Work' }]; Object.assign(t,{ opaqueRoot: { retained: true } }); const before = structuredClone(t)
     const r = applyV2Move(t, request('15:00')); expect(r.ok).toBe(true); if (!r.ok) return
     expect(r.document.categories[0].matches[0]).toMatchObject({ id: 'm', opaque: 1, scheduledAt: at('15:00') }); expect(r.document.slots[0]).toEqual({ id: 'original-slot', startsAt: at('18:00'), opaque: 2 }); expect(r.document.slots[2].matchId).toBe('m'); expect(r.document.slots[1]).toEqual(before.slots[1]); expect(r.document.categories[0].matches[1]).toEqual(before.categories[0].matches[1]); expect(r.document.pairUnavailableWindows).toEqual(before.pairUnavailableWindows); expect(r.document.calendar).toEqual(before.calendar); expect(t).toEqual(before)
   })
-  it('rejects played/noop/offgrid/date/closed/custom/full interval bounds, permits end midnight', () => {
+  it('rejects noop/offgrid/date/closed/custom/full interval bounds, permits end midnight', () => {
     const t = movable(); expect(validateV2Move(t,request('18:00'))).toMatchObject({ ok: false, noop: true })
     expect(validateV2Move(t,request('15:07')).ok).toBe(false); expect(validateV2Move(t,request('14:30')).ok).toBe(false)
     expect(validateV2Move(t, { ...request('15:00'), to: new Date('2026-10-06T15:00').toISOString() }).ok).toBe(false)
@@ -36,7 +36,6 @@ describe('explicit isolated real group-match moves', () => {
     expect(validateV2Move(t,request('23:30')).ok).toBe(true)
     t.calendar!.overrides = [{ date: '2026-10-05', kind: 'custom', startsAt: '16:00', endsAt: '17:10' }]
     expect(validateV2Move(t,request('16:30')).ok).toBe(true); expect(validateV2Move(t,request('17:00')).ok).toBe(false)
-    t.categories[0].matches[0].result = { scoreA: 1, scoreB: 0 }; expect(validateV2Move(t,request('16:30')).ok).toBe(false)
   })
   it('checks both pair full intervals and offset-normalized partial/adjacent restrictions', () => {
     const t = movable(); const start = Date.parse(at('15:00'))

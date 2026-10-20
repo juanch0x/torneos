@@ -98,7 +98,7 @@ describe('setupPageMode', () => {
     expect(setupPageMode(sample())).toBe('locked')
   })
 
-  it('locks on the first assigned slot without requiring results', () => {
+  it('locks on the first assigned slot', () => {
     const source = unlockedSample()
     source.slots[0].matchId = 'm'
     expect(setupPageMode(source)).toBe('locked')

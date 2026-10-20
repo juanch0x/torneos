@@ -1,5 +1,4 @@
-import { Badge, Button, Group, Paper, Stack, Text } from '@mantine/core'
-import type { MatchResult } from '../domain/types'
+import { Group, Paper, Stack, Text } from '@mantine/core'
 
 export interface MobileMatchCardProps {
   matchNumber?: number
@@ -7,13 +6,7 @@ export interface MobileMatchCardProps {
   metaLabel?: string
   teamA: string
   teamB: string
-  score?: MatchResult
-  scoreText?: string
-  statusLabel: string
-  actionLabel: string
   accentColor?: string
-  actionVariant?: 'filled' | 'light' | 'default' | 'subtle'
-  onOpenResult: () => void
 }
 
 export function MobileMatchCard({
@@ -22,15 +15,8 @@ export function MobileMatchCard({
   metaLabel,
   teamA,
   teamB,
-  score,
-  scoreText,
-  statusLabel,
-  actionLabel,
   accentColor,
-  actionVariant = 'light',
-  onOpenResult,
 }: MobileMatchCardProps) {
-  const resolvedScoreText = scoreText ?? (score ? `${score.scoreA} – ${score.scoreB}` : undefined)
   const accentBorder = accentColor ? `4px solid ${accentColor}` : undefined
 
   return (
@@ -45,9 +31,6 @@ export function MobileMatchCard({
               </Text>
             )}
           </Stack>
-          <Badge color={score ? 'green' : 'gray'} variant="light">
-            {statusLabel}
-          </Badge>
         </Group>
 
         {metaLabel && (
@@ -64,18 +47,6 @@ export function MobileMatchCard({
             {teamB}
           </Text>
         </Stack>
-
-        <Group justify="space-between" align="center" gap="sm">
-          <Stack gap={2}>
-            <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
-              Resultado
-            </Text>
-            <Text fw={700}>{resolvedScoreText ?? 'Pendiente'}</Text>
-          </Stack>
-          <Button size="sm" variant={actionVariant} onClick={onOpenResult}>
-            {actionLabel}
-          </Button>
-        </Group>
       </Stack>
     </Paper>
   )

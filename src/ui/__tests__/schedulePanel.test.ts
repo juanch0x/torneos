@@ -1,23 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { Tournament } from '../../domain/types'
-import { isFixtureDurationLocked } from '../SchedulePanel'
 
 function tournament(fixtureSettings: Tournament['fixtureSettings']): Tournament {
   return {
     id: 't1', name: 'Torneo', slots: [], fixtureSettings, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
-    categories: [{ id: 'c1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' }, pairs: [], groups: [], matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1, result: { scoreA: 6, scoreB: 4 } }] }],
+    categories: [{ id: 'c1', name: 'Cat', color: 'hsl(0, 70%, 90%)', config: { numGroups: 1, format: 'round-robin' }, pairs: [], groups: [], matches: [{ id: 'm1', groupId: 'g1', pairAId: 'a', pairBId: 'b', round: 1 }] }],
   }
 }
-
-describe('fixture duration control', () => {
-  it('stays enabled when results exist but the initial duration is undefined', () => {
-    expect(isFixtureDurationLocked(tournament(undefined))).toBe(false)
-  })
-
-  it('locks after a historic duration exists', () => {
-    expect(isFixtureDurationLocked(tournament({ matchDurationMinutes: 45 }))).toBe(true)
-  })
-})
 
 import { withCalendarOverride } from '../SchedulePanel'
 

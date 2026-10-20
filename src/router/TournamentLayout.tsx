@@ -34,12 +34,8 @@ export function TournamentLayout() {
     return <Navigate to="/v2/configuration" search={{ tournamentId: id }} replace />
   }
 
-  const activeTab = location.pathname.endsWith('/results')
-    ? 'results'
-    : location.pathname.endsWith('/fixture')
-      ? 'fixture'
-      : null
-  // Pairs and groups live in the v2 preparation page; the layout only hosts the legacy fixture and results.
+  const activeTab = location.pathname.endsWith('/fixture') ? 'fixture' : null
+  // Pairs and groups live in the v2 preparation page; the layout only hosts the legacy fixture.
   if (!activeTab) return <Navigate to="/v2/groups" search={{ tournamentId: id }} replace />
 
   const handleTabChange = (value: string | null) => {
@@ -47,12 +43,10 @@ export function TournamentLayout() {
       void navigate({ to: '/v2/groups', search: { tournamentId: id } })
     } else if (value === 'fixture') {
       void navigate({ to: '/tournaments/$id/fixture', params: { id } })
-    } else if (value === 'results') {
-      void navigate({ to: '/tournaments/$id/results', params: { id }, search: { categoryId: undefined } })
     }
   }
 
-  const sectionLabel = activeTab === 'results' ? 'Resultados' : 'Calendario'
+  const sectionLabel = 'Calendario'
   const guidance = deriveCockpitGuidance(current)
 
   return (
@@ -122,7 +116,7 @@ export function TournamentLayout() {
         >
           <Tabs.List grow>
             <Tabs.Tab value="groups">Categorías y parejas</Tabs.Tab>
-            <Tabs.Tab value={activeTab}>{activeTab === 'fixture' ? 'Calendario legacy' : 'Resultados legacy'}</Tabs.Tab>
+            <Tabs.Tab value={activeTab}>Calendario legacy</Tabs.Tab>
           </Tabs.List>
         </Tabs>
 

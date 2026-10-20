@@ -21,7 +21,7 @@ describe('duration-aligned planning calendar display', () => {
   })
 
   it('renders the explicit physical-hours move view with25minute cells and original picked match unchanged', () => {
-    const t = sample(); t.calendar!.defaultWindow = { startsAt: '15:00',endsAt: '22:00' }; t.fixtureSettings = { matchDurationMinutes: 25,automaticWindow: { startsAt: '18:00',endsAt: '22:00' } }; t.categories[0].matches = [{ ...t.categories[0].matches[0],scheduledAt: new Date(at('18:00')).toISOString(),result: undefined }]
+    const t = sample(); t.calendar!.defaultWindow = { startsAt: '15:00',endsAt: '22:00' }; t.fixtureSettings = { matchDurationMinutes: 25,automaticWindow: { startsAt: '18:00',endsAt: '22:00' } }; t.categories[0].matches = [{ ...t.categories[0].matches[0],scheduledAt: new Date(at('18:00')).toISOString() }]
     const before = structuredClone(t)
     const moves = { pickingId: 'm',previewDate: new Date(at('15:05')),previewError: null,court: true,busy: false,reviewing: false,hover: () => {},cursor: () => {},propose: () => {},context: () => {},week: () => {},dragStart: () => {} }
     const html = renderToStaticMarkup(<MantineProvider><ReadCalendar planning moves={moves} snapshot={{ baseline: t,display: adaptV2Tournament(t),sourceId: t.id,sourceVersion: t.updatedAt }} onMatch={() => {}} /></MantineProvider>)
@@ -54,7 +54,7 @@ describe('duration-aligned planning calendar display', () => {
     expect(planningCalendarBounds(t,[{ start: at('23:45'), end: next.getTime() }])).toEqual({ minimum: '00:00:00', maximum: '24:00:00', expanded: true })
   })
   it('renders actual FullCalendar25minute axis, explicit week, first label and separate complete pair lines', () => {
-    const t = sample(); t.calendar!.defaultWindow = { startsAt: '15:00', endsAt: '22:00' }; t.fixtureSettings = { matchDurationMinutes: 25, automaticWindow: { startsAt: '18:00', endsAt: '22:00' } }; t.categories[0].matches = [{ ...t.categories[0].matches[0], scheduledAt: new Date(at('18:00')).toISOString(), result: undefined }]
+    const t = sample(); t.calendar!.defaultWindow = { startsAt: '15:00', endsAt: '22:00' }; t.fixtureSettings = { matchDurationMinutes: 25, automaticWindow: { startsAt: '18:00', endsAt: '22:00' } }; t.categories[0].matches = [{ ...t.categories[0].matches[0], scheduledAt: new Date(at('18:00')).toISOString() }]
     const html = renderToStaticMarkup(<MantineProvider><ReadCalendar planning snapshot={{ baseline: t, display: adaptV2Tournament(t), sourceId: t.id, sourceVersion: t.updatedAt }} onMatch={() => {}} /></MantineProvider>)
     expect(html).toContain('18:25'); expect(html).toContain('18:50'); expect(html).toContain('preparation-v2-first-time')
     expect(html).toContain('octubre de 2026'); expect(html).toContain('calendar-v2-planning-pair'); expect(html).toContain('Ada / Luz'); expect(html).toContain('Leo / Sol')

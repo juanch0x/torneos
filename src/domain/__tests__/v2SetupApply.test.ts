@@ -10,7 +10,7 @@ function unlocked(): Tournament {
   const source = sample()
   source.slots = source.slots.map(({ matchId: _matchId, ...slot }) => slot)
   source.categories[0].matches = source.categories[0].matches.map(
-    ({ scheduledAt: _scheduledAt, result: _result, ...match }) => match,
+    ({ scheduledAt: _scheduledAt, ...match }) => match,
   )
   return source
 }
@@ -47,7 +47,6 @@ describe('applyV2Setup', () => {
   it('renames records, adds empty groups/categories in draft order, and applies the baseline', () => {
     const source = unlocked()
     source.categories[0].color = CATEGORY_PALETTE[0].color
-    source.categories[0].playoffs = { rounds: [{ id: 'round', name: 'Final', slots: [] }] }
     const before = structuredClone(source)
     const draft = draftFor(source)
     draft.opensAt = '10:00'
@@ -67,7 +66,7 @@ describe('applyV2Setup', () => {
     expect(new Set([added.color, existing.color, another.color]).size).toBe(3)
     expect(added.id).not.toBe(existing.id)
     expect(added.groups[0].id).not.toBe(existing.groups[0].id)
-    expect(existing).toMatchObject({ id: 'c', color: source.categories[0].color, config: { numGroups: 2 }, pairs: source.categories[0].pairs, playoffs: source.categories[0].playoffs, matches: source.categories[0].matches })
+    expect(existing).toMatchObject({ id: 'c', color: source.categories[0].color, config: { numGroups: 2 }, pairs: source.categories[0].pairs, matches: source.categories[0].matches })
     expect(existing.groups).toEqual([
       { id: expect.any(String), name: 'New group', pairIds: [] },
       { id: 'g', name: 'Renamed group', pairIds: ['a', 'b'] },
@@ -160,12 +159,10 @@ describe('applyV2Setup', () => {
     if (result.ok) expect(result.document).not.toHaveProperty('pairUnavailableWindows')
   })
 
-  it.each(['slot', 'scheduled match', 'match result', 'playoff result'] as const)('rejects a locked %s before validating the draft', lock => {
+  it.each(['slot', 'scheduled match'] as const)('rejects a locked %s before validating the draft', lock => {
     const source = unlocked()
     if (lock === 'slot') source.slots[0].matchId = 'm'
     if (lock === 'scheduled match') source.categories[0].matches[0].scheduledAt = '2026-10-05T09:00'
-    if (lock === 'match result') source.categories[0].matches[0].result = { scoreA: 1, scoreB: 0 }
-    if (lock === 'playoff result') source.categories[0].playoffs = { rounds: [{ id: 'round', name: 'Final', slots: [{ id: 'final', result: { scoreA: 1, scoreB: 0 } }] }] }
     const before = structuredClone(source)
     const result = applyV2Setup(source, { ...draftFor(source), categories: [] })
     expect(result).toMatchObject({ ok: false, error: expect.stringMatching(/solo lectura.*primera generación del calendario/i) })

@@ -72,7 +72,6 @@ describe('organizer warnings', () => {
   it('explains an unscheduled integrity blocker instead of leaving Generate silently disabled', () => {
     const source = sample()
     source.categories[0].matches[0].scheduledAt = undefined
-    source.categories[0].matches[0].result = undefined
     source.categories[0].matches[1].id = source.categories[0].matches[0].id
     source.slots = []
     const display = adaptV2Tournament(source)

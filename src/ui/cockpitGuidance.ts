@@ -1,12 +1,11 @@
 import type { ID, Match, Tournament } from '../domain/types'
 
-export type CockpitStage = 'setup' | 'fixture' | 'no-results' | 'partial-results' | 'standings-ready'
+export type CockpitStage = 'setup' | 'fixture' | 'scheduled'
 
 export interface CockpitAction {
   label: string
-  to: '/tournaments/$id/groups' | '/tournaments/$id/fixture' | '/tournaments/$id/results'
+  to: '/tournaments/$id/groups' | '/tournaments/$id/fixture'
   params: { id: string }
-  search?: { categoryId?: undefined }
 }
 
 export interface CockpitGuidance {
@@ -17,17 +16,10 @@ export interface CockpitGuidance {
   unassignedPairCount: number
   undersizedGroupCount: number
   scheduledMatchCount: number
-  playedScheduledCount: number
-  pendingScheduledCount: number
   primaryAction: CockpitAction
-  secondaryAction?: CockpitAction
 }
 
 function makeAction(id: string, to: CockpitAction['to'], label: string): CockpitAction {
-  if (to === '/tournaments/$id/results') {
-    return { label, to, params: { id }, search: { categoryId: undefined } }
-  }
-
   return { label, to, params: { id } }
 }
 
@@ -70,10 +62,8 @@ export function deriveCockpitGuidance(tournament: Tournament): CockpitGuidance {
     undersizedGroupCount += category.groups.filter((group) => group.pairIds.length < 2).length
   }
 
-  const scheduledMatches = collectScheduledMatches(tournament)
-  const scheduledMatchCount = scheduledMatches.length
-  const playedScheduledCount = scheduledMatches.filter((match) => match.result != null).length
-  const pendingScheduledCount = scheduledMatchCount - playedScheduledCount
+  const scheduledMatchCount = collectScheduledMatches(tournament).length
+  const counts = { categoryCount, groupCount, pairCount, unassignedPairCount, undersizedGroupCount, scheduledMatchCount }
 
   const setupIncomplete =
     categoryCount === 0 ||
@@ -83,77 +73,12 @@ export function deriveCockpitGuidance(tournament: Tournament): CockpitGuidance {
     undersizedGroupCount > 0
 
   if (setupIncomplete) {
-    return {
-      stage: 'setup',
-      categoryCount,
-      groupCount,
-      pairCount,
-      unassignedPairCount,
-      undersizedGroupCount,
-      scheduledMatchCount,
-      playedScheduledCount,
-      pendingScheduledCount,
-      primaryAction: makeAction(tournament.id, '/tournaments/$id/groups', 'Completar la configuración'),
-    }
+    return { stage: 'setup', ...counts, primaryAction: makeAction(tournament.id, '/tournaments/$id/groups', 'Completar la configuración') }
   }
 
   if (scheduledMatchCount === 0) {
-    return {
-      stage: 'fixture',
-      categoryCount,
-      groupCount,
-      pairCount,
-      unassignedPairCount,
-      undersizedGroupCount,
-      scheduledMatchCount,
-      playedScheduledCount,
-      pendingScheduledCount,
-      primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Generar el calendario'),
-    }
+    return { stage: 'fixture', ...counts, primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Generar el calendario') }
   }
 
-  if (playedScheduledCount === 0) {
-    return {
-      stage: 'no-results',
-      categoryCount,
-      groupCount,
-      pairCount,
-      unassignedPairCount,
-      undersizedGroupCount,
-      scheduledMatchCount,
-      playedScheduledCount,
-      pendingScheduledCount,
-      primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Cargar el primer resultado'),
-      secondaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Abrir calendario para exportar XLSX'),
-    }
-  }
-
-  if (pendingScheduledCount === 0) {
-    return {
-      stage: 'standings-ready',
-      categoryCount,
-      groupCount,
-      pairCount,
-      unassignedPairCount,
-      undersizedGroupCount,
-      scheduledMatchCount,
-      playedScheduledCount,
-      pendingScheduledCount,
-      primaryAction: makeAction(tournament.id, '/tournaments/$id/results', 'Revisar resultados y posiciones'),
-      secondaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Abrir calendario para exportar XLSX'),
-    }
-  }
-
-  return {
-    stage: 'partial-results',
-    categoryCount,
-    groupCount,
-    pairCount,
-    unassignedPairCount,
-    undersizedGroupCount,
-    scheduledMatchCount,
-    playedScheduledCount,
-    pendingScheduledCount,
-    primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Seguir cargando resultados'),
-  }
+  return { stage: 'scheduled', ...counts, primaryAction: makeAction(tournament.id, '/tournaments/$id/fixture', 'Abrir calendario para exportar XLSX') }
 }

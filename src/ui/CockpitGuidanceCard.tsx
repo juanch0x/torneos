@@ -1,4 +1,4 @@
-import { Badge, Button, Group, Paper, Progress, Stack, Text, useMantineTheme } from '@mantine/core'
+import { Badge, Button, Group, Paper, Stack, Text, useMantineTheme } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import type { CockpitAction, CockpitGuidance } from './cockpitGuidance'
 
@@ -29,24 +29,11 @@ function getGuidanceCopy(guidance: CockpitGuidance): GuidanceCopy {
         title: 'La configuración ya permite generar el calendario',
         description: 'Abrí Calendario para crear los partidos y horarios iniciales del torneo.',
       }
-    case 'no-results':
+    case 'scheduled':
       return {
-        badge: 'Resultados pendientes',
-        title: 'El calendario ya está listo para empezar a cargar resultados',
-        description: `Hay ${guidance.scheduledMatchCount} partido(s) con horario y todavía ninguno tiene resultado cargado en la app.`,
-      }
-    case 'partial-results':
-      return {
-        badge: `${guidance.playedScheduledCount}/${guidance.scheduledMatchCount} cargados`,
-        title: 'El torneo ya está en marcha',
-        description: `Quedan ${guidance.pendingScheduledCount} partido(s) pendientes para completar la fase de grupos.`,
-      }
-    case 'standings-ready':
-      return {
-        badge: 'Posiciones listas',
-        title: 'Ya podés revisar resultados y posiciones',
-        description:
-          'Todos los partidos con horario ya tienen resultado. La revisión en la app es el siguiente paso natural.',
+        badge: 'Calendario listo',
+        title: 'El calendario ya está generado',
+        description: `Hay ${guidance.scheduledMatchCount} partido(s) con horario. Exportalo a XLSX para compartirlo y seguir el torneo fuera de la app.`,
       }
   }
 }
@@ -55,10 +42,6 @@ export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
   const navigate = useNavigate()
   const theme = useMantineTheme()
   const copy = getGuidanceCopy(guidance)
-  const secondaryAction = guidance.secondaryAction
-  const completion = guidance.scheduledMatchCount > 0
-    ? Math.round((guidance.playedScheduledCount / guidance.scheduledMatchCount) * 100)
-    : 0
 
   const summaryItems = guidance.stage === 'setup' || guidance.stage === 'fixture'
     ? [
@@ -67,13 +50,13 @@ export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
         { label: 'Parejas', value: guidance.pairCount },
       ]
     : [
+        { label: 'Categorías', value: guidance.categoryCount },
+        { label: 'Parejas', value: guidance.pairCount },
         { label: 'Con horario', value: guidance.scheduledMatchCount },
-        { label: 'Cargados', value: guidance.playedScheduledCount },
-        { label: 'Pendientes', value: guidance.pendingScheduledCount },
       ]
 
   const goToAction = (action: CockpitAction) => {
-    void navigate({ to: action.to, params: action.params, search: action.search })
+    void navigate({ to: action.to, params: action.params })
   }
 
   return (
@@ -124,43 +107,6 @@ export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
             </Paper>
           ))}
         </Group>
-
-        {guidance.scheduledMatchCount > 0 && (
-          <Paper
-            withBorder
-            p="sm"
-            radius="lg"
-            shadow="xs"
-            style={{ backgroundColor: theme.other.surfaceOverlaySoft, borderColor: theme.other.borderSubtle }}
-          >
-            <Stack gap={6}>
-              <Group justify="space-between" gap="sm">
-                <Text size="xs" c="dimmed">Progreso de resultados</Text>
-                <Text size="xs" c="dimmed">{completion}%</Text>
-              </Group>
-              <Progress value={completion} size="sm" radius="xl" />
-            </Stack>
-          </Paper>
-        )}
-
-        {secondaryAction && (
-          <Paper
-            withBorder
-            p="sm"
-            radius="lg"
-            shadow="xs"
-            style={{ backgroundColor: theme.other.surfaceOverlaySoft, borderColor: theme.other.borderSubtle }}
-          >
-            <Group justify="space-between" gap="xs" wrap="wrap">
-              <Text size="sm" c="dimmed" style={{ flex: '1 1 18rem' }}>
-                La exportación XLSX sigue disponible desde Calendario como apoyo para compartir o respaldar.
-              </Text>
-              <Button variant="subtle" size="sm" onClick={() => goToAction(secondaryAction)}>
-                {secondaryAction.label}
-              </Button>
-            </Group>
-          </Paper>
-        )}
       </Stack>
     </Paper>
   )

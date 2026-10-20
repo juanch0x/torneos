@@ -15,7 +15,7 @@ describe('V2 mandatory configuration', () => {
       expect(applyV2Configuration(sample(), { ...valid, ...change }).ok).toBe(false)
     }
   })
-  it('preserves opaque config/default/settings, imported overrides, restrictions and schedule/results', () => {
+  it('preserves opaque config/default/settings, imported overrides, restrictions and schedule', () => {
     const source = { ...sample(), opaque: 8, calendar: { ...sample().calendar!, opaqueCalendar: 1, defaultWindow: { startsAt: '09:00', endsAt: '16:00', opaqueHour: 2 } }, fixtureSettings: { matchDurationMinutes: 30, opaqueSetting: 3 }, pairUnavailableWindows: [{ id: 'r', pairId: 'a', startsAt: '2026-10-05T17:07:45.123-03:00', endsAt: '2026-10-05T18:00:00-03:00', reason: 'Doctor' }] }
     const result = applyV2Configuration(source, { ...valid, opensAt: '10:00', tournamentOpensAt: '10:00' })
     expect(result.ok).toBe(true)
@@ -26,12 +26,10 @@ describe('V2 mandatory configuration', () => {
     expect(result.document.fixtureSettings).toMatchObject({ opaqueSetting: 3 })
     expect(v2ConfigurationIssues(result.document).map(issue => issue.kind)).toContain('restriction-hours')
   })
-  it('rejects cutting imported overrides and changing ambiguous played-match duration', () => {
+  it('rejects cutting imported overrides and allows changing the shared duration', () => {
     expect(applyV2Configuration(sample(), { ...valid, endDate: '2026-10-05' })).toMatchObject({ ok: false })
-    expect(applyV2Configuration(sample(), { ...valid, duration: '45' })).toMatchObject({ ok: false })
-    expect(applyV2Configuration({ ...sample(), fixtureSettings: undefined }, valid)).toMatchObject({ ok: false })
-    const unplayed = sample(); delete unplayed.categories[0].matches[0].result
-    expect(applyV2Configuration(unplayed, { ...valid, duration: '45' }).ok).toBe(true)
+    expect(applyV2Configuration({ ...sample(), fixtureSettings: undefined }, valid).ok).toBe(true)
+    expect(applyV2Configuration(sample(), { ...valid, duration: '45' }).ok).toBe(true)
   })
   it('retains outside-period exact restrictions and reports actionable issues rather than deleting', () => {
     const source = { ...sample(), calendar: { ...sample().calendar!, overrides: [] }, pairUnavailableWindows: [{ id: 'r', pairId: 'a', startsAt: '2026-10-06T09:00:00-03:00', endsAt: '2026-10-06T10:00:00-03:00' }] }

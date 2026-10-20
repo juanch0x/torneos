@@ -27,7 +27,7 @@ const timeFormat = { hour: '2-digit', minute: '2-digit', hour12: false } as cons
 const local = (instant: number) => formatDayDateTime(instant)
 function Matches({ matches }: { matches: V2DisplayMatch[] }) {
   return <Table.ScrollContainer minWidth={680}><Table><Table.Thead><Table.Tr><Table.Th>Partido</Table.Th><Table.Th>Categoría / grupo</Table.Th><Table.Th>Horario local / original</Table.Th></Table.Tr></Table.Thead><Table.Tbody>
-    {matches.map(match => <Table.Tr key={match.key}><Table.Td><Text size="sm">{match.pairA} vs. {match.pairB}</Text><Text size="xs" c="dimmed">ID: {match.id}{match.played ? ' · Con resultado, solo lectura' : ''}</Text></Table.Td>
+    {matches.map(match => <Table.Tr key={match.key}><Table.Td><Text size="sm">{match.pairA} vs. {match.pairB}</Text><Text size="xs" c="dimmed">ID: {match.id}</Text></Table.Td>
       <Table.Td>{match.categoryName} · {match.group}</Table.Td><Table.Td>{match.instant !== null ? local(match.instant) : match.status === 'unscheduled' ? 'Sin programar' : 'Horario inválido'}{match.scheduledAt !== undefined && <Text size="xs" c="dimmed">Original: {String(match.scheduledAt)}</Text>}</Table.Td></Table.Tr>)}
   </Table.Tbody></Table></Table.ScrollContainer>
 }
@@ -127,7 +127,7 @@ export function ReadCalendar({ snapshot, onMatch, planning = false, conflictCoun
     }
     return result
   },[week,calendar])
-  const events = useMemo(() => [...courtEvents,...scheduled.map(match => ({ id: match.key, start: new Date(match.instant!), end: new Date(match.instant!+display.duration!*60000), title: `${match.categoryName} · ${match.group} · ${match.pairA} vs. ${match.pairB}`, color: match.categoryColor, contrastColor: '#1b2927',startEditable: !match.played }))],[courtEvents,scheduled,display.duration])
+  const events = useMemo(() => [...courtEvents,...scheduled.map(match => ({ id: match.key, start: new Date(match.instant!), end: new Date(match.instant!+display.duration!*60000), title: `${match.categoryName} · ${match.group} · ${match.pairA} vs. ${match.pairB}`, color: match.categoryColor, contrastColor: '#1b2927',startEditable: true }))],[courtEvents,scheduled,display.duration])
   if (display.duration === null) return <Alert color="orange">Sin duración válida: se muestran los horarios en la lista, sin inventar intervalos de partido.</Alert>
   return <Paper withBorder={!planning} p={planning ? 0 : 'sm'} className={planning ? 'calendar-v2-planning-grid' : 'preparation-v2-calendar'}>
     {planning && bounds.expanded && <Text size="xs" c="dimmed" mb="xs">{moves?.court ? `Disponibilidad general de cancha: ${calendar?.defaultWindow?.startsAt}–${calendar?.defaultWindow?.endsAt}. Grilla alineada al torneo; el relleno gris queda fuera de la disponibilidad de cada día.` : 'Vista ampliada para conservar partidos fuera del horario habitual. Los horarios originales no se ajustan a la grilla.'}</Text>}
@@ -168,7 +168,7 @@ export function ReadCalendar({ snapshot, onMatch, planning = false, conflictCoun
           <span className="calendar-v2-planning-meta">{match.categoryName} · {match.group}</span>
           <strong className="calendar-v2-planning-pair">{match.pairA}</strong>
           <strong className="calendar-v2-planning-pair"><span className="calendar-v2-planning-versus">vs. </span>{match.pairB}</strong>
-          <span className="calendar-v2-planning-time">{info.timeText}{match.played ? ' · Con resultado' : ''}{conflictCounts[match.key] ? ` · ${plural(conflictCounts[match.key], 'conflicto', 'conflictos')}` : unvalidatedKeys.includes(match.key) ? ' · Sin validar' : ''}</span>
+          <span className="calendar-v2-planning-time">{info.timeText}{conflictCounts[match.key] ? ` · ${plural(conflictCounts[match.key], 'conflicto', 'conflictos')}` : unvalidatedKeys.includes(match.key) ? ' · Sin validar' : ''}</span>
         </div> : info.event.title
       } : undefined} />
     </div>
