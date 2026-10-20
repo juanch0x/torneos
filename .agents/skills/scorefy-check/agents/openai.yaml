@@ -1,0 +1,6 @@
+interface:
+  display_name: "Revisar Scorefy"
+  short_description: "Compara agenda y resultados antes de aprobar cambios"
+  default_prompt: "Usa $scorefy-check para revisar la agenda y los resultados del torneo y mostrarme los cambios propuestos sin modificar la hoja."
+policy:
+  allow_implicit_invocation: false
