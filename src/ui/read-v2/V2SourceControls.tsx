@@ -48,7 +48,7 @@ function TournamentWorkspaceHeader({ view, tournamentId }: { view: 'groups' | 'c
 export function V2SessionStatus({ tournamentId }: { tournamentId: string }) {
   const state = useStore(v2SessionStore)
   if (state.status === 'loading') return <Text role="status">Leyendo torneo…</Text>
-  if (state.sourceId !== tournamentId) return <Alert color="orange">No se cambió de torneo: primero descarta los cambios de la vista actual.</Alert>
+  if (state.sourceId !== tournamentId) return <Alert color="warning">No se cambió de torneo: primero descarta los cambios de la vista actual.</Alert>
   if (state.error) return <Alert role="alert" color="red">{state.error}</Alert>
   return null
 }

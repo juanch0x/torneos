@@ -28,7 +28,7 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
     <Group justify="space-between" wrap="nowrap">
       <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
         <Title order={1} size="h2" style={{ overflowWrap: 'anywhere' }}>{title}</Title>
-        {source && !ready && <Badge color="orange" variant="light">Necesita configuración</Badge>}
+        {source && !ready && <Badge color="warning" variant="light">Necesita configuración</Badge>}
         {locked && <Badge color="gray" variant="light">Configuración bloqueada</Badge>}
       </Group>
       <Tooltip label="Configuración del torneo" withArrow>
@@ -45,9 +45,9 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
         </ActionIcon>
       </Tooltip>
     </Group>
-    {source && !ready && <Text size="sm" c="orange.8">Completá y guardá la configuración del torneo desde la página de configuración para editar restricciones o abrir el calendario.</Text>}
+    {source && !ready && <Text size="sm" c="warning">Completá y guardá la configuración del torneo desde la página de configuración para editar restricciones o abrir el calendario.</Text>}
     {(state.saving || !source) && <Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando…' : (state.status === 'loading' ? 'Leyendo el torneo seleccionado…' : state.status === 'not-found' ? 'No se encontró esta fuente.' : state.status === 'error' ? 'No se pudo cargar esta fuente.' : 'Seleccioná o cargá este torneo para configurarlo.')}</Text>}
-    {!!issues.length && <details><summary>{plural(issues.length, 'registro requiere', 'registros requieren')} revisión · Horarios intactos</summary><Stack mt="xs" gap={4} style={{ maxHeight: 180, overflowY: 'auto' }}>{issues.map((issue, index) => <Text size="xs" key={index} c="orange.8">{configurationIssueText(source!, issue)}</Text>)}</Stack></details>}
+    {!!issues.length && <details><summary>{plural(issues.length, 'registro requiere', 'registros requieren')} revisión · Horarios intactos</summary><Stack mt="xs" gap={4} style={{ maxHeight: 180, overflowY: 'auto' }}>{issues.map((issue, index) => <Text size="xs" key={index} c="warning">{configurationIssueText(source!, issue)}</Text>)}</Stack></details>}
   </Stack>
 }
 

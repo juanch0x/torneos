@@ -121,7 +121,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
     <Stack gap="sm" className="preparation-v2-modal-layout">
       <Group justify="space-between"><Text size="sm">Arrastrá para marcar cuándo NO puede jugar (cada 15 minutos). Clic o clic derecho sobre una restricción para editarla o eliminarla.</Text><Badge color="grape" variant="light">Borrador · {plural(draft.length, 'restricción', 'restricciones')} · {formatDateRange(parseLocalDateTime(start) ?? start, new Date((parseLocalDateTime(end) ?? new Date(end)).getTime() - 1))}</Badge></Group>
       {(outsideVisible || expandedHours) && <Group justify="space-between" gap="sm">
-        <Text size="sm" c="orange.8">{expandedHours ? 'Vista de 24 horas: las restricciones fuera del rango siguen conservadas.' : `Hay restricciones fuera de ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}. Ampliá la vista para editarlas o eliminarlas.`}</Text>
+        <Text size="sm" c="warning">{expandedHours ? 'Vista de 24 horas: las restricciones fuera del rango siguen conservadas.' : `Hay restricciones fuera de ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}. Ampliá la vista para editarlas o eliminarlas.`}</Text>
         <Button disabled={saving} variant="light" size="xs" onClick={() => { setActions(null); setExpandedHours((value) => !value) }}>
           {expandedHours ? `Volver a ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}` : 'Mostrar horarios fuera del rango'}
         </Button>

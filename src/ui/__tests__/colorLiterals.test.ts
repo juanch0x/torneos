@@ -22,6 +22,11 @@ const RULES: readonly Rule[] = [
     strip: { 'src/ui/theme.ts': /rgba\(0, 0, 0, [\d.]+\)/g },
   },
   { id: 'legacy palette aliases', pattern: /courtTeal|clay|theme\.white/, allowlist: [] },
+  {
+    id: 'orange and shade-pinned semantic colors',
+    pattern: /['"]orange(\.\d)?['"]|['"](red|warning|success)\.\d['"]/,
+    allowlist: [],
+  },
   { id: 'named white/black in css', pattern: /(?<![\w-])(white|black)(?![\w-])/, allowlist: [], ext: '.css' },
 ]
 

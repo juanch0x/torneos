@@ -237,7 +237,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const [draggedMatchId, setDraggedMatchId] = useState<ID | null>(null)
   const [dropTargetId, setDropTargetId] = useState<ID | null>(null)
   const [reorderFeedback, setReorderFeedback] =
-    useState<{ color: 'green' | 'orange' | 'red'; message: string } | null>(null)
+    useState<{ color: 'success' | 'warning' | 'red'; message: string } | null>(null)
   const [unavailablePairId, setUnavailablePairId] = useState<string | null>(null)
   const [unavailableStartsAt, setUnavailableStartsAt] = useState('')
   const [unavailableEndsAt, setUnavailableEndsAt] = useState('')
@@ -295,12 +295,12 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       const warning = outcome.createsBackToBack
         ? ' Atención: una pareja quedó con partidos consecutivos.'
         : ''
-      setReorderFeedback({ color: outcome.createsBackToBack ? 'orange' : 'green', message: `Partido reordenado.${shifted}${warning}` })
+      setReorderFeedback({ color: outcome.createsBackToBack ? 'warning' : 'success', message: `Partido reordenado.${shifted}${warning}` })
       return
     }
 
     if (outcome.status === 'no-op') {
-      setReorderFeedback({ color: 'orange', message: 'El partido ya estaba en esa franja.' })
+      setReorderFeedback({ color: 'warning', message: 'El partido ya estaba en esa franja.' })
       return
     }
 

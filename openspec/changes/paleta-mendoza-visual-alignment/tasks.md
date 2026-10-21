@@ -95,9 +95,9 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: XLSX tests unchanged and green; stored data unchanged. QA (dark via localStorage): events, badges, outlines readable. Note: contradicts design Open Question 2 and the spec "unchanged in dark"; spec/design need amending by the orchestrator.
 
 ## Slice 7: Warning remap (130-220), needs 6b
-- [ ] 7.1 All 28 `orange` sites in 11 files to `warning` (`orange.8` to `c="warning"`; `PairModal.tsx:72`; `SchedulePanel.tsx:238,296,301` union retyped to `'success'|'warning'|'red'`).
-- [ ] 7.2 `GroupsMockPage.tsx:13-14`: remove mock `color` field; count Badge `:61` to `gray` (decision: gray).
-- [ ] 7.3 Append guard rule (quoted `orange` and shade-pinned semantic colors).
+- [x] 7.1 All 28 `orange` sites in 11 files to `warning` (`orange.8` to `c="warning"`; `PairModal.tsx:72`; `SchedulePanel.tsx:238,296,301` union retyped to `'success'|'warning'|'red'`).
+- [x] 7.2 `GroupsMockPage.tsx:13-14`: remove mock `color` field; count Badge `:61` to `gray` (decision: gray).
+- [x] 7.3 Append guard rule (quoted `orange` and shade-pinned semantic colors).
 - AC: V; no `orange` in src. QA (both): alerts, PairModal filled button.
 
 ## Slice 8: Stock hues (90-180), needs 7

@@ -63,13 +63,13 @@ export function PairModal({ mode, categoryName, initial, findDuplicate, onSave, 
         <Stack gap="sm">
           <TextInput data-autofocus label="Integrante 1" value={names.player1} disabled={saving || namesLocked} error={fieldError('player1')} onChange={event => update('player1', event.currentTarget.value)} />
           <TextInput label="Integrante 2" value={names.player2} disabled={saving || namesLocked} error={fieldError('player2')} onChange={event => update('player2', event.currentTarget.value)} />
-          {duplicateConfirmed && <Alert color="orange">Ya existe la pareja {duplicate.label} en esta categoría. Confirmá solo si es otra pareja con los mismos nombres.</Alert>}
+          {duplicateConfirmed && <Alert color="warning">Ya existe la pareja {duplicate.label} en esta categoría. Confirmá solo si es otra pareja con los mismos nombres.</Alert>}
           {saveError && <Alert color="red" role="alert">{saveError}</Alert>}
           {namesLocked && <Text size="xs" c="dimmed">El guardado anterior no se confirmó: reintentá con los mismos nombres para completarlo.</Text>}
           {mode === 'edit' && <Text size="xs" c="dimmed">Corrige los nombres de la misma pareja: conserva su grupo, sus partidos y sus restricciones.</Text>}
           <Group justify="flex-end">
             <Button variant="default" disabled={saving} onClick={requestClose}>Cancelar</Button>
-            <Button type="submit" loading={saving} color={duplicateConfirmed ? 'orange' : undefined}>{confirmLabel}</Button>
+            <Button type="submit" loading={saving} color={duplicateConfirmed ? 'warning' : undefined}>{confirmLabel}</Button>
           </Group>
         </Stack>
       </form>

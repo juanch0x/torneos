@@ -23,7 +23,7 @@ export function TournamentConfigurationPage() {
   const { tournamentId } = useSearch({ from: '/v2/configuration' })
   const state = useStore(v2SessionStore)
   if (!tournamentId) return <Stack>
-    <Alert color="orange">Seleccioná un torneo para configurar sus categorías y horarios. Esta página requiere un torneo guardado.</Alert>
+    <Alert color="warning">Seleccioná un torneo para configurar sus categorías y horarios. Esta página requiere un torneo guardado.</Alert>
     <Button component={Link} to="/">Volver a torneos</Button>
   </Stack>
 
@@ -143,7 +143,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
           <Button variant="light" renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Ver grupos</Button>
           <Button variant="light" renderRoot={props => <Link {...props} to="/v2/calendar" search={{ tournamentId }} />}>Ver calendario</Button>
         </Group>
-      </Alert> : baselineOnly ? <Alert color="orange" title="Completá la configuración de horarios">
+      </Alert> : baselineOnly ? <Alert color="warning" title="Completá la configuración de horarios">
         El torneo ya tiene un calendario generado. Las categorías, los grupos y las parejas quedan bloqueados, pero tenés que completar la configuración de horarios que falta para abrir el calendario y editar las restricciones.
       </Alert> : <Text size="sm">Definí las categorías, el período y los horarios antes de cargar las parejas. Guardar no genera ni reprograma partidos.</Text>}
       {!!alertMessages.length && <Alert color="red" role="alert" title="No se puede guardar la configuración">
@@ -170,7 +170,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
         {field('duration', 'Duración de cada partido (minutos)', 'number')}
       </Stack>
       <Text size="xs" c="dimmed">Las excepciones de cancha existentes se preservan, sin editor en esta etapa.</Text>
-      {!!impacts.length && <Alert color="orange">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisá el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
+      {!!impacts.length && <Alert color="warning">{plural(impacts.length, 'registro requiere', 'registros requieren')} revisión con esta configuración. Se conservarán íntegros; revisá el detalle después de guardar. El calendario no queda validado automáticamente.</Alert>}
       {mode === 'edit' && <Text size="sm" c="dimmed">Al generar el calendario por primera vez, la configuración, las categorías, los grupos y las parejas quedan bloqueados.</Text>}
       <Group justify="flex-end">
         {!locked && <Button type="submit" loading={state.saving} disabled={disabled}>Guardar y continuar</Button>}

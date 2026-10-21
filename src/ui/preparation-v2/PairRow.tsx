@@ -35,7 +35,7 @@ export function PairRow(props: PairRowProps) {
       {(!!restrictionCount || !!conflictCount || !!pendingCount) && <Group gap={6}>
         {!!restrictionCount && <Badge component="button" type="button" variant="light" color={conflictCount ? 'red' : 'gray'} size="sm" radius="sm" style={{ cursor: props.restrictionsDisabled ? 'default' : 'pointer' }} disabled={props.restrictionsDisabled} onClick={props.onRestrictions}>{plural(restrictionCount, 'restricción', 'restricciones')}</Badge>}
         {!!conflictCount && <Text size="xs" c="red">{plural(conflictCount, 'conflicto', 'conflictos')}</Text>}
-        {!!pendingCount && <Text size="xs" c="orange.8">{plural(pendingCount, 'partido', 'partidos')} sin validar</Text>}
+        {!!pendingCount && <Text size="xs" c="warning">{plural(pendingCount, 'partido', 'partidos')} sin validar</Text>}
       </Group>}
     </Stack>
     <Menu withinPortal loop position="bottom-end">
