@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ErrorIcon, LockIcon, SuccessIcon, WarningIcon } from '../icons'
+import { ErrorIcon, LockIcon, MoonIcon, SuccessIcon, SunIcon, WarningIcon } from '../icons'
 
-const ICONS = { WarningIcon, ErrorIcon, SuccessIcon, LockIcon }
+const ICONS = { WarningIcon, ErrorIcon, SuccessIcon, LockIcon, SunIcon, MoonIcon }
 
 describe('state icons', () => {
   it.each(Object.entries(ICONS))('%s is a decorative svg that inherits the text color', (_name, Icon) => {

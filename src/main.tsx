@@ -9,9 +9,9 @@ import './ui/fullcalendarTheme.css'
 import { router } from './router'
 import { startAutosave } from './store/autosave'
 import { cssVariablesResolver, theme } from './ui/theme'
-import { COLOR_SCHEME_STORAGE_KEY } from './ui/tokens'
+import { COLOR_SCHEME_STORAGE_KEY, DEFAULT_COLOR_SCHEME } from './ui/tokens'
 
-// Dark is reachable only by hand (localStorage) until the toggle and dark default land.
+// Dark is the default; the header toggle persists the choice under COLOR_SCHEME_STORAGE_KEY.
 const colorSchemeManager = localStorageColorSchemeManager({ key: COLOR_SCHEME_STORAGE_KEY })
 
 // Arrancamos el autosave una sola vez, al montar la app.
@@ -23,7 +23,7 @@ createRoot(document.getElementById('root')!).render(
       theme={theme}
       cssVariablesResolver={cssVariablesResolver}
       colorSchemeManager={colorSchemeManager}
-      defaultColorScheme="light"
+      defaultColorScheme={DEFAULT_COLOR_SCHEME}
     >
       <RouterProvider router={router} />
     </MantineProvider>

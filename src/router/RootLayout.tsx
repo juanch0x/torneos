@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { Anchor, AppShell, Container, Group, Text, Title, useMantineTheme } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
+import { ColorSchemeToggle } from '../ui/ColorSchemeToggle'
 import { installPrintLightScheme } from '../ui/printScheme'
 import { contentWidthFor, NARROW_CONTENT_WIDTH } from './contentWidth'
 import { isTournamentsNavActive } from './shellNav'
@@ -38,29 +39,32 @@ export function RootLayout() {
     >
       <AppShell.Header>
         <Container size="xl" h="100%" px={{ base: 'md', sm: 'lg' }}>
-          <Group h="100%" align="center" gap="xl" wrap="nowrap">
-            <Title order={3} lh={1.1}>
-              <Anchor component={Link} to="/" c="primary" underline="never">
-                Paleta Mendoza · Torneos
-              </Anchor>
-            </Title>
-            <nav aria-label="Principal">
-              <Anchor
-                component={Link}
-                to="/"
-                c={navActive ? 'primary' : 'dimmed'}
-                aria-current={navActive ? 'page' : undefined}
-                underline="never"
-                fz="sm"
-                style={{
-                  fontFamily: 'var(--mantine-font-family-monospace)',
-                  textDecoration: navActive ? 'underline wavy 2px' : 'none',
-                  textUnderlineOffset: 4,
-                }}
-              >
-                Torneos
-              </Anchor>
-            </nav>
+          <Group h="100%" align="center" gap="xl" wrap="nowrap" justify="space-between">
+            <Group align="center" gap="xl" wrap="nowrap">
+              <Title order={3} lh={1.1}>
+                <Anchor component={Link} to="/" c="primary" underline="never">
+                  Paleta Mendoza · Torneos
+                </Anchor>
+              </Title>
+              <nav aria-label="Principal">
+                <Anchor
+                  component={Link}
+                  to="/"
+                  c={navActive ? 'primary' : 'dimmed'}
+                  aria-current={navActive ? 'page' : undefined}
+                  underline="never"
+                  fz="sm"
+                  style={{
+                    fontFamily: 'var(--mantine-font-family-monospace)',
+                    textDecoration: navActive ? 'underline wavy 2px' : 'none',
+                    textUnderlineOffset: 4,
+                  }}
+                >
+                  Torneos
+                </Anchor>
+              </nav>
+            </Group>
+            <ColorSchemeToggle />
           </Group>
         </Container>
       </AppShell.Header>

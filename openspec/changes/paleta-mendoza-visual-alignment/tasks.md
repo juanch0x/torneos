@@ -125,8 +125,8 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V; inert while light. Rollback: revert.
 
 ## Slice 11b: Toggle, dark default, no flash (150-260), needs 11a
-- [ ] 11b.1 `ColorSchemeToggle.tsx`; sun/moon in `icons.tsx`; mount in `RootLayout`.
-- [ ] 11b.2 RED `src/__tests__/indexHtml.test.ts`; GREEN `index.html` static attribute, inline script, `html:root[...]` rules; `main.tsx` `defaultColorScheme={DEFAULT_COLOR_SCHEME}`.
+- [x] 11b.1 `ColorSchemeToggle.tsx`; sun/moon in `icons.tsx`; mount in `RootLayout`.
+- [x] 11b.2 RED `src/__tests__/indexHtml.test.ts`; GREEN `index.html` static attribute, inline script, `html:root[...]` rules; `main.tsx` `defaultColorScheme={DEFAULT_COLOR_SCHEME}`.
 - AC: V. QA: first visit dark with light OS; toggle persists; no `#242424` flash (also `pnpm dev`); print preview Chrome and Safari; every route both schemes.
 
 ## Slice 12: Doc and cleanup (220-360), needs 11b

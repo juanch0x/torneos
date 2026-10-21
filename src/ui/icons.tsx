@@ -61,3 +61,18 @@ export const LockIcon = (props: IconProps) => (
     <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
   </Svg>
 )
+
+/** Sun: shown while dark is active, as the target of the toggle. */
+export const SunIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+  </Svg>
+)
+
+/** Crescent moon: shown while light is active, as the target of the toggle. */
+export const MoonIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />
+  </Svg>
+)
