@@ -14,6 +14,7 @@ import { formatDateRange, formatTimeRange } from '../format'
 import { formatWeekRange } from '../calendar-v2/formatWeekRange'
 import { DEMO_START, DEMO_END, DEMO_VISIBLE_HOURS, retainRestrictionWeek, isRestrictionDraftDirty, deleteRestriction, restoreRestriction, validateInteraction, hasOutsideVisibleTimedWindows, localDateTime, normalizeWindows, parseLocalDateTime, validateWindow, type RestrictionDeletion, type RestrictionWindow } from './restrictionWindows'
 import { plural } from '../../domain/text'
+import { ErrorIcon, WarningIcon } from '../icons'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const blockLabel = (start: string, end: string) => formatTimeRange(parseLocalDateTime(start) ?? start, parseLocalDateTime(end) ?? end)
@@ -53,7 +54,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
   }
   const events = useMemo(() => draft.filter((window) => !validateWindow(window, config)).map((window) => ({
     id: window.id, start: window.start, end: window.end, title: window.reason || 'No disponible',
-    color: '#f4d6d6', contrastColor: '#722929', allDay: window.start.endsWith('T00:00') && window.end.endsWith('T00:00'),
+    color: 'var(--tn-restriction-bg)', contrastColor: 'var(--tn-restriction-fg)', allDay: window.start.endsWith('T00:00') && window.end.endsWith('T00:00'),
   })), [draft, config])
 
   const courtEvents = useMemo(() => {
@@ -65,7 +66,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
       const spans = hours === null ? [['00:00', '24:00']] : [['00:00', hours.startsAt], [hours.endsAt, '24:00']]
       for (const [start, end] of spans) if (start !== end) {
         const next = new Date(date); next.setDate(next.getDate() + 1)
-        courtEvents.push({ start: `${day}T${start}:00`, end: end === '24:00' ? next : `${day}T${end}:00`, display: 'background', color: '#d9dfe2', title: 'Cancha cerrada' })
+        courtEvents.push({ start: `${day}T${start}:00`, end: end === '24:00' ? next : `${day}T${end}:00`, display: 'background', color: 'var(--tn-closed-a)', title: 'Cancha cerrada' })
       }
     }
     return courtEvents
@@ -119,9 +120,9 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
   return <><Modal opened onClose={requestClose} closeOnEscape={!saving && !actions && !discardOpen && !suspendFocus} closeOnClickOutside={!saving && !discardOpen} trapFocus={!discardOpen && !suspendFocus} title={`Restricciones · ${pairName}`} size="min(1400px, 96vw)" centered yOffset={16}
     closeButtonProps={{ 'aria-label': 'Cancelar edición de restricciones', disabled: saving }} classNames={{ content: `preparation-v2-modal-content${modalScroll ? ' preparation-v2-modal-scroll' : ''}`, header: 'preparation-v2-modal-header', body: 'preparation-v2-modal-body' }}>
     <Stack gap="sm" className="preparation-v2-modal-layout">
-      <Group justify="space-between"><Text size="sm">Arrastrá para marcar cuándo NO puede jugar (cada 15 minutos). Clic o clic derecho sobre una restricción para editarla o eliminarla.</Text><Badge color="grape" variant="light">Borrador · {plural(draft.length, 'restricción', 'restricciones')} · {formatDateRange(parseLocalDateTime(start) ?? start, new Date((parseLocalDateTime(end) ?? new Date(end)).getTime() - 1))}</Badge></Group>
+      <Group justify="space-between"><Text size="sm">Arrastrá para marcar cuándo NO puede jugar (cada 15 minutos). Clic o clic derecho sobre una restricción para editarla o eliminarla.</Text><Badge color="primary" variant="light">Borrador · {plural(draft.length, 'restricción', 'restricciones')} · {formatDateRange(parseLocalDateTime(start) ?? start, new Date((parseLocalDateTime(end) ?? new Date(end)).getTime() - 1))}</Badge></Group>
       {(outsideVisible || expandedHours) && <Group justify="space-between" gap="sm">
-        <Text size="sm" c="orange.8">{expandedHours ? 'Vista de 24 horas: las restricciones fuera del rango siguen conservadas.' : `Hay restricciones fuera de ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}. Ampliá la vista para editarlas o eliminarlas.`}</Text>
+        <Text size="sm" c="warning"><WarningIcon inline />{expandedHours ? 'Vista de 24 horas: las restricciones fuera del rango siguen conservadas.' : `Hay restricciones fuera de ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}. Ampliá la vista para editarlas o eliminarlas.`}</Text>
         <Button disabled={saving} variant="light" size="xs" onClick={() => { setActions(null); setExpandedHours((value) => !value) }}>
           {expandedHours ? `Volver a ${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}` : 'Mostrar horarios fuera del rango'}
         </Button>
@@ -176,8 +177,8 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
         calendar.current?.getApi().gotoDate(deleted.window.start)
         setDeleted(null); setNotice(`Restricción restaurada: ${blockLabel(deleted.window.start, deleted.window.end)}.`)
       }}>Deshacer eliminación</Button>}</Group>
-      {saveError && <Text role="alert" size="sm" c="red">{saveError}</Text>}
-      {invalid && <Text role="alert" size="sm" c="red">Corrige el borrador antes de guardar: {invalid}</Text>}
+      {saveError && <Text role="alert" size="sm" c="red"><ErrorIcon inline />{saveError}</Text>}
+      {invalid && <Text role="alert" size="sm" c="red"><ErrorIcon inline />Corrige el borrador antes de guardar: {invalid}</Text>}
       <Group justify="space-between"><Text size="xs" c="dimmed"><Text span fw={600}>Rango visible: {expandedHours ? '00:00–24:00' : `${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}`}.</Text>{' '}Los rangos superpuestos se unirán al guardar.</Text><Group><Button disabled={saving} variant="default" onClick={requestClose}>Cancelar</Button><Button loading={saving} disabled={!!invalid || saving} onClick={async () => {
         if (savingRef.current) return
         savingRef.current = true; setSaving(true); setSaveError(''); setActions(null)

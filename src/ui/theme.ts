@@ -2,8 +2,10 @@ import {
   Alert,
   Badge,
   Button,
+  Chip,
   createTheme,
   Drawer,
+  Menu,
   NativeSelect,
   NumberInput,
   Paper,
@@ -13,73 +15,64 @@ import {
   Tabs,
   TextInput,
   type CSSVariablesResolver,
-  type MantineColorsTuple,
+  virtualColor,
 } from '@mantine/core'
+import { THEME_BLACK, THEME_WHITE, scales, schemeTokens, tnCssVariables } from './tokens'
 
 // Single source of truth for the torneos brand.
 // Edit color tuples here to rebrand the whole app.
 // Shades run lightest (0) → darkest (9); shade 6 is the primary action shade.
 
-const courtTeal: MantineColorsTuple = [
-  '#e8f5f3',
-  '#c0e8e3',
-  '#96d8d2',
-  '#68c5be',
-  '#3fb5ac',
-  '#1fa89e',
-  '#0d9488',
-  '#0a7a70',
-  '#075e57',
-  '#044039',
-]
+function mantineOverrides(scheme: 'light' | 'dark'): Record<string, string> {
+  const t = schemeTokens[scheme]
+  return {
+    '--mantine-color-placeholder': t.textMuted,
+    '--mantine-color-dimmed': t.textMuted,
+    '--mantine-color-error': t.error,
+    '--mantine-color-success': t.success,
+    '--mantine-color-default-border': t.borderControl,
+  }
+}
 
-const clay: MantineColorsTuple = [
-  '#fdf0e8',
-  '#f9d9c1',
-  '#f3bf96',
-  '#eda36a',
-  '#e7894a',
-  '#e07234',
-  '#c45e24',
-  '#a04b1c',
-  '#7d3815',
-  '#572510',
-]
-
-const shellBackground = '#f6f1e8'
-const surfaceBase = '#fffdf9'
-const surfaceMuted = '#f8f3ea'
-const borderSubtle = '#ddd4c5'
-const textStrong = '#203330'
-const textMuted = '#5d6d69'
-const shellHeaderBackground = 'rgba(255, 253, 249, 0.92)'
-const surfaceOverlayStrong = 'rgba(255, 253, 249, 0.88)'
-const surfaceOverlaySoft = 'rgba(255, 253, 249, 0.82)'
-const leadingRowBackground = 'rgba(224, 114, 52, 0.08)'
-
-// Mantine's default dimmed grey (#868e96) is 2.95:1 on the page background and
-// 3.27:1 on cards. textMuted gives 4.84:1 and 5.36:1 (WCAG AA for body text).
+// Stock Mantine values are replaced where they fail WCAG (placeholder, dimmed, error, control
+// border). Dark primary text and links use ember-3 (ember-4 is the fill, 4.52 on hover surfaces).
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {},
-  light: { '--mantine-color-dimmed': textMuted },
-  dark: {},
+  light: { ...mantineOverrides('light'), ...tnCssVariables('light') },
+  dark: {
+    ...mantineOverrides('dark'),
+    '--mantine-color-primary-text': 'var(--mantine-color-ember-3)',
+    '--mantine-color-anchor': 'var(--mantine-color-ember-3)',
+    ...tnCssVariables('dark'),
+  },
 })
 
 export const theme = createTheme({
   colors: {
-    courtTeal,
-    clay,
+    // Raw scales
+    brand: [...scales.brand],
+    ember: [...scales.ember],
+    dark: [...scales.navy],
+    dangerScale: [...scales.danger],
+    warningScale: [...scales.warning],
+    successScale: [...scales.success],
+    // Semantic colors are virtual so Mantine derives -contrast/-filled per scheme.
+    primary: virtualColor({ name: 'primary', light: 'brand', dark: 'ember' }),
+    red: virtualColor({ name: 'red', light: 'dangerScale', dark: 'dangerScale' }),
+    warning: virtualColor({ name: 'warning', light: 'warningScale', dark: 'warningScale' }),
+    success: virtualColor({ name: 'success', light: 'successScale', dark: 'successScale' }),
   },
-  primaryColor: 'courtTeal',
-  primaryShade: { light: 6, dark: 7 },
-  defaultRadius: 'lg',
-  white: surfaceBase,
-  black: textStrong,
+  primaryColor: 'primary',
+  primaryShade: { light: 6, dark: 4 },
+  autoContrast: true,
+  defaultRadius: 'md',
+  white: THEME_WHITE,
+  black: THEME_BLACK,
   cursorType: 'pointer',
   focusRing: 'auto',
   respectReducedMotion: true,
-  fontFamily: 'Inter, system-ui, sans-serif',
-  fontFamilyMonospace: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  fontFamilyMonospace: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   spacing: {
     xs: rem(10),
     sm: rem(14),
@@ -88,19 +81,17 @@ export const theme = createTheme({
     xl: rem(32),
   },
   radius: {
-    xs: rem(8),
-    sm: rem(10),
-    md: rem(14),
-    lg: rem(18),
-    xl: rem(24),
+    xs: rem(4),
+    sm: rem(6),
+    md: rem(8),
+    lg: rem(12),
+    xl: rem(16),
   },
   shadows: {
-    xs: '0 1px 2px rgba(32, 51, 48, 0.06)',
-    sm: '0 8px 24px rgba(32, 51, 48, 0.08)',
-    md: '0 14px 32px rgba(32, 51, 48, 0.10)',
+    xs: '0 1px 2px rgba(0, 0, 0, 0.06)',
   },
   headings: {
-    fontFamily: 'Inter, system-ui, sans-serif',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
     fontWeight: '700',
     textWrap: 'balance',
     sizes: {
@@ -111,14 +102,12 @@ export const theme = createTheme({
     },
   },
   other: {
-    shellBackground,
-    shellHeaderBackground,
-    surfaceMuted,
-    surfaceOverlayStrong,
-    surfaceOverlaySoft,
-    borderSubtle,
-    textMuted,
-    leadingRowBackground,
+    shellBackground: 'var(--mantine-color-body)',
+    shellHeaderBackground: 'var(--tn-shell-header)',
+    surfaceMuted: 'var(--tn-surface-muted)',
+    surfaceOverlayStrong: 'var(--tn-overlay-strong)',
+    surfaceOverlaySoft: 'var(--tn-overlay-soft)',
+    borderSubtle: 'var(--tn-border-subtle)',
   },
   components: {
     Paper: Paper.extend({
@@ -130,14 +119,13 @@ export const theme = createTheme({
       },
       styles: {
         root: {
-          backgroundColor: surfaceBase,
-          borderColor: borderSubtle,
+          backgroundColor: 'var(--tn-surface)',
+          borderColor: 'var(--tn-border-subtle)',
         },
       },
     }),
     Button: Button.extend({
       defaultProps: {
-        radius: 'xl',
         size: 'md',
       },
       styles: {
@@ -148,25 +136,25 @@ export const theme = createTheme({
     }),
     Tabs: Tabs.extend({
       defaultProps: {
-        radius: 'xl',
-        color: 'courtTeal',
+        color: 'primary',
       },
       styles: {
         list: {
           gap: rem(8),
         },
         tab: {
+          fontFamily: 'var(--mantine-font-family-monospace)',
           fontWeight: 600,
         },
       },
     }),
     Badge: Badge.extend({
       defaultProps: {
-        radius: 'xl',
         variant: 'light',
       },
       styles: {
         root: {
+          fontFamily: 'var(--mantine-font-family-monospace)',
           fontWeight: 700,
           letterSpacing: '0.01em',
         },
@@ -177,18 +165,25 @@ export const theme = createTheme({
         radius: 'lg',
         variant: 'light',
       },
-      styles: {
-        root: {
-          border: `1px solid ${borderSubtle}`,
-          backgroundColor: surfaceMuted,
-        },
-        title: {
-          fontWeight: 700,
-          color: textStrong,
-        },
-        message: {
-          color: textMuted,
-        },
+      styles: (_theme, props) => {
+        // Stock gray text (gray-6) is 2.97:1 on the muted surface; dimmed passes in both schemes.
+        const gray = props.color === 'gray'
+        return {
+          root: {
+            border: '1px solid var(--tn-border-subtle)',
+            backgroundColor: 'var(--tn-surface-muted)',
+            ...(gray
+              ? { '--alert-color': 'var(--mantine-color-dimmed)', borderColor: 'var(--mantine-color-dimmed)' }
+              : {}),
+          },
+          title: {
+            fontWeight: 700,
+            color: 'var(--mantine-color-text)',
+          },
+          message: {
+            color: 'var(--mantine-color-dimmed)',
+          },
+        }
       },
     }),
     Table: Table.extend({
@@ -198,17 +193,36 @@ export const theme = createTheme({
         horizontalSpacing: 'md',
         verticalSpacing: 'sm',
         withTableBorder: true,
+        // Stock stripe/hover grays are invisible (light) or equal to the surface (dark).
+        stripedColor: 'var(--tn-surface-muted)',
+        highlightOnHoverColor: 'var(--tn-row-hover)',
       },
       styles: {
         table: {
-          borderColor: borderSubtle,
+          borderColor: 'var(--tn-border-subtle)',
         },
         thead: {
-          backgroundColor: surfaceMuted,
+          backgroundColor: 'var(--tn-surface-muted)',
+          borderBottom: '2px solid var(--mantine-color-default-border)',
         },
         th: {
-          color: textStrong,
+          color: 'var(--mantine-color-text)',
           fontWeight: 700,
+        },
+      },
+    }),
+    // Stock checked Chip puts white on the primary fill (2.81:1 in dark); an explicit color
+    // makes Mantine compute the per-scheme contrast text.
+    Chip: Chip.extend({
+      defaultProps: {
+        color: 'primary',
+      },
+    }),
+    // Stock dark item hover is dark-4 (3.18:1 for text); inherits to every item.
+    Menu: Menu.extend({
+      styles: {
+        dropdown: {
+          '--menu-item-hover': 'var(--tn-row-hover)',
         },
       },
     }),
@@ -238,17 +252,16 @@ export const theme = createTheme({
     }),
     Drawer: Drawer.extend({
       defaultProps: {
-        radius: 'xl',
         padding: 'lg',
         overlayProps: { backgroundOpacity: 0.45, blur: 2 },
       },
       styles: {
         content: {
-          backgroundColor: surfaceBase,
+          backgroundColor: 'var(--tn-surface)',
         },
         header: {
-          backgroundColor: surfaceBase,
-          borderBottom: `1px solid ${borderSubtle}`,
+          backgroundColor: 'var(--tn-surface)',
+          borderBottom: '1px solid var(--tn-border-subtle)',
         },
       },
     }),

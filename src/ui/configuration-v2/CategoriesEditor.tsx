@@ -43,6 +43,7 @@ function IconPlus({ size = 16 }: { size?: number }) {
 // ── resizeGroups helper ───────────────────────────────────────────────────────
 
 import type { V2SetupGroupDraft } from '../../domain/v2Setup'
+import { ErrorIcon } from '../icons'
 
 /**
  * Returns a new groups array resized to `count` (clamped 1..5).
@@ -160,6 +161,9 @@ function ReduceGroupsModal({ opened, affectedPairs, onCancel, onConfirm }: Reduc
   )
 }
 
+// Height of an md input label (font-size-md × line-height), used to align the row's icon.
+const LABEL_OFFSET = 'calc(var(--mantine-font-size-md) * var(--mantine-line-height))'
+
 // ── Single category row ───────────────────────────────────────────────────────
 
 interface CategoryRowProps {
@@ -215,7 +219,7 @@ function CategoryRow({
 
   return (
     <>
-      <Group gap="sm" align="flex-end" wrap="nowrap">
+      <Group gap="sm" align="flex-start" wrap="nowrap">
         <TextInput
           label="Nombre de la categoría"
           required
@@ -242,7 +246,10 @@ function CategoryRow({
         <ActionIcon
           variant="subtle"
           color="red"
-          size={44}
+          size="input-md"
+          // Offset by the md input label height so the icon sits level with the input boxes,
+          // whether or not a validation error renders below them.
+          mt={LABEL_OFFSET}
           aria-label="Eliminar categoría"
           disabled={disabled}
           onClick={onRemove}
@@ -315,25 +322,26 @@ export function CategoriesEditor({
 
   return (
     <Stack gap="md">
-      {/* Header: title + add button */}
-      <Group gap="xs" align="center">
-        <Title order={2} size="h3" style={{ flex: 1 }}>
+      <Group justify="space-between" align="center">
+        <Title order={2} size="h3">
           Categorías
         </Title>
         <Tooltip label="Agregar categoría">
           <ActionIcon
-            variant="subtle"
+            variant="filled"
+            size="lg"
+            radius="xl"
             aria-label="Agregar categoría"
             disabled={disabled}
             onClick={() => onChange([...value, newCategoryDraft()])}
           >
-            <IconPlus size={16} />
+            <IconPlus size={18} />
           </ActionIcon>
         </Tooltip>
       </Group>
 
       {headerError && (
-        <Text size="sm" c="red">
+        <Text size="sm" c="red"><ErrorIcon inline />
           {headerError}
         </Text>
       )}

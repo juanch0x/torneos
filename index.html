@@ -1,9 +1,29 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-mantine-color-scheme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Torneos — Pelota Paleta</title>
+    <title>Paleta Mendoza · Torneos</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      try {
+        var stored = window.localStorage.getItem('torneos-color-scheme');
+        var scheme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+        document.documentElement.setAttribute('data-mantine-color-scheme', scheme);
+      } catch (e) {}
+    </script>
+    <style>
+      html:root[data-mantine-color-scheme=dark] {
+        --mantine-color-body: #212737;
+        --mantine-color-text: #eaedf3;
+        background-color: #212737;
+      }
+      html:root[data-mantine-color-scheme=light] {
+        --mantine-color-body: #fdfdfd;
+        --mantine-color-text: #282728;
+        background-color: #fdfdfd;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

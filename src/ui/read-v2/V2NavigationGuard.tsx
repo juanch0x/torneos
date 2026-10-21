@@ -5,6 +5,7 @@ import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
 import { planningIssueText } from './planningIssueText'
+import { ErrorIcon } from '../icons'
 
 /** Owns the unsaved-changes blocker, its modal, the navigationBlocked sync, save-error
  *  text display, and the "Actualizar desde datos guardados" reload button.
@@ -67,7 +68,7 @@ export function V2NavigationGuard({ tournamentId }: { tournamentId?: string }) {
   return (
     <>
       {saveErrorText && (
-        <Text role="alert" c="red" size="sm">
+        <Text role="alert" c="red" size="sm"><ErrorIcon inline />
           {saveErrorText}
         </Text>
       )}
@@ -97,7 +98,7 @@ export function V2NavigationGuard({ tournamentId }: { tournamentId?: string }) {
       >
         <Stack>
           {state.writeUncertain && (
-            <Alert color="red">
+            <Alert icon={<ErrorIcon />} color="red">
               No se confirmó el último guardado. Actualiza desde los datos
               guardados para verificarlo antes de salir.
             </Alert>

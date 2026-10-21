@@ -10,8 +10,8 @@ import { plural } from '../../domain/text'
 
 interface DemoPair { id: string; categoryId: string; groupId: string | null; first: string; second: string; windows: RestrictionWindow[] }
 const categories = [
-  { id: 'first', name: 'Primera', color: 'grape' }, { id: 'second', name: 'Segunda', color: 'teal' },
-  { id: 'third', name: 'Tercera', color: 'orange' }, { id: 'fourth', name: 'Cuarta', color: 'blue' },
+  { id: 'first', name: 'Primera' }, { id: 'second', name: 'Segunda' },
+  { id: 'third', name: 'Tercera' }, { id: 'fourth', name: 'Cuarta' },
 ]
 const names = [
   ['Pérez', 'Gil', 'López', 'Ruiz', 'Mora', 'Soler', 'Cano', 'Valle', 'Vega', 'Lara'],
@@ -52,13 +52,13 @@ function DemoGroupsPage() {
 
   return <Stack gap="lg" className="preparation-v2">
     <Group justify="space-between" align="flex-start"><Stack gap={6}>
-      <Group><Badge color="grape" variant="light">V2 · Prototipo</Badge><Text size="sm" c="dimmed">Datos ficticios · Sin guardar</Text></Group>
+      <Group><Badge color="gray" variant="light">V2 · Prototipo</Badge><Text size="sm" c="dimmed">Datos ficticios · Sin guardar</Text></Group>
       <Title order={1} size="h2">Preparar grupos y restricciones</Title>
       <Text c="dimmed">Categorías definidas. Grupos claros. Marcá únicamente las excepciones.</Text>
     </Stack><Group><Button component={Link} to="/v2/calendar" variant="light">Probar calendario</Button><Button component={Link} to="/v2/read" variant="subtle">Leer torneo real</Button><Button component={Link} to="/" variant="subtle">Volver a torneos</Button></Group></Group>
     <Paper withBorder p="sm" radius="md"><Text size="sm">Este ejemplo no comparte datos con el calendario. Guardar restricciones NUNCA reprograma partidos.</Text></Paper>
     <Tabs value={categoryId} onChange={(value) => { if (value) setCategoryId(value) }}>
-      <Tabs.List>{categories.map((category) => <Tabs.Tab key={category.id} value={category.id}>{category.name} <Badge ml={6} size="sm" color={category.color} variant="light">{pairs.filter((pair) => pair.categoryId === category.id).length}</Badge></Tabs.Tab>)}</Tabs.List>
+      <Tabs.List>{categories.map((category) => <Tabs.Tab key={category.id} value={category.id}>{category.name} <Badge ml={6} size="sm" color="gray" variant="light">{pairs.filter((pair) => pair.categoryId === category.id).length}</Badge></Tabs.Tab>)}</Tabs.List>
       {categories.map((category) => <Tabs.Panel key={category.id} value={category.id} pt="lg">
         <Stack gap="md"><Group justify="space-between"><Title order={2} size="h4">{category.name}</Title><Button variant="default" onClick={() => { setGroupName(''); setAddOpen(true) }}>Agregar grupo</Button></Group>
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
@@ -70,7 +70,7 @@ function DemoGroupsPage() {
                 {members.map((pair) => <Paper key={pair.id} withBorder p="sm" radius="md">
                   <Group justify="space-between" wrap="nowrap" align="flex-start"><Stack gap={3}>
                     <Text fw={600} size="sm">{pair.first} / {pair.second}</Text>
-                    <Button size="compact-xs" variant="subtle" color={pair.windows.length ? 'red' : 'teal'} onClick={() => open(pair, 'restrictions')}>
+                    <Button size="compact-xs" variant="subtle" color={pair.windows.length ? 'red' : 'primary'} onClick={() => open(pair, 'restrictions')}>
                       {pair.windows.length ? `${pair.windows.length} ${pair.windows.length === 1 ? 'restricción' : 'restricciones'}` : 'Sin restricciones'}
                     </Button>
                   </Stack><Menu withinPortal width={210} position="bottom-end"><Menu.Target><Button variant="subtle" size="compact-sm" aria-label={`Acciones de ${pair.first} y ${pair.second}`}>⋯</Button></Menu.Target><Menu.Dropdown>

@@ -1,10 +1,32 @@
-/* Base resets — Mantine owns all element and component styling. */
-:root {
-  font-family: system-ui, sans-serif;
-  line-height: 1.5;
-  color: #1a1a1a;
-}
-
+/* Base resets. Mantine owns text color, font and component styling; this file only holds
+   rules that reference theme variables (no color literals, no palette definitions). */
 * {
   box-sizing: border-box;
+}
+
+/* Dashed accent focus ring. */
+.mantine-focus-auto:focus-visible,
+:focus-visible {
+  outline: 2px dashed var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+/* Explicit pair: a 75% mix failed the text contrast (4.23 light, 3.64 dark); 50% passes. */
+::selection {
+  background-color: color-mix(in srgb, var(--mantine-primary-color-filled) 50%, var(--mantine-color-body));
+  color: var(--mantine-color-text);
+}
+
+/* Mono utilities. Labels are small uppercase captions; times are tabular so columns align. */
+.tn-label {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--mantine-primary-color-text);
+}
+
+.tn-time {
+  font-family: var(--mantine-font-family-monospace);
+  font-variant-numeric: tabular-nums;
 }

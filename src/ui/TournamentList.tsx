@@ -6,10 +6,12 @@ import {
 } from '@tanstack/react-table'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState, useRef } from 'react'
-import { Alert, Button, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Group, Paper, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import type { TournamentMeta } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { formatTournamentPeriod } from './tournamentPeriod'
+import { ErrorIcon } from './icons'
+import { tournamentNameError } from './tournamentName'
 
 const columnHelper = createColumnHelper<TournamentMeta>()
 
@@ -24,6 +26,7 @@ export function TournamentList() {
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
+  const [nameError, setNameError] = useState<string | null>(null)
 
   const columns = useMemo(
     () => [
@@ -34,9 +37,15 @@ export function TournamentList() {
         id: 'acciones',
         header: '',
         cell: ({ row }) => (
-          <Link to="/v2/groups" search={{ tournamentId: row.original.id }}>
-            Abrir
-          </Link>
+          <Group justify="flex-end">
+            <Button
+              size="xs"
+              variant="light"
+              renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: row.original.id }} />}
+            >
+              Abrir
+            </Button>
+          </Group>
         ),
       }),
     ],
@@ -45,40 +54,67 @@ export function TournamentList() {
 
   const table = useReactTable({ data: list, columns, getCoreRowModel: getCoreRowModel() })
 
-  return (
-    <Stack gap="md">
-      <Title order={2}>Torneos</Title>
-      {listError && <Alert color="red">{listError}<Button variant="light" onClick={() => void loadList()}>Reintentar lectura</Button></Alert>}
-      {creationError && <Alert color="red">{creationError}</Alert>}
+  const create = () => {
+    if (creatingRef.current) return
+    const error = tournamentNameError(name)
+    setNameError(error)
+    if (error) return
+    creatingRef.current = true; setCreating(true); setCreationError('')
+    const trimmed = name.trim()
+    void newTournament(trimmed).then(() => {
+      setName('')
+      const id = useTournamentStore.getState().current!.id
+      return navigate({ to: '/v2/configuration', search: { tournamentId: id } })
+    }).catch(() => setCreationError('No se pudo confirmar la creación. Releé la lista antes de reintentar: el documento puede haberse guardado parcialmente.')).finally(() => { creatingRef.current = false; setCreating(false) })
+  }
 
-      <Group gap="sm" wrap="wrap">
-        <TextInput
-          placeholder="Nombre del torneo"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Button
-          disabled={creating || !name.trim()}
-          loading={creating}
-          onClick={() => {
-            if (creatingRef.current) return
-            creatingRef.current = true; setCreating(true); setCreationError('')
-            const trimmed = name.trim()
-            void newTournament(trimmed).then(() => {
-              setName('')
-              const id = useTournamentStore.getState().current!.id
-              return navigate({ to: '/v2/configuration', search: { tournamentId: id } })
-            }).catch(() => setCreationError('No se pudo confirmar la creación. Releé la lista antes de reintentar: el documento puede haberse guardado parcialmente.')).finally(() => { creatingRef.current = false; setCreating(false) })
+  return (
+    <Stack gap="lg">
+      <Stack gap={4}>
+        <Title order={1} size="h2">Torneos</Title>
+        <Text c="dimmed" size="sm">Creá un torneo o abrí uno existente.</Text>
+      </Stack>
+      {listError && (
+        <Alert icon={<ErrorIcon />} color="red" title="No se pudo leer la lista">
+          {listError}
+          <Button mt="sm" size="xs" variant="light" onClick={() => void loadList()}>Reintentar lectura</Button>
+        </Alert>
+      )}
+      {creationError && <Alert icon={<ErrorIcon />} color="red">{creationError}</Alert>}
+
+      <Paper withBorder p="md">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            create()
           }}
         >
-          Nuevo torneo
-        </Button>
-      </Group>
+          <Group gap="sm" align="flex-end" wrap="wrap">
+            <TextInput
+              label="Nombre del torneo"
+              value={name}
+              error={nameError}
+              onChange={(e) => {
+                setName(e.target.value)
+                if (nameError) setNameError(null)
+              }}
+              maw={480}
+              style={{ flex: 1 }}
+            />
+            <Button type="submit" disabled={creating} loading={creating}>
+              Nuevo torneo
+            </Button>
+          </Group>
+        </form>
+      </Paper>
 
       {list.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          Todavía no hay torneos. Creá el primero.
-        </Text>
+        <Paper withBorder p="md">
+          <Stack gap={4}>
+            <Text className="tn-label" fz="xs">Sin torneos</Text>
+            <Text c="dimmed" size="sm">Todavía no hay torneos. Creá el primero con el formulario de arriba.</Text>
+          </Stack>
+        </Paper>
       ) : (
         <Table.ScrollContainer minWidth={480}>
           <Table>

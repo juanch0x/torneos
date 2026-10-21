@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router'
-import { Anchor, Breadcrumbs, Text } from '@mantine/core'
+import { Breadcrumbs, Text } from '@mantine/core'
+import { RouterLink } from './RouterLink'
 
 interface TournamentBreadcrumbProps {
   tournamentId: string
@@ -15,9 +15,9 @@ interface TournamentBreadcrumbProps {
 export function TournamentBreadcrumb({ tournamentId, name, current, linkTournament = false }: TournamentBreadcrumbProps) {
   return (
     <Breadcrumbs>
-      <Anchor renderRoot={props => <Link {...props} to="/" />} size="sm">Torneos</Anchor>
+      <RouterLink to="/" size="sm">Torneos</RouterLink>
       {linkTournament ? (
-        <Anchor renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />} size="sm">{name}</Anchor>
+        <RouterLink to="/v2/groups" search={{ tournamentId }} size="sm">{name}</RouterLink>
       ) : (
         <Text span size="sm">{name}</Text>
       )}

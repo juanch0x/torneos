@@ -1,5 +1,14 @@
+import type { CSSProperties } from 'react'
 import { ActionIcon, Badge, Group, Menu, Stack, Text } from '@mantine/core'
 import { plural } from '../../domain/text'
+import { ErrorIcon, WarningIcon } from '../icons'
+
+// Menu.Item color="red" sets --menu-item-color (red-6) and --menu-item-hover inline, which
+// defeats the theme override and renders 1.95:1 in dark. Set both variables directly instead.
+const DANGER_ITEM_STYLE = {
+  '--menu-item-color': 'var(--mantine-color-red-text)',
+  '--menu-item-hover': 'var(--tn-row-hover)',
+} as CSSProperties
 
 export interface PairRowProps {
   label: string
@@ -25,9 +34,9 @@ export function PairRow(props: PairRowProps) {
     <Stack gap={4} style={{ minWidth: 0 }}>
       <Text fw={600} size="sm" truncate="end" title={label}>{label}</Text>
       {(!!restrictionCount || !!conflictCount || !!pendingCount) && <Group gap={6}>
-        {!!restrictionCount && <Badge component="button" type="button" variant="light" color={conflictCount ? 'red' : 'gray'} size="sm" radius="sm" style={{ cursor: props.restrictionsDisabled ? 'default' : 'pointer' }} disabled={props.restrictionsDisabled} onClick={props.onRestrictions}>{plural(restrictionCount, 'restricción', 'restricciones')}</Badge>}
-        {!!conflictCount && <Text size="xs" c="red">{plural(conflictCount, 'conflicto', 'conflictos')}</Text>}
-        {!!pendingCount && <Text size="xs" c="orange.8">{plural(pendingCount, 'partido', 'partidos')} sin validar</Text>}
+        {!!restrictionCount && <Badge component="button" type="button" variant="light" color={conflictCount ? 'red' : 'gray'} leftSection={conflictCount ? <ErrorIcon size={12} /> : undefined} size="sm" radius="sm" style={{ cursor: props.restrictionsDisabled ? 'default' : 'pointer' }} disabled={props.restrictionsDisabled} onClick={props.onRestrictions}>{plural(restrictionCount, 'restricción', 'restricciones')}</Badge>}
+        {!!conflictCount && <Text size="xs" c="red"><ErrorIcon inline />{plural(conflictCount, 'conflicto', 'conflictos')}</Text>}
+        {!!pendingCount && <Text size="xs" c="warning"><WarningIcon inline />{plural(pendingCount, 'partido', 'partidos')} sin validar</Text>}
       </Group>}
     </Stack>
     <Menu withinPortal loop position="bottom-end">
@@ -39,7 +48,7 @@ export function PairRow(props: PairRowProps) {
         <Menu.Item disabled={props.restrictionsDisabled} onClick={props.onRestrictions}>{restrictionsLabel}</Menu.Item>
         <Menu.Item onClick={props.onEditNames}>Editar nombres</Menu.Item>
         <Menu.Divider />
-        <Menu.Item color="red" disabled={props.deleteDisabled} onClick={props.onDelete}>Eliminar pareja</Menu.Item>
+        <Menu.Item style={DANGER_ITEM_STYLE} disabled={props.deleteDisabled} onClick={props.onDelete}>Eliminar pareja</Menu.Item>
       </Menu.Dropdown>
     </Menu>
   </Group>

@@ -1,0 +1,71 @@
+/* Fixes for Mantine's built-in colors that fail WCAG with this palette. Variables only, no
+   color literals. Imported after '@mantine/core/styles.css' so equal-specificity rules win. */
+
+/* Stock rule paints the selected option with white text on the primary fill (2.81:1 in dark).
+   Specificity (0,2,0) beats Mantine's :where() rule. */
+.mantine-Select-option[data-combobox-selected] {
+  color: var(--mantine-primary-color-contrast);
+}
+
+/* The stock light default input border is gray-4 (1.47:1). Error and success states keep their
+   own border variables, so they are excluded here. */
+:root[data-mantine-color-scheme='light'] .mantine-Input-wrapper[data-variant='default']:not([data-error]):not([data-success]) {
+  --input-bd: var(--mantine-color-default-border);
+}
+
+/* Structural lines are decorative. Stock dark uses dark-4, the same value as the control
+   border, which reads as a bright line on the navy body. Control borders (inputs, default
+   Button, table header separator) keep the control border token. Mantine scopes these colors
+   with :where() (0,1,0), so these (0,3,0) selectors win regardless of order. */
+:root[data-mantine-color-scheme] .mantine-Table-table {
+  --table-border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Divider-root {
+  --divider-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Popover-dropdown {
+  --popover-border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Menu-dropdown {
+  --popover-border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Select-dropdown {
+  --popover-border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Menu-divider {
+  border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Menu-search {
+  border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Combobox-search {
+  border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Combobox-header {
+  border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Combobox-footer {
+  border-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Combobox-groupLabel::after {
+  background-color: var(--tn-border-subtle);
+}
+
+:root[data-mantine-color-scheme] .mantine-Fieldset-root {
+  border-color: var(--tn-border-subtle);
+}
+
+/* The stock Tabs rule is [data-mantine-color-scheme] .root (0,2,0); this is (0,3,0). */
+:root[data-mantine-color-scheme] .mantine-Tabs-root {
+  --tab-border-color: var(--tn-border-subtle);
+}

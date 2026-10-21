@@ -30,7 +30,11 @@ import { useTournamentStore } from '../store/tournamentStore'
 import { createExportXlsxController, initialExportXlsxState } from './exportXlsxController'
 import { MobileMatchCard } from './MobileMatchCard'
 import { formatShortDate, formatDayDateTime, formatTimeRange } from './format'
-import { getMutedSurfaceStyle } from './surfaceStyles'
+import { getMutedSurfaceStyle, guidanceGradient } from './surfaceStyles'
+import { useCategoryDisplay } from './categoryColors'
+import { ErrorIcon, SuccessIcon, WarningIcon } from './icons'
+
+const REORDER_ICON = { success: <SuccessIcon />, warning: <WarningIcon />, red: <ErrorIcon /> } as const
 
 interface MatchInfo {
   match: Match
@@ -136,7 +140,7 @@ function FixtureOutcomeSummary({
       p={{ base: 'md', sm: 'lg' }}
       radius="xl"
       style={{
-        background: `linear-gradient(135deg, ${theme.colors.clay[0]} 0%, ${theme.white} 55%, ${theme.colors.courtTeal[0]} 100%)`,
+        background: guidanceGradient(55),
         borderColor: theme.other.borderSubtle,
       }}
     >
@@ -144,7 +148,7 @@ function FixtureOutcomeSummary({
         <Group justify="space-between" align="flex-start" gap="sm">
           <Stack gap={4}>
             <Group gap="xs">
-              <Badge color={hasExceptions ? 'blue' : 'green'}>
+              <Badge color={hasExceptions ? 'primary' : 'success'}>
                 {hasExceptions ? 'Revisión puntual' : 'Listo para revisar'}
               </Badge>
               <Title order={3}>
@@ -210,6 +214,7 @@ export const CALENDAR_DISCLOSURE_BUTTON_TYPE = 'button'
 const columnHelper = createColumnHelper<Slot>()
 
 export function SchedulePanel({ tournament }: { tournament: Tournament }) {
+  const categoryColor = useCategoryDisplay()
   const theme = useMantineTheme()
   const generateFixture = useTournamentStore((s) => s.generateFixture)
   const setFixtureCalendar = useTournamentStore((s) => s.setFixtureCalendar)
@@ -235,7 +240,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
   const [draggedMatchId, setDraggedMatchId] = useState<ID | null>(null)
   const [dropTargetId, setDropTargetId] = useState<ID | null>(null)
   const [reorderFeedback, setReorderFeedback] =
-    useState<{ color: 'green' | 'orange' | 'red'; message: string } | null>(null)
+    useState<{ color: 'success' | 'warning' | 'red'; message: string } | null>(null)
   const [unavailablePairId, setUnavailablePairId] = useState<string | null>(null)
   const [unavailableStartsAt, setUnavailableStartsAt] = useState('')
   const [unavailableEndsAt, setUnavailableEndsAt] = useState('')
@@ -293,12 +298,12 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       const warning = outcome.createsBackToBack
         ? ' Atención: una pareja quedó con partidos consecutivos.'
         : ''
-      setReorderFeedback({ color: outcome.createsBackToBack ? 'orange' : 'green', message: `Partido reordenado.${shifted}${warning}` })
+      setReorderFeedback({ color: outcome.createsBackToBack ? 'warning' : 'success', message: `Partido reordenado.${shifted}${warning}` })
       return
     }
 
     if (outcome.status === 'no-op') {
-      setReorderFeedback({ color: 'orange', message: 'El partido ya estaba en esa franja.' })
+      setReorderFeedback({ color: 'warning', message: 'El partido ya estaba en esa franja.' })
       return
     }
 
@@ -322,7 +327,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       }),
       columnHelper.accessor('startsAt', {
         header: 'Cuándo',
-        cell: (ctx) => formatDayDateTime(ctx.getValue()),
+        cell: (ctx) => <span className="tn-time">{formatDayDateTime(ctx.getValue())}</span>,
       }),
       columnHelper.display({
         id: 'partido',
@@ -460,7 +465,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           metaLabel={info.label}
           teamA={info.labelA}
           teamB={info.labelB}
-          accentColor={info.color}
+          accentColor={categoryColor(info.color).bg}
         />
       )
     }
@@ -474,7 +479,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       >
         <Stack gap="xs">
           <Group justify="space-between" gap="xs" wrap="wrap">
-            <Text size="sm" c="dimmed">{formatDayDateTime(slot.startsAt)}</Text>
+            <Text size="sm" c="dimmed" className="tn-time">{formatDayDateTime(slot.startsAt)}</Text>
             <Badge color="gray">Franja libre</Badge>
           </Group>
           <Text c="dimmed" size="sm">
@@ -490,7 +495,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       <Stack gap="md">
         <Stack gap={4}>
           <Group gap="xs" wrap="wrap">
-            <Badge color="courtTeal">Una sola cancha</Badge>
+            <Badge color="primary">Una sola cancha</Badge>
             <Badge color="gray">Todas las categorías</Badge>
           </Group>
           <Title order={2}>Calendario y horarios</Title>
@@ -519,7 +524,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               {exceptionsOpened ? 'Ocultar cambios por día' : 'Cambiar horario de un día'}
             </Button>
             <Collapse expanded={exceptionsOpened}>
-              <Paper p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+              <Paper p="sm" radius="lg" style={{ backgroundColor: 'var(--tn-surface)', borderColor: theme.other.borderSubtle }}>
                 <Stack gap="xs">
                   <Text fw={600} size="sm">Excepción por día</Text>
                   <Group gap="sm" wrap="wrap" align="flex-end">
@@ -533,7 +538,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               </Paper>
             </Collapse>
             {calendarError && (
-              <Alert
+              <Alert icon={<ErrorIcon />}
                 color="red"
                 title={calendarError.startsWith('No hay partidos') ? 'Faltan partidos para generar el calendario' : 'Revisá el calendario'}
               >
@@ -544,13 +549,13 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         </Paper>
 
         {reorderFeedback && (
-          <Alert color={reorderFeedback.color} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del calendario'}>
+          <Alert color={reorderFeedback.color} icon={REORDER_ICON[reorderFeedback.color]} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del calendario'}>
             <Text size="sm">{reorderFeedback.message}</Text>
           </Alert>
         )}
 
         {exportState.errorMessage && (
-          <Alert color="red" title="Error al exportar">
+          <Alert icon={<ErrorIcon />} color="red" title="Error al exportar">
             <Text size="sm">{exportState.errorMessage}</Text>
           </Alert>
         )}
@@ -573,7 +578,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               <Stack gap={4}>
                 <Group gap="xs" wrap="wrap">
                   <Title order={3}>Restricciones de parejas</Title>
-                  <Badge color="blue">Reacomodo guiado</Badge>
+                  <Badge color="primary">Reacomodo guiado</Badge>
                 </Group>
                 <Text c="dimmed" size="sm">
                   Registrá excepciones puntuales para una pareja y el calendario reubica lo necesario sin cambiar las reglas de agenda.
@@ -616,7 +621,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
             </Group>
 
             {(tournament.pairUnavailableWindows ?? []).length === 0 ? (
-              <Paper p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+              <Paper p="sm" radius="lg" style={{ backgroundColor: 'var(--tn-surface)', borderColor: theme.other.borderSubtle }}>
                 <Text size="sm" c="dimmed">
                   Todavía no hay excepciones cargadas. Si aparece un conflicto puntual, agregalo acá y el calendario se reacomoda.
                 </Text>
@@ -626,13 +631,13 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                 {(tournament.pairUnavailableWindows ?? []).map((window) => {
                   const pair = pairOptions.find((option) => option.value === window.pairId)
                   return (
-                    <Paper key={window.id} p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+                    <Paper key={window.id} p="sm" radius="lg" style={{ backgroundColor: 'var(--tn-surface)', borderColor: theme.other.borderSubtle }}>
                       <Group justify="space-between" gap="xs" wrap="wrap">
                         <Box style={{ flex: '1 1 18rem' }}>
                           <Text size="sm" fw={600}>
                             {pair?.label ?? window.pairId}
                           </Text>
-                          <Text size="sm" c="dimmed">
+                          <Text size="sm" c="dimmed" className="tn-time">
                             {formatTimeRange(window.startsAt, window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
                           </Text>
                         </Box>
@@ -656,10 +661,10 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           >
             <Stack gap="xs">
               <Group gap="xs" wrap="wrap">
-                <Badge color={calendarError ? 'red' : 'gray'}>
+                <Badge color={calendarError ? 'red' : 'gray'} leftSection={calendarError ? <ErrorIcon size={12} /> : undefined}>
                   {!hasScheduleableMatches(tournament) ? 'Faltan partidos por agendar' : calendarError ? 'Calendario sin capacidad' : 'Sin calendario todavía'}
                 </Badge>
-                {!calendarError && <Badge color="courtTeal">Paso siguiente</Badge>}
+                {!calendarError && <Badge color="primary">Paso siguiente</Badge>}
               </Group>
               <Text fw={700}>
                 {!hasScheduleableMatches(tournament) ? 'Faltan parejas o grupos con partidos' : calendarError ? 'No se pudo generar el calendario' : 'Todavía no hay horarios generados'}
@@ -729,8 +734,8 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                         setDropTargetId(null)
                       }}
                       style={{
-                        ...(info ? { boxShadow: `inset 4px 0 0 ${info.color}` } : {}),
-                        ...(isDropTarget ? { backgroundColor: theme.colors.courtTeal[1], outline: `2px solid ${theme.colors.courtTeal[6]}` } : {}),
+                        ...(info ? { boxShadow: `inset 4px 0 0 ${categoryColor(info.color).bg}` } : {}),
+                        ...(isDropTarget ? { backgroundColor: 'var(--mantine-primary-color-light)', outline: '2px solid var(--mantine-primary-color-filled)' } : {}),
                         ...(isInvalidTarget ? { opacity: 0.55 } : {}),
                         ...(info ? { cursor: 'grab' } : {}),
                       }}

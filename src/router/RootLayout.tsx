@@ -1,15 +1,24 @@
-import { Outlet } from '@tanstack/react-router'
+import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { AppShell, Container, Group, Stack, Title, useMantineTheme } from '@mantine/core'
+import { Anchor, AppShell, Container, Group, Text, Title, useMantineTheme } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
+import { ColorSchemeToggle } from '../ui/ColorSchemeToggle'
+import { installPrintLightScheme } from '../ui/printScheme'
+import { isTournamentsNavActive } from './shellNav'
 
 export function RootLayout() {
   const loadList = useTournamentStore((s) => s.loadList)
   const theme = useMantineTheme()
+  const pathname = useLocation({ select: (l) => l.pathname })
+  // Every route is full width; header, content and footer share one fluid column so their edges align.
+  const columnPx = { base: 'md', sm: 'lg' }
+  const navActive = isTournamentsNavActive(pathname)
 
   useEffect(() => {
     void loadList()
   }, [loadList])
+
+  useEffect(() => installPrintLightScheme(), [])
 
   return (
     <AppShell
@@ -19,6 +28,8 @@ export function RootLayout() {
         main: {
           backgroundColor: theme.other.shellBackground,
           minHeight: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
         },
         header: {
           backgroundColor: theme.other.shellHeaderBackground,
@@ -29,19 +40,52 @@ export function RootLayout() {
       }}
     >
       <AppShell.Header>
-        <Container size="xl" h="100%" px={{ base: 'md', sm: 'lg' }}>
-          <Group h="100%" align="center">
-            <Stack gap={0}>
-              <Title order={3} c="courtTeal.6" lh={1.1}>
-                Torneos — Pelota Paleta
+        <Container fluid w="100%" h="100%" px={columnPx}>
+          <Group h="100%" align="center" gap="xl" wrap="nowrap" justify="space-between">
+            <Group align="center" gap="xl" wrap="nowrap">
+              <Title order={3} lh={1.1}>
+                <Anchor component={Link} to="/" c="primary" underline="never">
+                  Paleta Mendoza · Torneos
+                </Anchor>
               </Title>
-            </Stack>
+              <nav aria-label="Principal">
+                <Anchor
+                  component={Link}
+                  to="/"
+                  c={navActive ? 'primary' : 'dimmed'}
+                  aria-current={navActive ? 'page' : undefined}
+                  underline="never"
+                  fz="sm"
+                  style={{
+                    fontFamily: 'var(--mantine-font-family-monospace)',
+                    textDecoration: navActive ? 'underline wavy 2px' : 'none',
+                    textUnderlineOffset: 4,
+                  }}
+                >
+                  Torneos
+                </Anchor>
+              </nav>
+            </Group>
+            <ColorSchemeToggle />
           </Group>
         </Container>
       </AppShell.Header>
       <AppShell.Main>
-        <Container size="xl" px={{ base: 'md', sm: 'lg' }} py={{ base: 'lg', sm: 'xl' }}>
+        <Container fluid w="100%" px={columnPx} py={{ base: 'lg', sm: 'xl' }} style={{ flex: 1 }}>
           <Outlet />
+        </Container>
+        <Container
+          fluid
+          w="100%"
+          px={columnPx}
+          py="lg"
+          mt="auto"
+          component="footer"
+          style={{ borderTop: '1px solid var(--tn-border-subtle)' }}
+        >
+          <Text className="tn-label" fz="xs">
+            Paleta Mendoza · Torneos
+          </Text>
         </Container>
       </AppShell.Main>
     </AppShell>

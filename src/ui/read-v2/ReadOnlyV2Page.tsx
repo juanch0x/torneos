@@ -19,7 +19,9 @@ import { useTournamentStore } from '../../store/tournamentStore'
 import '../preparation-v2/preparationMock.css'
 import { formatShortDate, formatDateRange, formatDayDateTime } from '../format'
 import { formatTournamentPeriod } from '../tournamentPeriod'
+import { useCategoryDisplay } from '../categoryColors'
 import { plural } from '../../domain/text'
+import { ErrorIcon, LockIcon, WarningIcon } from '../icons'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
 const toolbar = { start: 'prev,next', center: 'title', end: '' }
@@ -28,10 +30,11 @@ const local = (instant: number) => formatDayDateTime(instant)
 function Matches({ matches }: { matches: V2DisplayMatch[] }) {
   return <Table.ScrollContainer minWidth={680}><Table><Table.Thead><Table.Tr><Table.Th>Partido</Table.Th><Table.Th>Categoría / grupo</Table.Th><Table.Th>Horario local / original</Table.Th></Table.Tr></Table.Thead><Table.Tbody>
     {matches.map(match => <Table.Tr key={match.key}><Table.Td><Text size="sm">{match.pairA} vs. {match.pairB}</Text><Text size="xs" c="dimmed">ID: {match.id}</Text></Table.Td>
-      <Table.Td>{match.categoryName} · {match.group}</Table.Td><Table.Td>{match.instant !== null ? local(match.instant) : match.status === 'unscheduled' ? 'Sin programar' : 'Horario inválido'}{match.scheduledAt !== undefined && <Text size="xs" c="dimmed">Original: {String(match.scheduledAt)}</Text>}</Table.Td></Table.Tr>)}
+      <Table.Td>{match.categoryName} · {match.group}</Table.Td><Table.Td>{match.instant !== null ? <span className="tn-time">{local(match.instant)}</span> : match.status === 'unscheduled' ? 'Sin programar' : 'Horario inválido'}{match.scheduledAt !== undefined && <Text size="xs" c="dimmed">Original: {String(match.scheduledAt)}</Text>}</Table.Td></Table.Tr>)}
   </Table.Tbody></Table></Table.ScrollContainer>
 }
 export function ReadOnlyV2Page() {
+  const categoryColor = useCategoryDisplay()
   const [sources, setSources] = useState<TournamentMeta[]>([])
   const [selected, setSelected] = useState('')
   const [snapshot, setSnapshot] = useState<V2ReadSnapshot | null>(null)
@@ -62,7 +65,7 @@ export function ReadOnlyV2Page() {
   const unscheduled = display?.matches.filter(match => match.status === 'unscheduled') ?? []
   const invalid = display?.matches.filter(match => match.status === 'invalid') ?? []
   return <Stack p="lg" gap="md">
-    <Group justify="space-between"><Stack gap={4}><Group><Title order={2}>V2 · Leer un torneo real</Title><Badge color="teal">Solo lectura</Badge></Group><Text size="sm" c="dimmed">Copia aislada · Original sin cambios · No se guarda ni se carga en V1</Text></Stack><Group><Button component={Link} to="/v2/groups" variant="light">Ejemplo de grupos</Button><Button component={Link} to="/v2/calendar" variant="light">Ejemplo de calendario</Button></Group></Group>
+    <Group justify="space-between"><Stack gap={4}><Group><Title order={2}>V2 · Leer un torneo real</Title><Badge color="gray" leftSection={<LockIcon size={12} />}>Solo lectura</Badge></Group><Text size="sm" c="dimmed">Copia aislada · Original sin cambios · No se guarda ni se carga en V1</Text></Stack><Group><Button component={Link} to="/v2/groups" variant="light">Ejemplo de grupos</Button><Button component={Link} to="/v2/calendar" variant="light">Ejemplo de calendario</Button></Group></Group>
     <Paper withBorder p="sm"><Group justify="space-between"><Stack gap={2}><Text fw={600} size="sm">Herramientas de desarrollo</Text><Text size="xs" c="dimmed">Crear un torneo de prueba lo guarda en este navegador. El inspector de abajo no modifica torneos existentes.</Text></Stack><Button variant="default" disabled={creatingMock} loading={creatingMock} onClick={async () => {
       if (creatingMock) return
       setCreatingMock(true); setError('')
@@ -75,16 +78,16 @@ export function ReadOnlyV2Page() {
       finally { setCreatingMock(false) }
     }}>Crear torneo mock</Button></Group></Paper>
     <NativeSelect label="Seleccioná explícitamente el torneo a inspeccionar" value={selected} onChange={event => void selectSource(event.currentTarget.value)} data={[{ value: '', label: sources.length ? 'Seleccionar torneo…' : 'No hay torneos en el repositorio actual' }, ...sources.map(source => ({ value: source.id, label: `${source.name} · ${formatTournamentPeriod(source.periodStart, source.periodEnd)}` }))]} />
-    {busy && <Text role="status">Leyendo…</Text>}{error && <Alert color="red" role="alert">{error}</Alert>}
+    {busy && <Text role="status">Leyendo…</Text>}{error && <Alert icon={<ErrorIcon />} color="red" role="alert">{error}</Alert>}
     {snapshot && display && <>
       <Paper withBorder p="md"><Stack gap="xs"><Group justify="space-between"><Title order={3}>{display.name}</Title><Group><Button renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId: snapshot.sourceId }} />} size="xs" variant="light">Abrir grupos en sandbox</Button><Button renderRoot={props => <Link {...props} to="/v2/calendar" search={{ tournamentId: snapshot.sourceId }} />} size="xs" variant="light">Abrir calendario en sandbox</Button></Group></Group><Text size="sm">Fuente: {snapshot.sourceId} · Versión: {snapshot.sourceVersion}</Text><Text size="sm">{plural(display.categories.length, 'categoría', 'categorías')} · {plural(display.matches.length, 'partido', 'partidos')} · {plural(snapshot.baseline.slots.length, 'franja', 'franjas')}</Text>
         <Text size="sm">Duración global: {display.duration === null ? 'Sin configuración válida' : `${display.duration} minutos`}</Text>
-        {display.calendar ? <><Text size="sm">Período original: {formatDateRange(display.calendar.startDate, display.calendar.endDate)} · Horario general: {display.calendar.defaultWindow?.startsAt}–{display.calendar.defaultWindow?.endsAt}</Text>{(display.calendar.overrides ?? []).map((override, index) => <Text key={index} size="xs">{formatShortDate(override.date)}: {override.kind === 'closed' ? 'Cancha cerrada' : `${override.startsAt}–${override.endsAt}`}</Text>)}</> : <Text c="orange.8" size="sm">Calendario incompleto. No se usan los valores del ejemplo.</Text>}
+        {display.calendar ? <><Text size="sm">Período original: {formatDateRange(display.calendar.startDate, display.calendar.endDate)} · Horario general: {display.calendar.defaultWindow?.startsAt}–{display.calendar.defaultWindow?.endsAt}</Text>{(display.calendar.overrides ?? []).map((override, index) => <Text key={index} size="xs">{formatShortDate(override.date)}: {override.kind === 'closed' ? 'Cancha cerrada' : `${override.startsAt}–${override.endsAt}`}</Text>)}</> : <Text c="warning" size="sm"><WarningIcon inline />Calendario incompleto. No se usan los valores del ejemplo.</Text>}
         <Text size="xs" c="dimmed">Los instantes se muestran en la zona del navegador ({Intl.DateTimeFormat().resolvedOptions().timeZone}). Horarios sin zona son ambiguos. Los textos originales se conservan; no se afirma que el calendario sea válido.</Text>
       </Stack></Paper>
-      {!!display.diagnostics.length && <Alert color="orange" title={`${plural(display.diagnostics.length, 'diagnóstico', 'diagnósticos')} · Sin reparaciones automáticas`}><Stack gap={4}>{display.diagnostics.map((issue, index) => <Text size="xs" key={index}>{issue.path}: {issue.message}</Text>)}</Stack></Alert>}
+      {!!display.diagnostics.length && <Alert icon={<WarningIcon />} color="warning" title={`${plural(display.diagnostics.length, 'diagnóstico', 'diagnósticos')} · Sin reparaciones automáticas`}><Stack gap={4}>{display.diagnostics.map((issue, index) => <Text size="xs" key={index}>{issue.path}: {issue.message}</Text>)}</Stack></Alert>}
       <Tabs defaultValue="groups"><Tabs.List><Tabs.Tab value="groups">Grupos y parejas</Tabs.Tab><Tabs.Tab value="calendar">Calendario · {scheduled.length}</Tabs.Tab><Tabs.Tab value="unscheduled">Sin programar · {unscheduled.length}</Tabs.Tab><Tabs.Tab value="invalid">Horarios inválidos · {invalid.length}</Tabs.Tab></Tabs.List>
-        <Tabs.Panel value="groups" pt="md"><Stack>{display.categories.map((category, ci) => <Paper key={ci} withBorder p="md"><Group><Title order={3}>{category.name}</Title><Badge style={{ backgroundColor: category.color, color: '#1b2927' }}>{category.id}</Badge></Group><SimpleGrid cols={{ base: 1, md: 3 }} mt="sm">{category.groups.map((group, gi) => <Paper key={gi} withBorder p="sm"><Text fw={600}>{group.name}</Text>{group.pairs.map((pair, pi) => <Text size="sm" key={pi}>{pair.label} <Text span size="xs" c="dimmed">({pair.id})</Text></Text>)}</Paper>)}<Paper withBorder p="sm"><Text fw={600}>Sin grupo</Text>{category.unassigned.map((pair, pi) => <Text size="sm" key={pi}>{pairLabel(pair)} ({pair.id})</Text>)}</Paper></SimpleGrid></Paper>)}</Stack></Tabs.Panel>
+        <Tabs.Panel value="groups" pt="md"><Stack>{display.categories.map((category, ci) => <Paper key={ci} withBorder p="md"><Group><Title order={3}>{category.name}</Title><Badge style={{ backgroundColor: categoryColor(category.color).bg, color: categoryColor(category.color).fg }}>{category.id}</Badge></Group><SimpleGrid cols={{ base: 1, md: 3 }} mt="sm">{category.groups.map((group, gi) => <Paper key={gi} withBorder p="sm"><Text fw={600}>{group.name}</Text>{group.pairs.map((pair, pi) => <Text size="sm" key={pi}>{pair.label} <Text span size="xs" c="dimmed">({pair.id})</Text></Text>)}</Paper>)}<Paper withBorder p="sm"><Text fw={600}>Sin grupo</Text>{category.unassigned.map((pair, pi) => <Text size="sm" key={pi}>{pairLabel(pair)} ({pair.id})</Text>)}</Paper></SimpleGrid></Paper>)}</Stack></Tabs.Panel>
         <Tabs.Panel value="calendar" pt="md"><Stack><Text size="xs" c="dimmed">Gris: cancha cerrada según configuración. La vista se amplía para no ocultar partidos fuera de horario; sin horarios válidos muestra 24 horas, sin adoptar esa configuración. Las restricciones de parejas aún no se validan.</Text><ReadCalendar key={snapshot.sourceId} snapshot={snapshot} /><Matches matches={scheduled} /><Title order={4}>Franjas originales</Title><Table.ScrollContainer minWidth={600}><Table><Table.Tbody>{snapshot.baseline.slots.map((slot, index) => <Table.Tr key={index}><Table.Td>{slot.id}</Table.Td><Table.Td>{slot.startsAt}</Table.Td><Table.Td>{slot.matchId ?? 'Cancha libre (sin validar restricciones)'}</Table.Td></Table.Tr>)}</Table.Tbody></Table></Table.ScrollContainer></Stack></Tabs.Panel>
         <Tabs.Panel value="unscheduled" pt="md"><Matches matches={unscheduled} /></Tabs.Panel><Tabs.Panel value="invalid" pt="md"><Matches matches={invalid} /></Tabs.Panel>
       </Tabs>
@@ -93,6 +96,7 @@ export function ReadOnlyV2Page() {
 }
 export function ReadCalendar({ snapshot, onMatch, planning = false, conflictCounts = {}, unvalidatedKeys = [], calendarRef, moves }: { calendarRef?: RefObject<CalendarRef | null>; moves?: PlanningMoveInteraction; snapshot: V2ReadSnapshot; onMatch?: (key: string) => void; planning?: boolean; conflictCounts?: Record<string, number>; unvalidatedKeys?: string[] }) {
   const { display } = snapshot
+  const categoryColor = useCategoryDisplay()
   const localRef = useRef<CalendarRef>(null); const calendarApi = calendarRef ?? localRef
   const days = useRef(new Map<HTMLElement,Date>()); const rows = useRef(new Map<HTMLElement,number>())
   const contextListeners = useRef(new Map<HTMLElement,(event: MouseEvent) => void>())
@@ -122,13 +126,13 @@ export function ReadCalendar({ snapshot, onMatch, planning = false, conflictCoun
       const spans = window === null ? [['00:00','24:00']] : [['00:00',window.startsAt],[window.endsAt,'24:00']]
       for (const [start,end] of spans) if (start !== end) {
         const next = new Date(date); next.setDate(next.getDate()+1)
-        result.push({ start: `${day}T${start}:00`, end: end === '24:00' ? next : `${day}T${end}:00`, display: 'background', color: '#d9dfe2', title: 'Cancha cerrada según configuración' })
+        result.push({ start: `${day}T${start}:00`, end: end === '24:00' ? next : `${day}T${end}:00`, display: 'background', color: 'var(--tn-closed-a)', title: 'Cancha cerrada según configuración' })
       }
     }
     return result
   },[week,calendar])
-  const events = useMemo(() => [...courtEvents,...scheduled.map(match => ({ id: match.key, start: new Date(match.instant!), end: new Date(match.instant!+display.duration!*60000), title: `${match.categoryName} · ${match.group} · ${match.pairA} vs. ${match.pairB}`, color: match.categoryColor, contrastColor: '#1b2927',startEditable: true }))],[courtEvents,scheduled,display.duration])
-  if (display.duration === null) return <Alert color="orange">Sin duración válida: se muestran los horarios en la lista, sin inventar intervalos de partido.</Alert>
+  const events = useMemo(() => [...courtEvents,...scheduled.map(match => ({ id: match.key, start: new Date(match.instant!), end: new Date(match.instant!+display.duration!*60000), title: `${match.categoryName} · ${match.group} · ${match.pairA} vs. ${match.pairB}`, color: categoryColor(match.categoryColor).bg, contrastColor: categoryColor(match.categoryColor).fg,startEditable: true }))],[courtEvents,scheduled,display.duration,categoryColor])
+  if (display.duration === null) return <Alert icon={<WarningIcon />} color="warning">Sin duración válida: se muestran los horarios en la lista, sin inventar intervalos de partido.</Alert>
   return <Paper withBorder={!planning} p={planning ? 0 : 'sm'} className={planning ? 'calendar-v2-planning-grid' : 'preparation-v2-calendar'}>
     {planning && bounds.expanded && <Text size="xs" c="dimmed" mb="xs">{moves?.court ? `Disponibilidad general de cancha: ${calendar?.defaultWindow?.startsAt}–${calendar?.defaultWindow?.endsAt}. Grilla alineada al torneo; el relleno gris queda fuera de la disponibilidad de cada día.` : 'Vista ampliada para conservar partidos fuera del horario habitual. Los horarios originales no se ajustan a la grilla.'}</Text>}
     <div ref={choosingGrid} className={`${moves?.pickingId ? 'calendar-v2-choosing' : ''}${moves?.previewError ? ' calendar-v2-preview-invalid' : ''}`} role="group" tabIndex={moves?.pickingId ? 0 : undefined} aria-label="Calendario semanal. Flechas y Enter para elegir destino; Escape cancela."

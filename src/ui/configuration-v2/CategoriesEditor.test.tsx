@@ -42,10 +42,10 @@ const twoCategories: V2SetupCategoryDraft[] = [
 ]
 
 describe('CategoriesEditor SSR smoke test', () => {
-  it('renders the header with "Categorías" title and plus icon', () => {
+  it('renders the header with "Categorías" title and the add category button', () => {
     const html = render({ value: twoCategories })
     expect(html).toContain('Categorías')
-    expect(html).toContain('aria-label="Agregar categoría"')
+    expect(html).toMatch(/<button[^>]*aria-label="Agregar categoría"[^>]*>/)
   })
 
   it('renders category names', () => {
@@ -82,6 +82,13 @@ describe('CategoriesEditor SSR smoke test', () => {
     }
   })
 
+  it('disables the add category button when disabled prop is true', () => {
+    const html = render({ value: twoCategories, disabled: true })
+    const button = html.match(/<button[^>]*aria-label="Agregar categoría"[^>]*>/)?.[0]
+    expect(button).toBeDefined()
+    expect(button).toContain('disabled')
+  })
+
   it('does not render the remove-category modal when nothing is pending removal', () => {
     const html = render({ value: twoCategories })
     expect(html).not.toContain('¿Eliminar categoría?')
@@ -90,7 +97,7 @@ describe('CategoriesEditor SSR smoke test', () => {
   it('renders empty state with just the header (no category rows)', () => {
     const html = render({ value: [] })
     expect(html).toContain('Categorías')
-    expect(html).toContain('aria-label="Agregar categoría"')
+    expect(html).toMatch(/<button[^>]*aria-label="Agregar categoría"[^>]*>/)
     // No category name text inputs
     const inputs = html.match(/<input[^>]+type="text"[^>]*>/g) ?? []
     expect(inputs).toHaveLength(0)

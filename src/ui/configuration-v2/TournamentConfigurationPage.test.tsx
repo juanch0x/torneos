@@ -7,6 +7,12 @@ import { sample, unlockedSample } from '../../domain/__tests__/fixtures/v2Tourna
 import { v2SessionStore } from '../../store/v2Session'
 import { TournamentConfigurationPage } from './TournamentConfigurationPage'
 
+// RouterLink (breadcrumb) needs a router context; render it as a plain anchor.
+vi.mock('../RouterLink', () => ({
+  RouterLink: ({ to, search, size: _size, ...props }: ComponentProps<'a'> & { to: string; search?: { tournamentId?: string }; size?: string }) =>
+    <a {...props} href={`${to}${search?.tournamentId ? `?tournamentId=${search.tournamentId}` : ''}`} />,
+}))
+
 vi.mock('@tanstack/react-router', async importOriginal => ({
   ...await importOriginal<typeof import('@tanstack/react-router')>(),
   useSearch: vi.fn(() => ({ tournamentId: 't' })),
