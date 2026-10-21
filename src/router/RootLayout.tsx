@@ -4,14 +4,16 @@ import { Anchor, AppShell, Container, Group, Text, Title, useMantineTheme } from
 import { useTournamentStore } from '../store/tournamentStore'
 import { ColorSchemeToggle } from '../ui/ColorSchemeToggle'
 import { installPrintLightScheme } from '../ui/printScheme'
-import { contentWidthFor, NARROW_CONTENT_WIDTH } from './contentWidth'
+import { shellColumnFor } from './contentWidth'
 import { isTournamentsNavActive } from './shellNav'
 
 export function RootLayout() {
   const loadList = useTournamentStore((s) => s.loadList)
   const theme = useMantineTheme()
   const pathname = useLocation({ select: (l) => l.pathname })
-  const wide = contentWidthFor(pathname) === 'wide'
+  // One column box per route, shared by header, content and footer so their edges align.
+  const column = shellColumnFor(pathname)
+  const columnPx = { base: 'md', sm: 'lg' }
   const navActive = isTournamentsNavActive(pathname)
 
   useEffect(() => {
@@ -28,6 +30,8 @@ export function RootLayout() {
         main: {
           backgroundColor: theme.other.shellBackground,
           minHeight: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
         },
         header: {
           backgroundColor: theme.other.shellHeaderBackground,
@@ -38,7 +42,7 @@ export function RootLayout() {
       }}
     >
       <AppShell.Header>
-        <Container size="xl" h="100%" px={{ base: 'md', sm: 'lg' }}>
+        <Container {...column} w="100%" h="100%" px={columnPx}>
           <Group h="100%" align="center" gap="xl" wrap="nowrap" justify="space-between">
             <Group align="center" gap="xl" wrap="nowrap">
               <Title order={3} lh={1.1}>
@@ -69,15 +73,18 @@ export function RootLayout() {
         </Container>
       </AppShell.Header>
       <AppShell.Main>
-        <Container
-          size={wide ? undefined : NARROW_CONTENT_WIDTH}
-          fluid={wide}
-          px={{ base: 'md', sm: 'lg' }}
-          py={{ base: 'lg', sm: 'xl' }}
-        >
+        <Container {...column} w="100%" px={columnPx} py={{ base: 'lg', sm: 'xl' }} style={{ flex: 1 }}>
           <Outlet />
         </Container>
-        <Container size="xl" px={{ base: 'md', sm: 'lg' }} py="lg" component="footer">
+        <Container
+          {...column}
+          w="100%"
+          px={columnPx}
+          py="lg"
+          mt="auto"
+          component="footer"
+          style={{ borderTop: '1px solid var(--tn-border-subtle)' }}
+        >
           <Text className="tn-label" fz="xs">
             Paleta Mendoza · Torneos
           </Text>

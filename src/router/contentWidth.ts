@@ -14,3 +14,10 @@ export function contentWidthFor(pathname: string): ContentWidth {
   if (path.startsWith(WIDE_PREFIX) && path.length > WIDE_PREFIX.length) return 'wide'
   return 'narrow'
 }
+
+/** Mantine Container box shared by the header, main content and footer of the current route. */
+export type ShellColumn = { fluid: true } | { size: number }
+
+export function shellColumnFor(pathname: string): ShellColumn {
+  return contentWidthFor(pathname) === 'wide' ? { fluid: true } : { size: NARROW_CONTENT_WIDTH }
+}

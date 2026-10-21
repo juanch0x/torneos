@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contentWidthFor } from '../contentWidth'
+import { contentWidthFor, NARROW_CONTENT_WIDTH, shellColumnFor } from '../contentWidth'
 
 describe('contentWidthFor', () => {
   it.each(['/v2/calendar', '/v2/groups', '/v2/read', '/tournaments/abc/fixture', '/tournaments/abc/groups', '/tournaments/abc'])(
@@ -19,5 +19,17 @@ describe('contentWidthFor', () => {
   it('does not match prefixes of other segments', () => {
     expect(contentWidthFor('/v2/calendarx')).toBe('narrow')
     expect(contentWidthFor('/tournamentsx/1')).toBe('narrow')
+  })
+})
+
+describe('shellColumnFor', () => {
+  it('is fluid on wide routes', () => {
+    expect(shellColumnFor('/v2/calendar')).toEqual({ fluid: true })
+    expect(shellColumnFor('/tournaments/abc/fixture')).toEqual({ fluid: true })
+  })
+
+  it('uses the narrow content width elsewhere', () => {
+    expect(shellColumnFor('/')).toEqual({ size: NARROW_CONTENT_WIDTH })
+    expect(shellColumnFor('/v2/configuration')).toEqual({ size: NARROW_CONTENT_WIDTH })
   })
 })
