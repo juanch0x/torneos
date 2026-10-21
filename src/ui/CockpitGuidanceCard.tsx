@@ -1,6 +1,7 @@
 import { Badge, Button, Group, Paper, Stack, Text, useMantineTheme } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import type { CockpitAction, CockpitGuidance } from './cockpitGuidance'
+import { guidanceGradient } from './surfaceStyles'
 
 interface CockpitGuidanceCardProps {
   guidance: CockpitGuidance
@@ -64,7 +65,7 @@ export function CockpitGuidanceCard({ guidance }: CockpitGuidanceCardProps) {
       p={{ base: 'md', sm: 'lg' }}
       radius="xl"
       style={{
-        background: `linear-gradient(135deg, ${theme.colors.clay[0]} 0%, ${theme.white} 52%, ${theme.colors.courtTeal[0]} 100%)`,
+        background: guidanceGradient(52),
         borderColor: theme.other.borderSubtle,
       }}
     >

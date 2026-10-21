@@ -32,7 +32,7 @@ export function RootLayout() {
         <Container size="xl" h="100%" px={{ base: 'md', sm: 'lg' }}>
           <Group h="100%" align="center">
             <Stack gap={0}>
-              <Title order={3} c="courtTeal.6" lh={1.1}>
+              <Title order={3} c="primary" lh={1.1}>
                 Torneos — Pelota Paleta
               </Title>
             </Stack>

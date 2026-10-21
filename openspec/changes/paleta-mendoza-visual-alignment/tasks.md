@@ -67,9 +67,9 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: dark lines are subtle gray, not `#7a84a0`. QA (dark): tabs, tables, menus, fieldsets.
 
 ## Slice 5: Static consumers, remove aliases (110-190), needs 4a
-- [ ] 5.1 Migrate `CockpitGuidanceCard.tsx:67`, `SchedulePanel.tsx:139,522,619,629,733,493,662`, `RootLayout.tsx:35` per the static consumer table.
-- [ ] 5.2 Delete `courtTeal`/`clay` in `theme.ts`; `src/index.css` drops color/font, adds var-only `::selection` (50% mix + explicit color), focus ring.
-- [ ] 5.3 `derivedPairs.test.ts`: reads `index.css`, asserts the 50% mix and selection pair.
+- [x] 5.1 Migrate `CockpitGuidanceCard.tsx:67`, `SchedulePanel.tsx:139,522,619,629,733,493,662`, `RootLayout.tsx:35` per the static consumer table.
+- [x] 5.2 Delete `courtTeal`/`clay` in `theme.ts`; `src/index.css` drops color/font, adds var-only `::selection` (50% mix + explicit color), focus ring.
+- [x] 5.3 `derivedPairs.test.ts`: reads `index.css`, asserts the 50% mix and selection pair.
 - AC: `tsc` green; no `theme.white`. QA (both): guidance card, drop target, selection.
 
 ## Slice 6a1: FullCalendar variables (150-250), needs 5

@@ -30,7 +30,7 @@ import { useTournamentStore } from '../store/tournamentStore'
 import { createExportXlsxController, initialExportXlsxState } from './exportXlsxController'
 import { MobileMatchCard } from './MobileMatchCard'
 import { formatShortDate, formatDayDateTime, formatTimeRange } from './format'
-import { getMutedSurfaceStyle } from './surfaceStyles'
+import { getMutedSurfaceStyle, guidanceGradient } from './surfaceStyles'
 
 interface MatchInfo {
   match: Match
@@ -136,7 +136,7 @@ function FixtureOutcomeSummary({
       p={{ base: 'md', sm: 'lg' }}
       radius="xl"
       style={{
-        background: `linear-gradient(135deg, ${theme.colors.clay[0]} 0%, ${theme.white} 55%, ${theme.colors.courtTeal[0]} 100%)`,
+        background: guidanceGradient(55),
         borderColor: theme.other.borderSubtle,
       }}
     >
@@ -490,7 +490,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       <Stack gap="md">
         <Stack gap={4}>
           <Group gap="xs" wrap="wrap">
-            <Badge color="courtTeal">Una sola cancha</Badge>
+            <Badge color="primary">Una sola cancha</Badge>
             <Badge color="gray">Todas las categorías</Badge>
           </Group>
           <Title order={2}>Calendario y horarios</Title>
@@ -519,7 +519,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               {exceptionsOpened ? 'Ocultar cambios por día' : 'Cambiar horario de un día'}
             </Button>
             <Collapse expanded={exceptionsOpened}>
-              <Paper p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+              <Paper p="sm" radius="lg" style={{ backgroundColor: 'var(--tn-surface)', borderColor: theme.other.borderSubtle }}>
                 <Stack gap="xs">
                   <Text fw={600} size="sm">Excepción por día</Text>
                   <Group gap="sm" wrap="wrap" align="flex-end">
@@ -616,7 +616,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
             </Group>
 
             {(tournament.pairUnavailableWindows ?? []).length === 0 ? (
-              <Paper p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+              <Paper p="sm" radius="lg" style={{ backgroundColor: 'var(--tn-surface)', borderColor: theme.other.borderSubtle }}>
                 <Text size="sm" c="dimmed">
                   Todavía no hay excepciones cargadas. Si aparece un conflicto puntual, agregalo acá y el calendario se reacomoda.
                 </Text>
@@ -626,7 +626,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                 {(tournament.pairUnavailableWindows ?? []).map((window) => {
                   const pair = pairOptions.find((option) => option.value === window.pairId)
                   return (
-                    <Paper key={window.id} p="sm" radius="lg" style={{ backgroundColor: theme.white, borderColor: theme.other.borderSubtle }}>
+                    <Paper key={window.id} p="sm" radius="lg" style={{ backgroundColor: 'var(--tn-surface)', borderColor: theme.other.borderSubtle }}>
                       <Group justify="space-between" gap="xs" wrap="wrap">
                         <Box style={{ flex: '1 1 18rem' }}>
                           <Text size="sm" fw={600}>
@@ -659,7 +659,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                 <Badge color={calendarError ? 'red' : 'gray'}>
                   {!hasScheduleableMatches(tournament) ? 'Faltan partidos por agendar' : calendarError ? 'Calendario sin capacidad' : 'Sin calendario todavía'}
                 </Badge>
-                {!calendarError && <Badge color="courtTeal">Paso siguiente</Badge>}
+                {!calendarError && <Badge color="primary">Paso siguiente</Badge>}
               </Group>
               <Text fw={700}>
                 {!hasScheduleableMatches(tournament) ? 'Faltan parejas o grupos con partidos' : calendarError ? 'No se pudo generar el calendario' : 'Todavía no hay horarios generados'}
@@ -730,7 +730,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                       }}
                       style={{
                         ...(info ? { boxShadow: `inset 4px 0 0 ${info.color}` } : {}),
-                        ...(isDropTarget ? { backgroundColor: theme.colors.courtTeal[1], outline: `2px solid ${theme.colors.courtTeal[6]}` } : {}),
+                        ...(isDropTarget ? { backgroundColor: 'var(--mantine-primary-color-light)', outline: '2px solid var(--mantine-primary-color-filled)' } : {}),
                         ...(isInvalidTarget ? { opacity: 0.55 } : {}),
                         ...(info ? { cursor: 'grab' } : {}),
                       }}

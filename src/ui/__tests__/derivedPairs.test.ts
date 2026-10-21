@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { contrastRatio } from '../contrast'
-import { schemeTokens, type Scheme } from '../tokens'
+import { contrastRatio, mixSrgb } from '../contrast'
+import { scales, schemeTokens, type Scheme } from '../tokens'
 import { readRepoFile } from './readRepoFile'
 
 const SCHEMES: readonly Scheme[] = ['light', 'dark']
@@ -117,5 +117,32 @@ describe('structural borders use the subtle token (mantineOverrides.css)', () =>
   it('beats the stock Tabs rule specificity (0,2,0) with (0,3,0)', () => {
     // :root (0,1,0) + attribute (0,1,0) + class (0,1,0)
     expect(':root[data-mantine-color-scheme] .mantine-Tabs-root').toMatch(/^:root\[[^\]]+\] \.[\w-]+$/)
+  })
+})
+
+describe('index.css', () => {
+  const css = readRepoFile('src/index.css')
+
+  it('has no color literals and no font or text color on :root', () => {
+    expect(css).not.toMatch(HEX)
+    expect(css).not.toMatch(/font-family|\bcolor:\s*#/)
+  })
+
+  it('uses the exact 50% selection mix with an explicit text color', () => {
+    expect(css).toContain(
+      'background-color: color-mix(in srgb, var(--mantine-primary-color-filled) 50%, var(--mantine-color-body));',
+    )
+    expect(css).toContain('color: var(--mantine-color-text);')
+  })
+
+  it('has a dashed focus ring on the primary fill', () => {
+    expect(css).toMatch(/:focus-visible[^{]*\{[^}]*outline: 2px dashed var\(--mantine-primary-color-filled\)/)
+  })
+
+  it.each(SCHEMES)('selection text is readable on the 50%% mix (%s)', (scheme) => {
+    const fill = scheme === 'light' ? scales.brand[6] : scales.ember[4]
+    const t = schemeTokens[scheme]
+    const bg = mixSrgb(fill, t.body, 50)
+    expect(contrastRatio(t.text, bg)).toBeGreaterThanOrEqual(4.5)
   })
 })

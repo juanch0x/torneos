@@ -15,7 +15,6 @@ import {
   Tabs,
   TextInput,
   type CSSVariablesResolver,
-  type MantineColorsTuple,
   virtualColor,
 } from '@mantine/core'
 import { THEME_BLACK, THEME_WHITE, scales, schemeTokens, tnCssVariables } from './tokens'
@@ -23,34 +22,6 @@ import { THEME_BLACK, THEME_WHITE, scales, schemeTokens, tnCssVariables } from '
 // Single source of truth for the torneos brand.
 // Edit color tuples here to rebrand the whole app.
 // Shades run lightest (0) → darkest (9); shade 6 is the primary action shade.
-
-// Legacy aliases, still registered so unmigrated consumers compile. No longer primary;
-// removed once every consumer has moved to `primary` (static consumers slice).
-const courtTeal: MantineColorsTuple = [
-  '#e8f5f3',
-  '#c0e8e3',
-  '#96d8d2',
-  '#68c5be',
-  '#3fb5ac',
-  '#1fa89e',
-  '#0d9488',
-  '#0a7a70',
-  '#075e57',
-  '#044039',
-]
-
-const clay: MantineColorsTuple = [
-  '#fdf0e8',
-  '#f9d9c1',
-  '#f3bf96',
-  '#eda36a',
-  '#e7894a',
-  '#e07234',
-  '#c45e24',
-  '#a04b1c',
-  '#7d3815',
-  '#572510',
-]
 
 function mantineOverrides(scheme: 'light' | 'dark'): Record<string, string> {
   const t = schemeTokens[scheme]
@@ -90,8 +61,6 @@ export const theme = createTheme({
     red: virtualColor({ name: 'red', light: 'dangerScale', dark: 'dangerScale' }),
     warning: virtualColor({ name: 'warning', light: 'warningScale', dark: 'warningScale' }),
     success: virtualColor({ name: 'success', light: 'successScale', dark: 'successScale' }),
-    courtTeal,
-    clay,
   },
   primaryColor: 'primary',
   primaryShade: { light: 6, dark: 4 },
