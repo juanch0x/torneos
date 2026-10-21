@@ -45,9 +45,9 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V green. Rollback: revert.
 
 ## Slice 3: Theme rebase A, light (230-340), needs 2b
-- [ ] 3.1 `src/ui/theme.ts`: palette from tokens, virtual `primary`/`red`/`warning`/`success`, `primaryShade {6,4}`, `autoContrast`, explicit white/black from tokens, `Tabs` color `primary`, neutral `xs` shadow, `courtTeal`/`clay` kept as aliases.
-- [ ] 3.2 Radii: scale xs4/sm6/md8/lg12/xl16, `defaultRadius: 'md'`, remove `radius: 'xl'` pills on Button, Tabs, Badge, Drawer.
-- [ ] 3.3 `src/main.tsx`: `localStorageColorSchemeManager({ key })`, `defaultColorScheme="light"`.
+- [x] 3.1 `src/ui/theme.ts`: palette from tokens, virtual `primary`/`red`/`warning`/`success`, `primaryShade {6,4}`, `autoContrast`, explicit white/black from tokens, `Tabs` color `primary`, neutral `xs` shadow, `courtTeal`/`clay` kept as aliases.
+- [x] 3.2 Radii: scale xs4/sm6/md8/lg12/xl16, `defaultRadius: 'md'`, remove `radius: 'xl'` pills on Button, Tabs, Badge, Drawer.
+- [x] 3.3 `src/main.tsx`: `localStorageColorSchemeManager({ key })`, `defaultColorScheme="light"`.
 - AC: V; no pill shapes; light unchanged otherwise. QA (light): buttons, badges, tabs, drawer radii.
 
 ## Slice 4a: Variables and surfaces (200-300), needs 3

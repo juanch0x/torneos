@@ -14,12 +14,16 @@ import {
   TextInput,
   type CSSVariablesResolver,
   type MantineColorsTuple,
+  virtualColor,
 } from '@mantine/core'
+import { THEME_BLACK, THEME_WHITE, scales } from './tokens'
 
 // Single source of truth for the torneos brand.
 // Edit color tuples here to rebrand the whole app.
 // Shades run lightest (0) → darkest (9); shade 6 is the primary action shade.
 
+// Legacy aliases, still registered so unmigrated consumers compile. No longer primary;
+// removed once every consumer has moved to `primary` (static consumers slice).
 const courtTeal: MantineColorsTuple = [
   '#e8f5f3',
   '#c0e8e3',
@@ -67,14 +71,27 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
 
 export const theme = createTheme({
   colors: {
+    // Raw scales
+    brand: [...scales.brand],
+    ember: [...scales.ember],
+    dark: [...scales.navy],
+    dangerScale: [...scales.danger],
+    warningScale: [...scales.warning],
+    successScale: [...scales.success],
+    // Semantic colors are virtual so Mantine derives -contrast/-filled per scheme.
+    primary: virtualColor({ name: 'primary', light: 'brand', dark: 'ember' }),
+    red: virtualColor({ name: 'red', light: 'dangerScale', dark: 'dangerScale' }),
+    warning: virtualColor({ name: 'warning', light: 'warningScale', dark: 'warningScale' }),
+    success: virtualColor({ name: 'success', light: 'successScale', dark: 'successScale' }),
     courtTeal,
     clay,
   },
-  primaryColor: 'courtTeal',
-  primaryShade: { light: 6, dark: 7 },
-  defaultRadius: 'lg',
-  white: surfaceBase,
-  black: textStrong,
+  primaryColor: 'primary',
+  primaryShade: { light: 6, dark: 4 },
+  autoContrast: true,
+  defaultRadius: 'md',
+  white: THEME_WHITE,
+  black: THEME_BLACK,
   cursorType: 'pointer',
   focusRing: 'auto',
   respectReducedMotion: true,
@@ -88,16 +105,14 @@ export const theme = createTheme({
     xl: rem(32),
   },
   radius: {
-    xs: rem(8),
-    sm: rem(10),
-    md: rem(14),
-    lg: rem(18),
-    xl: rem(24),
+    xs: rem(4),
+    sm: rem(6),
+    md: rem(8),
+    lg: rem(12),
+    xl: rem(16),
   },
   shadows: {
-    xs: '0 1px 2px rgba(32, 51, 48, 0.06)',
-    sm: '0 8px 24px rgba(32, 51, 48, 0.08)',
-    md: '0 14px 32px rgba(32, 51, 48, 0.10)',
+    xs: '0 1px 2px rgba(0, 0, 0, 0.06)',
   },
   headings: {
     fontFamily: 'Inter, system-ui, sans-serif',
@@ -137,7 +152,6 @@ export const theme = createTheme({
     }),
     Button: Button.extend({
       defaultProps: {
-        radius: 'xl',
         size: 'md',
       },
       styles: {
@@ -148,8 +162,7 @@ export const theme = createTheme({
     }),
     Tabs: Tabs.extend({
       defaultProps: {
-        radius: 'xl',
-        color: 'courtTeal',
+        color: 'primary',
       },
       styles: {
         list: {
@@ -162,7 +175,6 @@ export const theme = createTheme({
     }),
     Badge: Badge.extend({
       defaultProps: {
-        radius: 'xl',
         variant: 'light',
       },
       styles: {
@@ -238,7 +250,6 @@ export const theme = createTheme({
     }),
     Drawer: Drawer.extend({
       defaultProps: {
-        radius: 'xl',
         padding: 'lg',
         overlayProps: { backgroundOpacity: 0.45, blur: 2 },
       },
