@@ -117,6 +117,7 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 ## Slice 10: Brand shell and widths (250-350), needs 9
 - [x] 10.1 RED then GREEN `src/router/contentWidth.ts` + test.
 - [x] 10.2 `RootLayout.tsx`: wordmark, footer, `Container size={768}` or fluid; `index.html` title and favicon; copy `public/favicon.svg`.
+  - Note: the 768px column (and `contentWidth.ts`) was superseded by a user decision on 2026-10-21: all routes are full width.
 - [x] 10.3 Nav: no links exist today. Define one item, "Torneos" -> `/` (active on `/` and `/tournaments/*`) with wavy underline; confirm with the user at apply start.
 - AC: V. QA: title, favicon, widths, no overflow at 768px.
 

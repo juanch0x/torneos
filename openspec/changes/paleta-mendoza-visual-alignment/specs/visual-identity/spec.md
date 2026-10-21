@@ -98,7 +98,7 @@ Mono (system stack) MUST be used for the wordmark, headings, labels and times (`
 
 ### Requirement: Brand Shell and Widths
 
-Header and browser tab title MUST show "Paleta Mendoza · Torneos", with the paleta-mendoza favicon, mono nav with wavy active underline, and footer line. Calendar, fixture and groups MUST use full width; forms and setup a ~768px column. Header and footer MUST share the content column width and padding of the current route. Mobile MUST NOT overflow.
+Header and browser tab title MUST show "Paleta Mendoza · Torneos", with the paleta-mendoza favicon, mono nav with wavy active underline, and footer line. All routes MUST be full width. Header and footer MUST share the content column and padding. Mobile MUST NOT overflow.
 
 #### Scenario: Branding
 
@@ -110,4 +110,4 @@ Header and browser tab title MUST show "Paleta Mendoza · Torneos", with the pal
 
 - GIVEN `/tournaments/:id/fixture`, then the tournament list, then a viewport ≤768px
 - WHEN each renders
-- THEN fixture is full width, list is ~768px, and no horizontal overflow occurs
+- THEN fixture and list are full width, and no horizontal overflow occurs

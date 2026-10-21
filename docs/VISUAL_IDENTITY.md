@@ -96,5 +96,5 @@ or when the `print` media query matches, and restores it afterwards, so a dark p
 
 ## Widths
 
-`contentWidthFor(pathname)` in `src/router/contentWidth.ts`: full width for `/v2/calendar`, `/v2/groups`, `/v2/read`
-and `/tournaments/*`; a 768px column for the list, `/v2/configuration` and anything else.
+All routes are full width (a fluid Mantine `Container` in `RootLayout`); header and footer share the content column
+and padding.

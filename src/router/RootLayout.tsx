@@ -4,15 +4,13 @@ import { Anchor, AppShell, Container, Group, Text, Title, useMantineTheme } from
 import { useTournamentStore } from '../store/tournamentStore'
 import { ColorSchemeToggle } from '../ui/ColorSchemeToggle'
 import { installPrintLightScheme } from '../ui/printScheme'
-import { shellColumnFor } from './contentWidth'
 import { isTournamentsNavActive } from './shellNav'
 
 export function RootLayout() {
   const loadList = useTournamentStore((s) => s.loadList)
   const theme = useMantineTheme()
   const pathname = useLocation({ select: (l) => l.pathname })
-  // One column box per route, shared by header, content and footer so their edges align.
-  const column = shellColumnFor(pathname)
+  // Every route is full width; header, content and footer share one fluid column so their edges align.
   const columnPx = { base: 'md', sm: 'lg' }
   const navActive = isTournamentsNavActive(pathname)
 
@@ -42,7 +40,7 @@ export function RootLayout() {
       }}
     >
       <AppShell.Header>
-        <Container {...column} w="100%" h="100%" px={columnPx}>
+        <Container fluid w="100%" h="100%" px={columnPx}>
           <Group h="100%" align="center" gap="xl" wrap="nowrap" justify="space-between">
             <Group align="center" gap="xl" wrap="nowrap">
               <Title order={3} lh={1.1}>
@@ -73,11 +71,11 @@ export function RootLayout() {
         </Container>
       </AppShell.Header>
       <AppShell.Main>
-        <Container {...column} w="100%" px={columnPx} py={{ base: 'lg', sm: 'xl' }} style={{ flex: 1 }}>
+        <Container fluid w="100%" px={columnPx} py={{ base: 'lg', sm: 'xl' }} style={{ flex: 1 }}>
           <Outlet />
         </Container>
         <Container
-          {...column}
+          fluid
           w="100%"
           px={columnPx}
           py="lg"

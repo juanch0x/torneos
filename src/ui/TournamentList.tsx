@@ -98,6 +98,7 @@ export function TournamentList() {
                 setName(e.target.value)
                 if (nameError) setNameError(null)
               }}
+              maw={480}
               style={{ flex: 1 }}
             />
             <Button type="submit" disabled={creating} loading={creating}>
