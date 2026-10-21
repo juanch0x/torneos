@@ -8,6 +8,7 @@ import { CockpitGuidanceCard } from '../ui/CockpitGuidanceCard'
 import { formatTournamentPeriod } from '../ui/tournamentPeriod'
 import { NotFound } from './NotFound'
 import { isV2SetupComplete, isV2SetupLocked } from '../domain/v2Setup'
+import { ErrorIcon } from '../ui/icons'
 
 export function TournamentLayout() {
   const { id } = useParams({ from: '/tournaments/$id' })
@@ -28,7 +29,7 @@ export function TournamentLayout() {
   }, [id, loadTournament])
 
   if (status === 'idle' || status === 'loading') return <Loader size="sm" m="md" />
-  if (status === 'error') return <Alert color="red">{loadError}<Button onClick={() => void loadTournament(id, true)}>Reintentar lectura</Button></Alert>
+  if (status === 'error') return <Alert icon={<ErrorIcon />} color="red">{loadError}<Button onClick={() => void loadTournament(id, true)}>Reintentar lectura</Button></Alert>
   if (status === 'not-found' || !current) return <NotFound />
   if (status === 'loaded' && !isV2SetupComplete(current) && !isV2SetupLocked(current)) {
     return <Navigate to="/v2/configuration" search={{ tournamentId: id }} replace />
@@ -56,7 +57,7 @@ export function TournamentLayout() {
         <Stack gap="lg">
           <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
             <Stack gap="xs" style={{ flex: '1 1 22rem' }}>
-              {saveError && <Alert color="red">{saveError}</Alert>}
+              {saveError && <Alert icon={<ErrorIcon />} color="red">{saveError}</Alert>}
               {savePending && <Text role="status">Guardando…</Text>}
               <Breadcrumbs>
                 <Link to="/">Torneos</Link>

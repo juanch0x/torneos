@@ -32,6 +32,9 @@ import { MobileMatchCard } from './MobileMatchCard'
 import { formatShortDate, formatDayDateTime, formatTimeRange } from './format'
 import { getMutedSurfaceStyle, guidanceGradient } from './surfaceStyles'
 import { useCategoryDisplay } from './categoryColors'
+import { ErrorIcon, SuccessIcon, WarningIcon } from './icons'
+
+const REORDER_ICON = { success: <SuccessIcon />, warning: <WarningIcon />, red: <ErrorIcon /> } as const
 
 interface MatchInfo {
   match: Match
@@ -535,7 +538,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               </Paper>
             </Collapse>
             {calendarError && (
-              <Alert
+              <Alert icon={<ErrorIcon />}
                 color="red"
                 title={calendarError.startsWith('No hay partidos') ? 'Faltan partidos para generar el calendario' : 'Revisá el calendario'}
               >
@@ -546,13 +549,13 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
         </Paper>
 
         {reorderFeedback && (
-          <Alert color={reorderFeedback.color} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del calendario'}>
+          <Alert color={reorderFeedback.color} icon={REORDER_ICON[reorderFeedback.color]} title={reorderFeedback.color === 'red' ? 'No se pudo reordenar' : 'Orden del calendario'}>
             <Text size="sm">{reorderFeedback.message}</Text>
           </Alert>
         )}
 
         {exportState.errorMessage && (
-          <Alert color="red" title="Error al exportar">
+          <Alert icon={<ErrorIcon />} color="red" title="Error al exportar">
             <Text size="sm">{exportState.errorMessage}</Text>
           </Alert>
         )}
@@ -658,7 +661,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           >
             <Stack gap="xs">
               <Group gap="xs" wrap="wrap">
-                <Badge color={calendarError ? 'red' : 'gray'}>
+                <Badge color={calendarError ? 'red' : 'gray'} leftSection={calendarError ? <ErrorIcon size={12} /> : undefined}>
                   {!hasScheduleableMatches(tournament) ? 'Faltan partidos por agendar' : calendarError ? 'Calendario sin capacidad' : 'Sin calendario todavía'}
                 </Badge>
                 {!calendarError && <Badge color="primary">Paso siguiente</Badge>}

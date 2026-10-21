@@ -10,6 +10,7 @@ import { Alert, Button, Group, Stack, Table, Text, TextInput, Title } from '@man
 import type { TournamentMeta } from '../domain/types'
 import { useTournamentStore } from '../store/tournamentStore'
 import { formatTournamentPeriod } from './tournamentPeriod'
+import { ErrorIcon } from './icons'
 
 const columnHelper = createColumnHelper<TournamentMeta>()
 
@@ -48,8 +49,8 @@ export function TournamentList() {
   return (
     <Stack gap="md">
       <Title order={2}>Torneos</Title>
-      {listError && <Alert color="red">{listError}<Button variant="light" onClick={() => void loadList()}>Reintentar lectura</Button></Alert>}
-      {creationError && <Alert color="red">{creationError}</Alert>}
+      {listError && <Alert icon={<ErrorIcon />} color="red">{listError}<Button variant="light" onClick={() => void loadList()}>Reintentar lectura</Button></Alert>}
+      {creationError && <Alert icon={<ErrorIcon />} color="red">{creationError}</Alert>}
 
       <Group gap="sm" wrap="wrap">
         <TextInput

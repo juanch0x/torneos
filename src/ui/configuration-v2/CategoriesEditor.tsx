@@ -43,6 +43,7 @@ function IconPlus({ size = 16 }: { size?: number }) {
 // ── resizeGroups helper ───────────────────────────────────────────────────────
 
 import type { V2SetupGroupDraft } from '../../domain/v2Setup'
+import { ErrorIcon } from '../icons'
 
 /**
  * Returns a new groups array resized to `count` (clamped 1..5).
@@ -333,7 +334,7 @@ export function CategoriesEditor({
       </Group>
 
       {headerError && (
-        <Text size="sm" c="red">
+        <Text size="sm" c="red"><ErrorIcon inline />
           {headerError}
         </Text>
       )}

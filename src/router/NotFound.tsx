@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { Alert, Stack } from '@mantine/core'
+import { WarningIcon } from '../ui/icons'
 
 export function NotFound() {
   return (
     <Stack gap="md" maw={400} m="md">
-      <Alert title="Torneo no encontrado" color="warning">
+      <Alert icon={<WarningIcon />} title="Torneo no encontrado" color="warning">
         El torneo que buscás no existe o fue eliminado.
       </Alert>
       <Link to="/">← Volver a la lista</Link>

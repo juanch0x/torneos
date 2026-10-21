@@ -9,6 +9,7 @@ import { plural } from '../../domain/text'
 import { configurationIssueText } from './organizerWarnings'
 import type { Tournament } from '../../domain/types'
 import { isV2SetupLocked } from '../../domain/v2Setup'
+import { LockIcon, WarningIcon } from '../icons'
 
 export function hasLegacyPlanningData(source: Tournament): boolean {
   return source.slots.length > 0 || !!source.pairUnavailableWindows?.length || !!source.calendar?.overrides.length || source.categories.some(category => category.matches.some(match => match.scheduledAt !== undefined))
@@ -28,8 +29,8 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
     <Group justify="space-between" wrap="nowrap">
       <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
         <Title order={1} size="h2" style={{ overflowWrap: 'anywhere' }}>{title}</Title>
-        {source && !ready && <Badge color="warning" variant="light">Necesita configuración</Badge>}
-        {locked && <Badge color="gray" variant="light">Configuración bloqueada</Badge>}
+        {source && !ready && <Badge color="warning" variant="light" leftSection={<WarningIcon size={12} />}>Necesita configuración</Badge>}
+        {locked && <Badge color="gray" variant="light" leftSection={<LockIcon size={12} />}>Configuración bloqueada</Badge>}
       </Group>
       <Tooltip label="Configuración del torneo" withArrow>
         <ActionIcon
@@ -45,9 +46,9 @@ export function V2ConfigurationHeader({ tournamentId }: { tournamentId: string }
         </ActionIcon>
       </Tooltip>
     </Group>
-    {source && !ready && <Text size="sm" c="warning">Completá y guardá la configuración del torneo desde la página de configuración para editar restricciones o abrir el calendario.</Text>}
+    {source && !ready && <Text size="sm" c="warning"><WarningIcon inline />Completá y guardá la configuración del torneo desde la página de configuración para editar restricciones o abrir el calendario.</Text>}
     {(state.saving || !source) && <Text role="status" aria-live="polite" size="sm">{state.saving ? 'Guardando…' : (state.status === 'loading' ? 'Leyendo el torneo seleccionado…' : state.status === 'not-found' ? 'No se encontró esta fuente.' : state.status === 'error' ? 'No se pudo cargar esta fuente.' : 'Seleccioná o cargá este torneo para configurarlo.')}</Text>}
-    {!!issues.length && <details><summary>{plural(issues.length, 'registro requiere', 'registros requieren')} revisión · Horarios intactos</summary><Stack mt="xs" gap={4} style={{ maxHeight: 180, overflowY: 'auto' }}>{issues.map((issue, index) => <Text size="xs" key={index} c="warning">{configurationIssueText(source!, issue)}</Text>)}</Stack></details>}
+    {!!issues.length && <details><summary>{plural(issues.length, 'registro requiere', 'registros requieren')} revisión · Horarios intactos</summary><Stack mt="xs" gap={4} style={{ maxHeight: 180, overflowY: 'auto' }}>{issues.map((issue, index) => <Text size="xs" key={index} c="warning"><WarningIcon inline />{configurationIssueText(source!, issue)}</Text>)}</Stack></details>}
   </Stack>
 }
 

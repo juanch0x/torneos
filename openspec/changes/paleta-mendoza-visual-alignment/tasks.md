@@ -106,8 +106,8 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V; guard green. QA (both): tags, locked Alert (gray, dimmed border).
 
 ## Slice 8b: Icons and text (230-350), needs 7 and 8
-- [ ] 8b.1 RED render test, GREEN `src/ui/icons.tsx` (warning, error, success, lock; aria-hidden).
-- [ ] 8b.2 Re-run grep including multi-line `<Alert` tags; apply icons per the design inventory plus: `SchedulePanel.tsx:536-537` (red Alert, not a Button), `RealPlanningViews.tsx:173` (export error Alert), `:190` (dynamic red text), `RealCalendarMoves.tsx:91` (save error text).
+- [x] 8b.1 RED render test, GREEN `src/ui/icons.tsx` (warning, error, success, lock; aria-hidden).
+- [x] 8b.2 Re-run grep including multi-line `<Alert` tags; apply icons per the design inventory plus: `SchedulePanel.tsx:536-537` (red Alert, not a Button), `RealPlanningViews.tsx:173` (export error Alert), `:190` (dynamic red text), `RealCalendarMoves.tsx:91` (save error text).
 - AC: inventory has no unhandled error/warning/locked site. QA: grayscale check of each state. Fallback: split by directory if >400.
 
 ## Slice 9: Typography (150-250), needs 6b
