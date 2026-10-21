@@ -78,8 +78,8 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V. QA (both): grid, text, hover states.
 
 ## Slice 6a2: Ghost preview and outlines (150-250), needs 6a1
-- [ ] 6a2.1 RED `derivedPairs.test.ts`: ghost text on both stripes >=4.5, dashed border >=3 (valid + invalid, both schemes, asserts exact `color-mix`); outlines >=3 vs the 6 palette + 4 mock colors; `restrictionFg` on `restrictionBg`.
-- [ ] 6a2.2 `calendarMock.css:40-81` and `preparationMock.css:12` literals to variables.
+- [x] 6a2.1 RED `derivedPairs.test.ts`: ghost text on both stripes >=4.5, dashed border >=3 (valid + invalid, both schemes, asserts exact `color-mix`); outlines >=3 vs the 6 palette + 4 mock colors; `restrictionFg` on `restrictionBg`.
+- [x] 6a2.2 `calendarMock.css:40-81` and `preparationMock.css:12` literals to variables.
 - AC: V. QA (both): ghost valid/invalid, conflict/unknown/picked/selected-window outlines.
 
 ## Slice 6b: TSX literals and guard (130-210), needs 6a2

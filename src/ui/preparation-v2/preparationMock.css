@@ -9,7 +9,7 @@
 .preparation-v2-modal-scroll .preparation-v2-modal-body { flex: none; display: block; overflow: visible; }
 .preparation-v2-modal-scroll .preparation-v2-modal-layout > .preparation-v2-calendar { flex: none; }
 .preparation-v2-calendar { min-width: 0; }
-.preparation-v2-window-selected { outline: 2px solid #a53737; outline-offset: -2px; }
+.preparation-v2-window-selected { outline: 2px solid var(--tn-restriction-fg); outline-offset: -2px; }
 @media (max-width: 900px) { .preparation-v2-calendar { overflow-x: auto; } .preparation-v2-calendar > div { min-width: 700px; } }
 
 .preparation-v2-actions-anchor { position: fixed; width: 1px; height: 1px; pointer-events: none; }
