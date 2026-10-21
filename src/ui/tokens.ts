@@ -53,6 +53,19 @@ export interface SchemeTokens {
   dangerText: string
   dangerTint: string
   dangerBorder: string
+  /** FullCalendar neutral fills (muted/strong bands), lightest to strongest. */
+  fill1: string
+  fill2: string
+  fill3: string
+  /** Closed-court stripes. */
+  closedA: string
+  closedB: string
+  /** Default calendar event. */
+  eventBg: string
+  eventFg: string
+  /** Restriction (unavailable window) event. */
+  restrictionBg: string
+  restrictionFg: string
   /** State outlines drawn on category events. */
   outlineConflict: string
   outlineUnknown: string
@@ -77,6 +90,15 @@ export const schemeTokens: Record<Scheme, SchemeTokens> = {
     dangerText: '#b42318',
     dangerTint: '#fdecea',
     dangerBorder: '#b42318',
+    fill1: '#e8e8e8',
+    fill2: '#dcdcdc',
+    fill3: '#cfcfcf',
+    closedA: '#d9dfe2',
+    closedB: '#f2f2f2',
+    eventBg: '#e5defa',
+    eventFg: '#423070',
+    restrictionBg: '#f4d6d6',
+    restrictionFg: '#722929',
     outlineConflict: '#b53636',
     outlineUnknown: '#a85d16',
     outlinePicked: '#205f5a',
@@ -98,6 +120,15 @@ export const schemeTokens: Record<Scheme, SchemeTokens> = {
     dangerText: '#ff8a80',
     dangerTint: '#3d2328',
     dangerBorder: '#ff8a80',
+    fill1: '#2f374c',
+    fill2: '#39425a',
+    fill3: '#444e68',
+    closedA: '#343c52',
+    closedB: '#262d3f',
+    eventBg: '#3a3160',
+    eventFg: '#e5defa',
+    restrictionBg: '#4a2a2e',
+    restrictionFg: '#ffd6d6',
     outlineConflict: '#b53636',
     outlineUnknown: '#a85d16',
     outlinePicked: '#205f5a',

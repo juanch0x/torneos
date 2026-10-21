@@ -41,7 +41,7 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: `tsc` and `pnpm build` pass with file-reading tests. Rollback: revert.
 
 ## Slice 2b: Calendar tokens (110-170), needs 2a
-- [ ] 2b.1 RED then GREEN: `fill1/2/3`, `closedA/B`, `eventBg/Fg`, `restrictionBg/Fg` per scheme in `tokens.ts`; text on fill1-3, eventFg/eventBg, restrictionFg/Bg >=4.5 in `tokens.test.ts`.
+- [x] 2b.1 RED then GREEN: `fill1/2/3`, `closedA/B`, `eventBg/Fg`, `restrictionBg/Fg` per scheme in `tokens.ts`; text on fill1-3, eventFg/eventBg, restrictionFg/Bg >=4.5 in `tokens.test.ts`.
 - AC: V green. Rollback: revert.
 
 ## Slice 3: Theme rebase A, light (230-340), needs 2b

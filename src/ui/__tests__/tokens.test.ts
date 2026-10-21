@@ -191,6 +191,20 @@ describe('scheme tokens', () => {
       expect(contrastRatio(t.borderControl, t.surfaceMuted)).toBeGreaterThanOrEqual(3)
     })
 
+    it(`${scheme}: calendar tokens - text on fill1-3, event and restriction pairs reach 4.5`, () => {
+      for (const fill of [t.fill1, t.fill2, t.fill3]) {
+        expect(contrastRatio(t.text, fill), fill).toBeGreaterThanOrEqual(4.5)
+      }
+      expect(contrastRatio(t.eventFg, t.eventBg)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(t.restrictionFg, t.restrictionBg)).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it(`${scheme}: closed-court stripes are distinct and legible against the body`, () => {
+      expect(t.closedA).not.toBe(t.closedB)
+      expect(contrastRatio(t.text, t.closedA)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(t.text, t.closedB)).toBeGreaterThanOrEqual(4.5)
+    })
+
     it(`${scheme}: outline tokens reach 3 against every category color`, () => {
       const bgs = [...CATEGORY_PALETTE.map((c) => c.color), ...CATEGORIES.map((c) => c.color)]
       for (const ink of [t.outlineConflict, t.outlineUnknown, t.outlinePicked]) {
