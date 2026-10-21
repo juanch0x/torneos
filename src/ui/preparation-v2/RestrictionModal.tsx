@@ -53,7 +53,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
   }
   const events = useMemo(() => draft.filter((window) => !validateWindow(window, config)).map((window) => ({
     id: window.id, start: window.start, end: window.end, title: window.reason || 'No disponible',
-    color: '#f4d6d6', contrastColor: '#722929', allDay: window.start.endsWith('T00:00') && window.end.endsWith('T00:00'),
+    color: 'var(--tn-restriction-bg)', contrastColor: 'var(--tn-restriction-fg)', allDay: window.start.endsWith('T00:00') && window.end.endsWith('T00:00'),
   })), [draft, config])
 
   const courtEvents = useMemo(() => {
@@ -65,7 +65,7 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
       const spans = hours === null ? [['00:00', '24:00']] : [['00:00', hours.startsAt], [hours.endsAt, '24:00']]
       for (const [start, end] of spans) if (start !== end) {
         const next = new Date(date); next.setDate(next.getDate() + 1)
-        courtEvents.push({ start: `${day}T${start}:00`, end: end === '24:00' ? next : `${day}T${end}:00`, display: 'background', color: '#d9dfe2', title: 'Cancha cerrada' })
+        courtEvents.push({ start: `${day}T${start}:00`, end: end === '24:00' ? next : `${day}T${end}:00`, display: 'background', color: 'var(--tn-closed-a)', title: 'Cancha cerrada' })
       }
     }
     return courtEvents

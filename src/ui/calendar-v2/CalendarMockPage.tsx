@@ -278,7 +278,7 @@ function DemoCalendarPage() {
           <Text fw={600}>{proposedMatch.title}</Text>
           <Text size="sm">De: {formatDayDateTime(proposedMatch.start)}</Text>
           <Text size="sm">A: {formatDayDateTime(proposal.start)}</Text>
-          <Paper p="sm" bg="gray.0"><Text size="sm">1 partido cambia · Ningún otro se mueve.</Text></Paper>
+          <Paper p="sm" bg="var(--tn-surface-muted)"><Text size="sm">1 partido cambia · Ningún otro se mueve.</Text></Paper>
           <Text size="sm" c="dimmed">Confirmá que ambas parejas puedan jugar en ese horario. Este ejemplo no conoce sus restricciones.</Text>
           <Group justify="flex-end"><Button onClick={() => {
             setPrevious(matches); setMatches(matches.map((match) => match.id === proposal.id ? { ...match, start: proposal.start } : match));

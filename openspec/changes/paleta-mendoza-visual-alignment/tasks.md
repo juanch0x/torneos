@@ -83,8 +83,8 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V. QA (both): ghost valid/invalid, conflict/unknown/picked/selected-window outlines.
 
 ## Slice 6b: TSX literals and guard (130-210), needs 6a2
-- [ ] 6b.1 `RestrictionModal.tsx:56,68`, `ReadOnlyV2Page.tsx:87,125,130` (`readableTextOn`), `CalendarMockPage.tsx:281`.
-- [ ] 6b.2 Create `colorLiterals.test.ts` (excludes `__tests__` and `*.test.*`; uses `readRepoFile`). Allowlist only `tokens.ts`, `mockSchedule.ts`, black-alpha shadows in `theme.ts`. `contrast.ts` is clean (1.2).
+- [x] 6b.1 `RestrictionModal.tsx:56,68`, `ReadOnlyV2Page.tsx:87,125,130` (`readableTextOn`), `CalendarMockPage.tsx:281`.
+- [x] 6b.2 Create `colorLiterals.test.ts` (excludes `__tests__` and `*.test.*`; uses `readRepoFile`). Allowlist only `tokens.ts`, `mockSchedule.ts`, black-alpha shadows in `theme.ts`. `contrast.ts` is clean (1.2).
 - AC: V; guard green. QA (both): restriction modal, read-only badges.
 
 ## Slice 6c: Category colors in dark (200-330), needs 6b
