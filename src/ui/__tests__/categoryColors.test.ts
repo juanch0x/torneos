@@ -70,7 +70,6 @@ describe('category color consumers', () => {
     'src/ui/read-v2/ReadOnlyV2Page.tsx',
     'src/ui/read-v2/RealCalendarMoves.tsx',
     'src/ui/read-v2/RealPlanningViews.tsx',
-    'src/ui/calendar-v2/CalendarMockPage.tsx',
   ]
 
   it.each(consumers)('%s routes stored colors through categoryDisplay', (file) => {

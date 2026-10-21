@@ -17,16 +17,14 @@ import { V2NavigationGuard } from '../read-v2/V2NavigationGuard'
 import { planningIssueText } from '../read-v2/planningIssueText'
 import { CategoriesEditor } from './CategoriesEditor'
 import { TournamentBreadcrumb } from '../TournamentBreadcrumb'
+import { TournamentRequired } from '../read-v2/TournamentRequired'
 import { groupPairCounts, isConfigurationDraftDirty, isSetupDraftDirty, setupPageMode } from './configurationPageModel'
 import { ErrorIcon, LockIcon, WarningIcon } from '../icons'
 
 export function TournamentConfigurationPage() {
   const { tournamentId } = useSearch({ from: '/v2/configuration' })
   const state = useStore(v2SessionStore)
-  if (!tournamentId) return <Stack>
-    <Alert icon={<WarningIcon />} color="warning">Seleccioná un torneo para configurar sus categorías y horarios. Esta página requiere un torneo guardado.</Alert>
-    <Button component={Link} to="/">Volver a torneos</Button>
-  </Stack>
+  if (!tournamentId) return <TournamentRequired>Seleccioná un torneo para configurar sus categorías y horarios. Esta página requiere un torneo guardado.</TournamentRequired>
 
   const working = state.sourceId === tournamentId && state.status === 'loaded' ? state.working : null
   return <Stack gap="lg">

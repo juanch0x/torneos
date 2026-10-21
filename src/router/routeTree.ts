@@ -75,7 +75,7 @@ const calendarV2Route = createRoute({
     if (abortController.signal.aborted) return
     guardV2Setup(deps.tournamentId, true)
   },
-  component: lazyRouteComponent(() => import('../ui/calendar-v2/CalendarMockPage'), 'CalendarMockPage'),
+  component: lazyRouteComponent(() => import('../ui/calendar-v2/CalendarPage'), 'CalendarPage'),
 })
 
 const groupsV2Route = createRoute({
@@ -89,7 +89,7 @@ const groupsV2Route = createRoute({
     if (abortController.signal.aborted) return
     guardV2Setup(deps.tournamentId)
   },
-  component: lazyRouteComponent(() => import('../ui/preparation-v2/GroupsMockPage'), 'GroupsMockPage'),
+  component: lazyRouteComponent(() => import('../ui/preparation-v2/GroupsPage'), 'GroupsPage'),
 })
 
 const configurationV2Route = createRoute({
