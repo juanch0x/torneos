@@ -2,8 +2,10 @@ import {
   Alert,
   Badge,
   Button,
+  Chip,
   createTheme,
   Drawer,
+  Menu,
   NativeSelect,
   NumberInput,
   Paper,
@@ -220,6 +222,9 @@ export const theme = createTheme({
         horizontalSpacing: 'md',
         verticalSpacing: 'sm',
         withTableBorder: true,
+        // Stock stripe/hover grays are invisible (light) or equal to the surface (dark).
+        stripedColor: 'var(--tn-surface-muted)',
+        highlightOnHoverColor: 'var(--tn-row-hover)',
       },
       styles: {
         table: {
@@ -227,10 +232,26 @@ export const theme = createTheme({
         },
         thead: {
           backgroundColor: 'var(--tn-surface-muted)',
+          borderBottom: '2px solid var(--mantine-color-default-border)',
         },
         th: {
           color: 'var(--mantine-color-text)',
           fontWeight: 700,
+        },
+      },
+    }),
+    // Stock checked Chip puts white on the primary fill (2.81:1 in dark); an explicit color
+    // makes Mantine compute the per-scheme contrast text.
+    Chip: Chip.extend({
+      defaultProps: {
+        color: 'primary',
+      },
+    }),
+    // Stock dark item hover is dark-4 (3.18:1 for text); inherits to every item.
+    Menu: Menu.extend({
+      styles: {
+        dropdown: {
+          '--menu-item-hover': 'var(--tn-row-hover)',
         },
       },
     }),

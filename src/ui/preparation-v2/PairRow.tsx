@@ -1,5 +1,13 @@
+import type { CSSProperties } from 'react'
 import { ActionIcon, Badge, Group, Menu, Stack, Text } from '@mantine/core'
 import { plural } from '../../domain/text'
+
+// Menu.Item color="red" sets --menu-item-color (red-6) and --menu-item-hover inline, which
+// defeats the theme override and renders 1.95:1 in dark. Set both variables directly instead.
+const DANGER_ITEM_STYLE = {
+  '--menu-item-color': 'var(--mantine-color-red-text)',
+  '--menu-item-hover': 'var(--tn-row-hover)',
+} as CSSProperties
 
 export interface PairRowProps {
   label: string
@@ -39,7 +47,7 @@ export function PairRow(props: PairRowProps) {
         <Menu.Item disabled={props.restrictionsDisabled} onClick={props.onRestrictions}>{restrictionsLabel}</Menu.Item>
         <Menu.Item onClick={props.onEditNames}>Editar nombres</Menu.Item>
         <Menu.Divider />
-        <Menu.Item color="red" disabled={props.deleteDisabled} onClick={props.onDelete}>Eliminar pareja</Menu.Item>
+        <Menu.Item style={DANGER_ITEM_STYLE} disabled={props.deleteDisabled} onClick={props.onDelete}>Eliminar pareja</Menu.Item>
       </Menu.Dropdown>
     </Menu>
   </Group>

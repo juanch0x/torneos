@@ -56,10 +56,10 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V; no `theme.other` consumer edits. QA (light, plus dark via localStorage): shell, cards, alerts.
 
 ## Slice 4b: Stock-component fixes (200-300), needs 4a
-- [ ] 4b.1 RED `derivedPairs.test.ts`: Menu hover text + danger on `rowHover` (light uses rowHover: 12.15 / 5.37; dark 9.35 / 4.81), Table hover/stripe/thead separator, input border >=3, gray Alert pair. Also gate the dark `Menu.Item` danger pair for the PairRow fix.
-- [ ] 4b.2 `theme.ts`: `Chip` color `primary`; `Table` stripedColor/highlightOnHoverColor/thead 2px border; `Menu` `--menu-item-hover`.
-- [ ] 4b.3 `PairRow.tsx:42`: replace `Menu.Item color="red"` with `--menu-item-color: var(--mantine-color-red-text)` and `--menu-item-hover: var(--tn-row-hover)`.
-- [ ] 4b.4 Create `src/ui/mantineOverrides.css` (Select selected option contrast, `--input-bd`, no hex), import in `main.tsx` after Mantine styles; test asserts no hex.
+- [x] 4b.1 RED `derivedPairs.test.ts`: Menu hover text + danger on `rowHover` (light uses rowHover: 12.15 / 5.37; dark 9.35 / 4.81), Table hover/stripe/thead separator, input border >=3, gray Alert pair. Also gate the dark `Menu.Item` danger pair for the PairRow fix.
+- [x] 4b.2 `theme.ts`: `Chip` color `primary`; `Table` stripedColor/highlightOnHoverColor/thead 2px border; `Menu` `--menu-item-hover`.
+- [x] 4b.3 `PairRow.tsx:42`: replace `Menu.Item color="red"` with `--menu-item-color: var(--mantine-color-red-text)` and `--menu-item-hover: var(--tn-row-hover)`.
+- [x] 4b.4 Create `src/ui/mantineOverrides.css` (Select selected option contrast, `--input-bd`, no hex), import in `main.tsx` after Mantine styles; test asserts no hex.
 - AC: V. QA (both): checked Chip, selected Select option, striped tables x3, PairRow menu hover.
 
 ## Slice 4c: Structural borders (100-180), needs 4b

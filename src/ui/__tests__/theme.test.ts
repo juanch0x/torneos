@@ -37,4 +37,24 @@ describe('theme', () => {
     const props = (theme.components?.Tabs as { defaultProps?: { color?: string } }).defaultProps
     expect(props?.color).toBe('primary')
   })
+
+  it('points Chip at the primary color so checked chips use the per-scheme contrast', () => {
+    const props = (theme.components?.Chip as { defaultProps?: { color?: string } }).defaultProps
+    expect(props?.color).toBe('primary')
+  })
+
+  it('wires Table stripe, hover and header separator to tokens', () => {
+    const table = theme.components?.Table as {
+      defaultProps?: Record<string, unknown>
+      styles?: { thead?: Record<string, string> }
+    }
+    expect(table.defaultProps?.stripedColor).toBe('var(--tn-surface-muted)')
+    expect(table.defaultProps?.highlightOnHoverColor).toBe('var(--tn-row-hover)')
+    expect(table.styles?.thead?.borderBottom).toBe('2px solid var(--mantine-color-default-border)')
+  })
+
+  it('sets the Menu item hover from the row hover token', () => {
+    const menu = theme.components?.Menu as { styles?: { dropdown?: Record<string, string> } }
+    expect(menu.styles?.dropdown?.['--menu-item-hover']).toBe('var(--tn-row-hover)')
+  })
 })

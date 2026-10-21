@@ -1,0 +1,14 @@
+/* Fixes for Mantine's built-in colors that fail WCAG with this palette. Variables only, no
+   color literals. Imported after '@mantine/core/styles.css' so equal-specificity rules win. */
+
+/* Stock rule paints the selected option with white text on the primary fill (2.81:1 in dark).
+   Specificity (0,2,0) beats Mantine's :where() rule. */
+.mantine-Select-option[data-combobox-selected] {
+  color: var(--mantine-primary-color-contrast);
+}
+
+/* The stock light default input border is gray-4 (1.47:1). Error and success states keep their
+   own border variables, so they are excluded here. */
+:root[data-mantine-color-scheme='light'] .mantine-Input-wrapper[data-variant='default']:not([data-error]):not([data-success]) {
+  --input-bd: var(--mantine-color-default-border);
+}
