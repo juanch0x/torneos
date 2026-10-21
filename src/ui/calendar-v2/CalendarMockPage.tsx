@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearch } from '@tanstack/react-router'
 import { V2SourceControls } from '../read-v2/V2SourceControls'
 import { RealV2Calendar } from '../read-v2/RealPlanningViews'
-import { Badge, Button, Group, Menu, Modal, NativeSelect, Paper, Popover, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Group, Menu, Modal, NativeSelect, Paper, Popover, Stack, Text, Title, useComputedColorScheme } from '@mantine/core'
 import FullCalendar, { type CalendarRef } from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/react/timegrid'
 import interactionPlugin from '@fullcalendar/react/interaction'
@@ -11,6 +11,7 @@ import esLocale from '@fullcalendar/react/locales/es'
 import '@fullcalendar/react/skeleton.css'
 import '@fullcalendar/react/themes/monarch/theme.css'
 import { CATEGORIES, COURT_HOURS, DEMO_DATE, DEMO_MATCHES, MATCH_MINUTES, checkDestination } from './mockSchedule'
+import { categoryDisplay } from '../categoryColors'
 import { getPreviewSlot } from './previewSlot'
 import { formatWeekRange } from './formatWeekRange'
 import './calendarMock.css'
@@ -33,6 +34,12 @@ export function CalendarMockPage() {
   return <Stack><V2SourceControls view="calendar" tournamentId={tournamentId} />{tournamentId ? <RealV2Calendar key={tournamentId} tournamentId={tournamentId} /> : <DemoCalendarPage />}</Stack>
 }
 function DemoCalendarPage() {
+  const scheme = useComputedColorScheme('light', { getInitialValueInEffect: false })
+  // The demo keeps its hand-picked inks in light; dark derives text per background.
+  const shown = useCallback((index: number) => {
+    const display = categoryDisplay(CATEGORIES[index].color, scheme)
+    return scheme === 'light' ? { bg: display.bg, fg: CATEGORIES[index].ink } : display
+  }, [scheme])
   const calendar = useRef<CalendarRef>(null)
   const dayLanes = useRef(new Map<HTMLElement, Date>())
   const slotLanes = useRef(new Map<HTMLElement, number>())
@@ -54,9 +61,9 @@ function DemoCalendarPage() {
   const events = useMemo(() => matches.map((match) => ({
     id: match.id, title: match.title, start: match.start,
     end: new Date(match.start.getTime() + MATCH_MINUTES * 60_000),
-    color: CATEGORIES[match.category].color, contrastColor: CATEGORIES[match.category].ink,
+    color: shown(match.category).bg, contrastColor: shown(match.category).fg,
     extendedProps: { category: match.category, group: match.group },
-  })), [matches])
+  })), [matches, shown])
   const detailsMatch = matches.find((match) => match.id === detailsId)
   const movingMatch = matches.find((match) => match.id === movingId)
   const previewDate = hoverDate ?? cursor
@@ -134,7 +141,7 @@ function DemoCalendarPage() {
         </Stack>
         <Group><Button component={Link} to="/v2/groups" variant="light">Preparar grupos</Button><Button component={Link} to="/v2/read" variant="subtle">Leer torneo real</Button><Button component={Link} to="/" variant="subtle">Volver a torneos</Button></Group>
         {movingMatch && <Paper withBorder radius="md" p="sm" shadow="sm" ref={moveCard} className="calendar-v2-move-card"
-          style={{ backgroundColor: CATEGORIES[movingMatch.category].color, color: CATEGORIES[movingMatch.category].ink }}>
+          style={{ backgroundColor: shown(movingMatch.category).bg, color: shown(movingMatch.category).fg }}>
           <Group gap="sm" wrap="nowrap" align="center">
             <Stack gap={3} className="calendar-v2-move-card-copy">
               <Text size="xs" fw={600}>Partido en movimiento · {CATEGORIES[movingMatch.category].name}</Text>
@@ -160,7 +167,7 @@ function DemoCalendarPage() {
           </Group>
         </Group>
         <Group gap="lg" mb="md" className="calendar-v2-legend">
-          {CATEGORIES.map((category) => <span key={category.name}><i style={{ background: category.color }} />{category.name}</span>)}
+          {CATEGORIES.map((category) => <span key={category.name}><i style={{ background: shown(CATEGORIES.indexOf(category)).bg }} />{category.name}</span>)}
           <span><i className="calendar-v2-closed-swatch" />Cancha cerrada</span>
           <span><i className="calendar-v2-free-swatch" />Libre</span>
         </Group>

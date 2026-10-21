@@ -129,9 +129,9 @@ export const schemeTokens: Record<Scheme, SchemeTokens> = {
     eventFg: '#e5defa',
     restrictionBg: '#4a2a2e',
     restrictionFg: '#ffd6d6',
-    outlineConflict: '#b53636',
-    outlineUnknown: '#a85d16',
-    outlinePicked: '#205f5a',
+    outlineConflict: '#fcd5d1',
+    outlineUnknown: '#fbd56b',
+    outlinePicked: '#86efac',
   },
 }
 

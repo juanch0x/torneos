@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CATEGORY_PALETTE } from '../../domain/categoryPalette'
 import { CATEGORIES } from '../calendar-v2/mockSchedule'
+import { categoryDisplay } from '../categoryColors'
 import { contrastRatio, relativeLuminance } from '../contrast'
 import {
   COLOR_SCHEME_STORAGE_KEY,
@@ -205,8 +206,10 @@ describe('scheme tokens', () => {
       expect(contrastRatio(t.text, t.closedB)).toBeGreaterThanOrEqual(4.5)
     })
 
-    it(`${scheme}: outline tokens reach 3 against every category color`, () => {
-      const bgs = [...CATEGORY_PALETTE.map((c) => c.color), ...CATEGORIES.map((c) => c.color)]
+    it(`${scheme}: outline tokens reach 3 against every displayed category color`, () => {
+      const bgs = [...CATEGORY_PALETTE.map((c) => c.color), ...CATEGORIES.map((c) => c.color)].map(
+        (color) => categoryDisplay(color, scheme).bg,
+      )
       for (const ink of [t.outlineConflict, t.outlineUnknown, t.outlinePicked]) {
         for (const bg of bgs) expect(contrastRatio(ink, bg), `${ink} on ${bg}`).toBeGreaterThanOrEqual(3)
       }

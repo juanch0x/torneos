@@ -19,7 +19,7 @@ import { useTournamentStore } from '../../store/tournamentStore'
 import '../preparation-v2/preparationMock.css'
 import { formatShortDate, formatDateRange, formatDayDateTime } from '../format'
 import { formatTournamentPeriod } from '../tournamentPeriod'
-import { readableTextOn } from '../contrast'
+import { useCategoryDisplay } from '../categoryColors'
 import { plural } from '../../domain/text'
 
 const plugins = [timeGridPlugin, interactionPlugin, themePlugin]
@@ -33,6 +33,7 @@ function Matches({ matches }: { matches: V2DisplayMatch[] }) {
   </Table.Tbody></Table></Table.ScrollContainer>
 }
 export function ReadOnlyV2Page() {
+  const categoryColor = useCategoryDisplay()
   const [sources, setSources] = useState<TournamentMeta[]>([])
   const [selected, setSelected] = useState('')
   const [snapshot, setSnapshot] = useState<V2ReadSnapshot | null>(null)
@@ -85,7 +86,7 @@ export function ReadOnlyV2Page() {
       </Stack></Paper>
       {!!display.diagnostics.length && <Alert color="orange" title={`${plural(display.diagnostics.length, 'diagnóstico', 'diagnósticos')} · Sin reparaciones automáticas`}><Stack gap={4}>{display.diagnostics.map((issue, index) => <Text size="xs" key={index}>{issue.path}: {issue.message}</Text>)}</Stack></Alert>}
       <Tabs defaultValue="groups"><Tabs.List><Tabs.Tab value="groups">Grupos y parejas</Tabs.Tab><Tabs.Tab value="calendar">Calendario · {scheduled.length}</Tabs.Tab><Tabs.Tab value="unscheduled">Sin programar · {unscheduled.length}</Tabs.Tab><Tabs.Tab value="invalid">Horarios inválidos · {invalid.length}</Tabs.Tab></Tabs.List>
-        <Tabs.Panel value="groups" pt="md"><Stack>{display.categories.map((category, ci) => <Paper key={ci} withBorder p="md"><Group><Title order={3}>{category.name}</Title><Badge style={{ backgroundColor: category.color, color: readableTextOn(category.color) }}>{category.id}</Badge></Group><SimpleGrid cols={{ base: 1, md: 3 }} mt="sm">{category.groups.map((group, gi) => <Paper key={gi} withBorder p="sm"><Text fw={600}>{group.name}</Text>{group.pairs.map((pair, pi) => <Text size="sm" key={pi}>{pair.label} <Text span size="xs" c="dimmed">({pair.id})</Text></Text>)}</Paper>)}<Paper withBorder p="sm"><Text fw={600}>Sin grupo</Text>{category.unassigned.map((pair, pi) => <Text size="sm" key={pi}>{pairLabel(pair)} ({pair.id})</Text>)}</Paper></SimpleGrid></Paper>)}</Stack></Tabs.Panel>
+        <Tabs.Panel value="groups" pt="md"><Stack>{display.categories.map((category, ci) => <Paper key={ci} withBorder p="md"><Group><Title order={3}>{category.name}</Title><Badge style={{ backgroundColor: categoryColor(category.color).bg, color: categoryColor(category.color).fg }}>{category.id}</Badge></Group><SimpleGrid cols={{ base: 1, md: 3 }} mt="sm">{category.groups.map((group, gi) => <Paper key={gi} withBorder p="sm"><Text fw={600}>{group.name}</Text>{group.pairs.map((pair, pi) => <Text size="sm" key={pi}>{pair.label} <Text span size="xs" c="dimmed">({pair.id})</Text></Text>)}</Paper>)}<Paper withBorder p="sm"><Text fw={600}>Sin grupo</Text>{category.unassigned.map((pair, pi) => <Text size="sm" key={pi}>{pairLabel(pair)} ({pair.id})</Text>)}</Paper></SimpleGrid></Paper>)}</Stack></Tabs.Panel>
         <Tabs.Panel value="calendar" pt="md"><Stack><Text size="xs" c="dimmed">Gris: cancha cerrada según configuración. La vista se amplía para no ocultar partidos fuera de horario; sin horarios válidos muestra 24 horas, sin adoptar esa configuración. Las restricciones de parejas aún no se validan.</Text><ReadCalendar key={snapshot.sourceId} snapshot={snapshot} /><Matches matches={scheduled} /><Title order={4}>Franjas originales</Title><Table.ScrollContainer minWidth={600}><Table><Table.Tbody>{snapshot.baseline.slots.map((slot, index) => <Table.Tr key={index}><Table.Td>{slot.id}</Table.Td><Table.Td>{slot.startsAt}</Table.Td><Table.Td>{slot.matchId ?? 'Cancha libre (sin validar restricciones)'}</Table.Td></Table.Tr>)}</Table.Tbody></Table></Table.ScrollContainer></Stack></Tabs.Panel>
         <Tabs.Panel value="unscheduled" pt="md"><Matches matches={unscheduled} /></Tabs.Panel><Tabs.Panel value="invalid" pt="md"><Matches matches={invalid} /></Tabs.Panel>
       </Tabs>
@@ -94,6 +95,7 @@ export function ReadOnlyV2Page() {
 }
 export function ReadCalendar({ snapshot, onMatch, planning = false, conflictCounts = {}, unvalidatedKeys = [], calendarRef, moves }: { calendarRef?: RefObject<CalendarRef | null>; moves?: PlanningMoveInteraction; snapshot: V2ReadSnapshot; onMatch?: (key: string) => void; planning?: boolean; conflictCounts?: Record<string, number>; unvalidatedKeys?: string[] }) {
   const { display } = snapshot
+  const categoryColor = useCategoryDisplay()
   const localRef = useRef<CalendarRef>(null); const calendarApi = calendarRef ?? localRef
   const days = useRef(new Map<HTMLElement,Date>()); const rows = useRef(new Map<HTMLElement,number>())
   const contextListeners = useRef(new Map<HTMLElement,(event: MouseEvent) => void>())
@@ -128,7 +130,7 @@ export function ReadCalendar({ snapshot, onMatch, planning = false, conflictCoun
     }
     return result
   },[week,calendar])
-  const events = useMemo(() => [...courtEvents,...scheduled.map(match => ({ id: match.key, start: new Date(match.instant!), end: new Date(match.instant!+display.duration!*60000), title: `${match.categoryName} · ${match.group} · ${match.pairA} vs. ${match.pairB}`, color: match.categoryColor, contrastColor: readableTextOn(match.categoryColor),startEditable: true }))],[courtEvents,scheduled,display.duration])
+  const events = useMemo(() => [...courtEvents,...scheduled.map(match => ({ id: match.key, start: new Date(match.instant!), end: new Date(match.instant!+display.duration!*60000), title: `${match.categoryName} · ${match.group} · ${match.pairA} vs. ${match.pairB}`, color: categoryColor(match.categoryColor).bg, contrastColor: categoryColor(match.categoryColor).fg,startEditable: true }))],[courtEvents,scheduled,display.duration,categoryColor])
   if (display.duration === null) return <Alert color="orange">Sin duración válida: se muestran los horarios en la lista, sin inventar intervalos de partido.</Alert>
   return <Paper withBorder={!planning} p={planning ? 0 : 'sm'} className={planning ? 'calendar-v2-planning-grid' : 'preparation-v2-calendar'}>
     {planning && bounds.expanded && <Text size="xs" c="dimmed" mb="xs">{moves?.court ? `Disponibilidad general de cancha: ${calendar?.defaultWindow?.startsAt}–${calendar?.defaultWindow?.endsAt}. Grilla alineada al torneo; el relleno gris queda fuera de la disponibilidad de cada día.` : 'Vista ampliada para conservar partidos fuera del horario habitual. Los horarios originales no se ajustan a la grilla.'}</Text>}

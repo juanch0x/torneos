@@ -558,7 +558,7 @@ reverting slice 11 alone returns the app to light-only; dark remains reachable o
 ## Open Questions
 
 - [ ] "Labels in mono" is read as section labels, badges, tabs and nav. Form field labels stay sans. Confirm.
-- [ ] Pastel category events remain bright blocks in dark mode (data colors are kept). Accept, or dim them in a follow-up?
+- [x] RESOLVED 2026-10-21: category colors are darkened in dark mode (derived in `src/ui`, stored data and XLSX unchanged). Slice 6c of tasks.md implements it and supersedes the "events stay pastel in dark" statements and the scheme-independent outline values in this document; see `judgment-carryover.md`.
 - [ ] Prototype tags ("V2 · Prototipo") move from grape to neutral gray and "Solo lectura" from teal to gray. Confirm the mapping in the stock audit.
 - [ ] Structural borders (table, tab list, divider, popover, menu, select dropdown) are overridden to the subtle border token so dark does not draw bright `#7a84a0` lines everywhere. Confirm, or accept Mantine's stock dark-4 lines as the visual decision.
 - [ ] Table header is told apart from the first stripe by a 2px control-border bottom line (both use `surfaceMuted`). Confirm, or give the stripe its own lighter token.

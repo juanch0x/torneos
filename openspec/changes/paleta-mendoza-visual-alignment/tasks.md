@@ -88,10 +88,10 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V; guard green. QA (both): restriction modal, read-only badges.
 
 ## Slice 6c: Category colors in dark (200-330), needs 6b
-- [ ] 6c.1 RED `categoryColors.test.ts`: `categoryDisplay(color, scheme)` returns `{bg, fg}`; light = stored color; dark bg derived with `mixSrgb`; fg >=4.5 for all 6 palette + 4 mock colors; input color never mutated.
-- [ ] 6c.2 GREEN `src/ui/categoryColors.ts` (uses `useComputedColorScheme` hook wrapper for React sites).
-- [ ] 6c.3 `tokens.ts`: per-scheme `outlineConflict/Unknown/Picked`; `derivedPairs.test.ts` gates >=3 vs every derived dark color and every light pastel.
-- [ ] 6c.4 Grep category-color consumers (calendar events, `mockSchedule.ts` use, `CalendarMockPage.tsx:259` badge, `ReadOnlyV2Page.tsx` badge/event, any chip); route all through `categoryDisplay`. Do not touch `src/export/` or `src/domain/`.
+- [x] 6c.1 RED `categoryColors.test.ts`: `categoryDisplay(color, scheme)` returns `{bg, fg}`; light = stored color; dark bg derived with `mixSrgb`; fg >=4.5 for all 6 palette + 4 mock colors; input color never mutated.
+- [x] 6c.2 GREEN `src/ui/categoryColors.ts` (uses `useComputedColorScheme` hook wrapper for React sites).
+- [x] 6c.3 `tokens.ts`: per-scheme `outlineConflict/Unknown/Picked`; `derivedPairs.test.ts` gates >=3 vs every derived dark color and every light pastel.
+- [x] 6c.4 Grep category-color consumers (calendar events, `mockSchedule.ts` use, `CalendarMockPage.tsx:259` badge, `ReadOnlyV2Page.tsx` badge/event, any chip); route all through `categoryDisplay`. Do not touch `src/export/` or `src/domain/`.
 - AC: XLSX tests unchanged and green; stored data unchanged. QA (dark via localStorage): events, badges, outlines readable. Note: contradicts design Open Question 2 and the spec "unchanged in dark"; spec/design need amending by the orchestrator.
 
 ## Slice 7: Warning remap (130-220), needs 6b

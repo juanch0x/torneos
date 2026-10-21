@@ -3,6 +3,7 @@ import { contrastRatio, mixSrgb } from '../contrast'
 import { scales, schemeTokens, type Scheme } from '../tokens'
 import { CATEGORY_PALETTE } from '../../domain/categoryPalette'
 import { CATEGORIES } from '../calendar-v2/mockSchedule'
+import { categoryDisplay } from '../categoryColors'
 import { readRepoFile } from './readRepoFile'
 
 const SCHEMES: readonly Scheme[] = ['light', 'dark']
@@ -185,12 +186,14 @@ describe.each(SCHEMES)('calendar ghost preview and outlines (%s)', (scheme) => {
     }
   })
 
-  const categoryColors = [...CATEGORY_PALETTE.map((c) => c.color), ...CATEGORIES.map((c) => c.color)]
+  const categoryColors = [...CATEGORY_PALETTE.map((c) => c.color), ...CATEGORIES.map((c) => c.color)].map(
+    (color) => categoryDisplay(color, scheme).bg,
+  )
   it.each([
     ['outlineConflict' as const],
     ['outlineUnknown' as const],
     ['outlinePicked' as const],
-  ])('%s reaches 3 on every category color', (key) => {
+  ])('%s reaches 3 on every displayed category color', (key) => {
     for (const color of categoryColors) {
       expect(contrastRatio(t[key], color), `${key} on ${color}`).toBeGreaterThanOrEqual(3)
     }

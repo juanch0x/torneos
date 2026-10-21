@@ -31,6 +31,7 @@ import { createExportXlsxController, initialExportXlsxState } from './exportXlsx
 import { MobileMatchCard } from './MobileMatchCard'
 import { formatShortDate, formatDayDateTime, formatTimeRange } from './format'
 import { getMutedSurfaceStyle, guidanceGradient } from './surfaceStyles'
+import { useCategoryDisplay } from './categoryColors'
 
 interface MatchInfo {
   match: Match
@@ -210,6 +211,7 @@ export const CALENDAR_DISCLOSURE_BUTTON_TYPE = 'button'
 const columnHelper = createColumnHelper<Slot>()
 
 export function SchedulePanel({ tournament }: { tournament: Tournament }) {
+  const categoryColor = useCategoryDisplay()
   const theme = useMantineTheme()
   const generateFixture = useTournamentStore((s) => s.generateFixture)
   const setFixtureCalendar = useTournamentStore((s) => s.setFixtureCalendar)
@@ -460,7 +462,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
           metaLabel={info.label}
           teamA={info.labelA}
           teamB={info.labelB}
-          accentColor={info.color}
+          accentColor={categoryColor(info.color).bg}
         />
       )
     }
@@ -729,7 +731,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                         setDropTargetId(null)
                       }}
                       style={{
-                        ...(info ? { boxShadow: `inset 4px 0 0 ${info.color}` } : {}),
+                        ...(info ? { boxShadow: `inset 4px 0 0 ${categoryColor(info.color).bg}` } : {}),
                         ...(isDropTarget ? { backgroundColor: 'var(--mantine-primary-color-light)', outline: '2px solid var(--mantine-primary-color-filled)' } : {}),
                         ...(isInvalidTarget ? { opacity: 0.55 } : {}),
                         ...(info ? { cursor: 'grab' } : {}),

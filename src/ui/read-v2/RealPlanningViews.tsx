@@ -32,8 +32,10 @@ import { availabilityWarnings, operationalPlanningWarning, organizerDisplay, org
 // Originals may be invalid or ambiguous: never format them as if they were valid.
 const timeRange = (from: string, to: string) => tryFormatDayDateTime(from) && tryFormatDayDateTime(to) ? formatTimeRange(from, to) : `Horario inválido: ${from} → ${to}`
 import { plural } from '../../domain/text'
+import { useCategoryDisplay } from '../categoryColors'
 
 export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
+  const categoryColor = useCategoryDisplay()
   const state = useStore(v2SessionStore)
   const [membershipAttempt, setMembershipAttempt] = useState<{ request: {categoryId: string; pairId: string; groupId: string | null}; epoch: number } | null>(null)
   async function submitMembership(attempt: NonNullable<typeof membershipAttempt>) {
@@ -102,7 +104,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
       {state.working && v2StructureBlocked(state.working) && <Alert color="orange">Calendario generado: no se pueden agregar, eliminar ni mover parejas. Podés corregir nombres, editar restricciones y regenerar el calendario.</Alert>}
       <AvailabilitySummary />
       {/* Categories filter the section's content, so they are chips rather than a second row of navigation tabs. */}
-      <Group justify="space-between" align="center" gap="sm"><Chip.Group value={String(Math.min(selectedCategory, display.categories.length - 1))} onChange={value => setSelectedCategory(Number(value))}><Group gap="xs" role="radiogroup" aria-label="Categoría">{display.categories.map((category, ci) => <Chip key={ci} value={String(ci)} styles={{ label: { borderColor: category.color } }}>{category.name} · {state.working!.categories[ci].pairs.length}</Chip>)}</Group></Chip.Group>
+      <Group justify="space-between" align="center" gap="sm"><Chip.Group value={String(Math.min(selectedCategory, display.categories.length - 1))} onChange={value => setSelectedCategory(Number(value))}><Group gap="xs" role="radiogroup" aria-label="Categoría">{display.categories.map((category, ci) => <Chip key={ci} value={String(ci)} styles={{ label: { borderColor: categoryColor(category.color).bg } }}>{category.name} · {state.working!.categories[ci].pairs.length}</Chip>)}</Group></Chip.Group>
         {!!display.categories.length && <Button disabled={state.saving || state.draftDirty || state.writeUncertain || !!v2StructureBlocked(state.working!)} onClick={() => setPairForm({ mode: 'add', categoryIndex: Math.min(selectedCategory, display.categories.length - 1), pairId: crypto.randomUUID(), initial: { player1: '', player2: '' }, epoch: state.epoch })}>Agregar pareja</Button>}</Group>
         {display.categories.map((category, ci) => ci !== Math.min(selectedCategory, display.categories.length - 1) ? null : <Stack key={ci} gap="md"><SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
           {[...category.groups, { id: '', name: 'Sin grupo', pairs: category.unassigned.map(pair => ({ id: pair.id, label: `${pair.player1} / ${pair.player2}` })) }].map((group, gi) => {
@@ -147,6 +149,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
   </Stack>
 }
 export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
+  const categoryColor = useCategoryDisplay()
   const state = useStore(v2SessionStore)
   const [exportState, setExportState] = useState(initialExportXlsxState)
   const [exportController] = useState(() => createExportXlsxController(setExportState))
@@ -183,7 +186,7 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
       {!!generationIssues.length && <Alert color="orange" title="No se confirmó un calendario completo"><Stack gap="xs" style={{ maxHeight: 220, overflowY: 'auto' }}>{generationIssues.map((issue, i) => <Text key={i} size="sm">{issue}</Text>)}</Stack><Button mt="sm" variant="light" renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Editar restricciones / Configurar período</Button></Alert>}
       </Stack></Paper><AvailabilitySummary /><Paper withBorder p="md" radius="lg"><Stack gap="sm">
       <Group justify="space-between"><Text size="sm">{display!.calendar ? formatDateRange(display!.calendar.startDate, display!.calendar.endDate) : 'Período sin configurar'} · Horario del torneo: {getV2AutomaticWindow(state.working!)?.startsAt}–{getV2AutomaticWindow(state.working!)?.endsAt} · {display!.duration !== null ? `${display!.duration} minutos por partido` : 'Duración sin configurar'}</Text><Text size="xs" c="dimmed">Horario local del navegador · Los movimientos requieren Aplicar</Text></Group>
-      <Group gap="lg" className="calendar-v2-legend">{display!.categories.map((category, index) => <span key={index}><i style={{ background: category.color }} />{category.name}</span>)}<span><i className="calendar-v2-closed-swatch" />Cancha cerrada</span><span><i className="calendar-v2-free-swatch" />Cancha libre, restricciones sin validar</span></Group>
+      <Group gap="lg" className="calendar-v2-legend">{display!.categories.map((category, index) => <span key={index}><i style={{ background: categoryColor(category.color).bg }} />{category.name}</span>)}<span><i className="calendar-v2-closed-swatch" />Cancha cerrada</span><span><i className="calendar-v2-free-swatch" />Cancha libre, restricciones sin validar</span></Group>
       {moves.controls}
       <ReadCalendar key={tournamentId} calendarRef={calendarRef} moves={moves.interaction} snapshot={snapshot} planning onMatch={setDetails} conflictCounts={state.availability.conflicts.reduce<Record<string, number>>((counts, conflict) => { counts[conflict.matchKey] = (counts[conflict.matchKey] ?? 0) + 1; return counts }, {})} unvalidatedKeys={state.availability.unvalidated.map(item => item.matchKey)} />
     </Stack></Paper>
