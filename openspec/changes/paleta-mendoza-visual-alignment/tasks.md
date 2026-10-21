@@ -73,8 +73,8 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: `tsc` green; no `theme.white`. QA (both): guidance card, drop target, selection.
 
 ## Slice 6a1: FullCalendar variables (150-250), needs 5
-- [ ] 6a1.1 RED `fullcalendarTheme.test.ts` (every `--fc-monarch-*` var read by monarch theme.css is defined).
-- [ ] 6a1.2 Create `src/ui/fullcalendarTheme.css` (table in design). `secondary-over/down` map to `--mantine-primary-color-light-hover`, not filled hover. Import in `main.tsx`; delete the duplicated hex blocks in `calendarMock.css:2-34` and `preparationMock.css:11,15`.
+- [x] 6a1.1 RED `fullcalendarTheme.test.ts` (every `--fc-monarch-*` var read by monarch theme.css is defined).
+- [x] 6a1.2 Create `src/ui/fullcalendarTheme.css` (table in design). `secondary-over/down` map to `--mantine-primary-color-light-hover`, not filled hover. Import in `main.tsx`; delete the duplicated hex blocks in `calendarMock.css:2-34` and `preparationMock.css:11,15`.
 - AC: V. QA (both): grid, text, hover states.
 
 ## Slice 6a2: Ghost preview and outlines (150-250), needs 6a1

@@ -1,38 +1,3 @@
-.calendar-v2 {
-  --fc-monarch-primary: #205f5a;
-  --fc-monarch-primary-foreground: white;
-  --fc-monarch-primary-over: #184e4a;
-  --fc-monarch-primary-down: #123e3b;
-  --fc-monarch-secondary: #e3f0ed;
-  --fc-monarch-secondary-foreground: #205f5a;
-  --fc-monarch-secondary-over: #d4e7e2;
-  --fc-monarch-secondary-down: #c4ddd6;
-  --fc-monarch-background: #fff;
-  --fc-monarch-foreground: #263735;
-  --fc-monarch-border: #e1e7e5;
-  --fc-monarch-faint: #f5f8f7;
-  --fc-monarch-muted: #e7ecea;
-  --fc-monarch-strong: #cbd6d2;
-  --fc-monarch-stronger: #becbc6;
-  --fc-monarch-strongest: #aebeb7;
-  --fc-monarch-strong-border: #c5d1cc;
-  --fc-monarch-faint-foreground: #85918d;
-  --fc-monarch-selected: #205f5a;
-  --fc-monarch-selected-foreground: white;
-  --fc-monarch-selected-over: #184e4a;
-  --fc-monarch-selected-down: #123e3b;
-  --fc-monarch-popover: white;
-  --fc-monarch-tertiary: #205f5a;
-  --fc-monarch-tertiary-foreground: white;
-  --fc-monarch-tertiary-over: #184e4a;
-  --fc-monarch-tertiary-down: #123e3b;
-  --fc-monarch-muted-foreground: #536360;
-  --fc-monarch-outline: #205f5a;
-  --fc-monarch-now: #c44343;
-  --fc-monarch-event: #e5defa;
-  --fc-monarch-event-contrast: #423070;
-  --fc-monarch-highlight: #d3ede8;
-}
 .calendar-v2-scroll { overflow-x: auto; }
 .calendar-v2-scroll > div { min-width: 950px; }
 .calendar-v2-match { padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; line-height: 1.25; overflow: hidden; }

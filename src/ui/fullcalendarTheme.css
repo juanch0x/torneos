@@ -1,0 +1,47 @@
+/* FullCalendar monarch theme colors, driven by Mantine and --tn-* variables. */
+.calendar-v2,
+.preparation-v2-calendar {
+  --fc-monarch-primary: var(--mantine-primary-color-filled);
+  --fc-monarch-primary-foreground: var(--mantine-primary-color-contrast);
+  --fc-monarch-primary-over: var(--mantine-primary-color-filled-hover);
+  --fc-monarch-primary-down: var(--mantine-primary-color-filled-hover);
+  --fc-monarch-selected: var(--mantine-primary-color-filled);
+  --fc-monarch-selected-foreground: var(--mantine-primary-color-contrast);
+  --fc-monarch-selected-over: var(--mantine-primary-color-filled-hover);
+  --fc-monarch-selected-down: var(--mantine-primary-color-filled-hover);
+  --fc-monarch-tertiary: var(--mantine-primary-color-filled);
+  --fc-monarch-tertiary-foreground: var(--mantine-primary-color-contrast);
+  --fc-monarch-tertiary-over: var(--mantine-primary-color-filled-hover);
+  --fc-monarch-tertiary-down: var(--mantine-primary-color-filled-hover);
+  --fc-monarch-outline: var(--mantine-primary-color-filled);
+  --fc-monarch-secondary: var(--mantine-primary-color-light);
+  --fc-monarch-secondary-foreground: var(--mantine-primary-color-light-color);
+  --fc-monarch-secondary-over: var(--mantine-primary-color-light-hover);
+  --fc-monarch-secondary-down: var(--mantine-primary-color-light-hover);
+  --fc-monarch-highlight: var(--mantine-primary-color-light);
+  --fc-monarch-background: var(--mantine-color-body);
+  --fc-monarch-popover: var(--tn-surface);
+  --fc-monarch-popover-foreground: var(--mantine-color-text);
+  --fc-monarch-foreground: var(--mantine-color-text);
+  --fc-monarch-muted-foreground: var(--mantine-color-dimmed);
+  --fc-monarch-faint-foreground: var(--mantine-color-dimmed);
+  --fc-monarch-border: var(--tn-border-subtle);
+  --fc-monarch-strong-border: var(--mantine-color-default-border);
+  --fc-monarch-faint: var(--tn-surface-muted);
+  --fc-monarch-muted: var(--tn-fill-1);
+  --fc-monarch-strong: var(--tn-fill-2);
+  --fc-monarch-strong-foreground: var(--mantine-color-text);
+  --fc-monarch-stronger: var(--tn-fill-3);
+  --fc-monarch-strongest: var(--tn-fill-3);
+  --fc-monarch-ring-color: var(--mantine-color-body);
+  --fc-monarch-now: var(--tn-danger-text);
+  --fc-monarch-event: var(--tn-event-bg);
+  --fc-monarch-event-contrast: var(--tn-event-fg);
+}
+
+/* Preparation shows unavailable windows: restriction colors instead of the default event colors. */
+.preparation-v2-calendar {
+  --fc-monarch-event: var(--tn-restriction-bg);
+  --fc-monarch-event-contrast: var(--tn-restriction-fg);
+  --fc-monarch-highlight: var(--tn-restriction-bg);
+}
