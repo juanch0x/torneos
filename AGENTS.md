@@ -11,6 +11,8 @@ repository, including delegation or orchestration rules such as "General Delegat
   explicitly asks for it in the current request. Work inline, one agent per task.
 - **No browser or device automation.** Do not run the app to drive a browser or device.
   "Verify manually" means the user verifies it: list the manual QA steps in the PR test plan.
+  Exception: visual checks with ego-browser (ego-lite) are allowed for responsive/layout work.
+  Keep captures and scripts outside the repo and attach the before/after results to the PR test plan.
 - **Read narrowly.** Read issues with `gh issue view N --json title,body`; add `--comments`
   only when the body points to them. Read code by range (`rg -n`, `sed -n 'a,bp'`).
   Never `cat` several files at once. Never dump tool catalogs or whole SKILL.md files.
