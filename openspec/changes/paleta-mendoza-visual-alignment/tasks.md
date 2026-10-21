@@ -130,7 +130,7 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V. QA: first visit dark with light OS; toggle persists; no `#242424` flash (also `pnpm dev`); print preview Chrome and Safari; every route both schemes.
 
 ## Slice 12: Doc and cleanup (220-360), needs 11b
-- [ ] 12.1 `docs/VISUAL_IDENTITY.md` (Menu hover row uses `rowHover`; dark category derivation) + `visualIdentityDoc.test.ts`.
+- [x] 12.1 `docs/VISUAL_IDENTITY.md` (Menu hover row uses `rowHover`; dark category derivation) + `visualIdentityDoc.test.ts`.
 - AC: V; doc matches tokens.
 
 ## Traceability
