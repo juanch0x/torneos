@@ -4,10 +4,10 @@ import { MantineProvider } from '@mantine/core'
 import { describe, expect, it, vi } from 'vitest'
 import { TournamentBreadcrumb } from './TournamentBreadcrumb'
 
-vi.mock('@tanstack/react-router', async importOriginal => ({
-  ...await importOriginal<typeof import('@tanstack/react-router')>(),
-  Link: ({ to, params, search, ...props }: ComponentProps<'a'> & { to: string; params?: { id: string }; search?: Record<string, string> }) =>
-    <a {...props} href={`${params ? to.replace('$id', params.id) : to}${search ? `?${new URLSearchParams(search)}` : ''}`} />,
+// RouterLink needs a router context; render it as a plain anchor with the resolved href.
+vi.mock('./RouterLink', () => ({
+  RouterLink: ({ to, search, size: _size, ...props }: ComponentProps<'a'> & { to: string; search?: Record<string, string>; size?: string }) =>
+    <a {...props} href={`${to}${search ? `?${new URLSearchParams(search)}` : ''}`} />,
 }))
 
 const render = (props: ComponentProps<typeof TournamentBreadcrumb>) =>

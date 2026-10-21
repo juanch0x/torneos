@@ -1,5 +1,5 @@
 import { PreparationNavigationGuard } from './PreparationNavigationGuard'
-import { Link, Navigate, Outlet, useNavigate, useParams, useLocation } from '@tanstack/react-router'
+import { Navigate, Outlet, useNavigate, useParams, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { Alert, Button, Box, Breadcrumbs, Group, Loader, Paper, Stack, Tabs, Text, Title, useMantineTheme } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
@@ -9,6 +9,7 @@ import { formatTournamentPeriod } from '../ui/tournamentPeriod'
 import { NotFound } from './NotFound'
 import { isV2SetupComplete, isV2SetupLocked } from '../domain/v2Setup'
 import { ErrorIcon } from '../ui/icons'
+import { RouterLink } from '../ui/RouterLink'
 
 export function TournamentLayout() {
   const { id } = useParams({ from: '/tournaments/$id' })
@@ -60,7 +61,7 @@ export function TournamentLayout() {
               {saveError && <Alert icon={<ErrorIcon />} color="red">{saveError}</Alert>}
               {savePending && <Text role="status">Guardando…</Text>}
               <Breadcrumbs>
-                <Link to="/">Torneos</Link>
+                <RouterLink to="/" size="sm">Torneos</RouterLink>
                 <Text span size="sm">
                   {current.name}
                 </Text>
