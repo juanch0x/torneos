@@ -9,7 +9,6 @@ import {
   Text,
   TextInput,
   Title,
-  Tooltip,
 } from '@mantine/core'
 import type { V2SetupCategoryDraft, V2CategoryRemovalImpact } from '../../domain/v2Setup'
 import {
@@ -161,6 +160,9 @@ function ReduceGroupsModal({ opened, affectedPairs, onCancel, onConfirm }: Reduc
   )
 }
 
+// Height of an md input label (font-size-md × line-height), used to align the row's icon.
+const LABEL_OFFSET = 'calc(var(--mantine-font-size-md) * var(--mantine-line-height))'
+
 // ── Single category row ───────────────────────────────────────────────────────
 
 interface CategoryRowProps {
@@ -216,7 +218,7 @@ function CategoryRow({
 
   return (
     <>
-      <Group gap="sm" align="flex-end" wrap="nowrap">
+      <Group gap="sm" align="flex-start" wrap="nowrap">
         <TextInput
           label="Nombre de la categoría"
           required
@@ -243,7 +245,10 @@ function CategoryRow({
         <ActionIcon
           variant="subtle"
           color="red"
-          size={44}
+          size="input-md"
+          // Offset by the md input label height so the icon sits level with the input boxes,
+          // whether or not a validation error renders below them.
+          mt={LABEL_OFFSET}
           aria-label="Eliminar categoría"
           disabled={disabled}
           onClick={onRemove}
@@ -316,22 +321,9 @@ export function CategoriesEditor({
 
   return (
     <Stack gap="md">
-      {/* Header: title + add button */}
-      <Group gap="xs" align="center">
-        <Title order={2} size="h3" style={{ flex: 1 }}>
-          Categorías
-        </Title>
-        <Tooltip label="Agregar categoría">
-          <ActionIcon
-            variant="subtle"
-            aria-label="Agregar categoría"
-            disabled={disabled}
-            onClick={() => onChange([...value, newCategoryDraft()])}
-          >
-            <IconPlus size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+      <Title order={2} size="h3">
+        Categorías
+      </Title>
 
       {headerError && (
         <Text size="sm" c="red"><ErrorIcon inline />
@@ -352,6 +344,17 @@ export function CategoriesEditor({
           onBlurField={onBlurField}
         />
       ))}
+
+      <Group justify="flex-start">
+        <Button
+          variant="light"
+          leftSection={<IconPlus size={16} />}
+          disabled={disabled}
+          onClick={() => onChange([...value, newCategoryDraft()])}
+        >
+          Agregar categoría
+        </Button>
+      </Group>
 
       {pendingRemoval !== null && (
         <RemoveCategoryModal
