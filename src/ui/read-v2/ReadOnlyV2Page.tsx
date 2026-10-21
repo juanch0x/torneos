@@ -30,7 +30,7 @@ const local = (instant: number) => formatDayDateTime(instant)
 function Matches({ matches }: { matches: V2DisplayMatch[] }) {
   return <Table.ScrollContainer minWidth={680}><Table><Table.Thead><Table.Tr><Table.Th>Partido</Table.Th><Table.Th>Categoría / grupo</Table.Th><Table.Th>Horario local / original</Table.Th></Table.Tr></Table.Thead><Table.Tbody>
     {matches.map(match => <Table.Tr key={match.key}><Table.Td><Text size="sm">{match.pairA} vs. {match.pairB}</Text><Text size="xs" c="dimmed">ID: {match.id}</Text></Table.Td>
-      <Table.Td>{match.categoryName} · {match.group}</Table.Td><Table.Td>{match.instant !== null ? local(match.instant) : match.status === 'unscheduled' ? 'Sin programar' : 'Horario inválido'}{match.scheduledAt !== undefined && <Text size="xs" c="dimmed">Original: {String(match.scheduledAt)}</Text>}</Table.Td></Table.Tr>)}
+      <Table.Td>{match.categoryName} · {match.group}</Table.Td><Table.Td>{match.instant !== null ? <span className="tn-time">{local(match.instant)}</span> : match.status === 'unscheduled' ? 'Sin programar' : 'Horario inválido'}{match.scheduledAt !== undefined && <Text size="xs" c="dimmed">Original: {String(match.scheduledAt)}</Text>}</Table.Td></Table.Tr>)}
   </Table.Tbody></Table></Table.ScrollContainer>
 }
 export function ReadOnlyV2Page() {

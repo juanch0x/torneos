@@ -16,3 +16,17 @@
   background-color: color-mix(in srgb, var(--mantine-primary-color-filled) 50%, var(--mantine-color-body));
   color: var(--mantine-color-text);
 }
+
+/* Mono utilities. Labels are small uppercase captions; times are tabular so columns align. */
+.tn-label {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--mantine-primary-color-text);
+}
+
+.tn-time {
+  font-family: var(--mantine-font-family-monospace);
+  font-variant-numeric: tabular-nums;
+}

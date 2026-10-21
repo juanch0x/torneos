@@ -126,9 +126,13 @@ describe('structural borders use the subtle token (mantineOverrides.css)', () =>
 describe('index.css', () => {
   const css = readRepoFile('src/index.css')
 
-  it('has no color literals and no font or text color on :root', () => {
+  it('has no color literals, no global font and no text color on :root', () => {
     expect(css).not.toMatch(HEX)
-    expect(css).not.toMatch(/font-family|\bcolor:\s*#/)
+    expect(css).not.toMatch(/\bcolor:\s*#/)
+    // Fonts come from the theme; only the mono utilities may set a family, and only through the variable.
+    const families = css.match(/font-family:[^;]*;/g) ?? []
+    expect(families.every((f) => f === 'font-family: var(--mantine-font-family-monospace);')).toBe(true)
+    expect(css.replace(/\.tn-(label|time)\s*{[^}]*}/g, '')).not.toMatch(/font-family/)
   })
 
   it('uses the exact 50% selection mix with an explicit text color', () => {

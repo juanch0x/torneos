@@ -327,7 +327,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       }),
       columnHelper.accessor('startsAt', {
         header: 'Cuándo',
-        cell: (ctx) => formatDayDateTime(ctx.getValue()),
+        cell: (ctx) => <span className="tn-time">{formatDayDateTime(ctx.getValue())}</span>,
       }),
       columnHelper.display({
         id: 'partido',
@@ -479,7 +479,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
       >
         <Stack gap="xs">
           <Group justify="space-between" gap="xs" wrap="wrap">
-            <Text size="sm" c="dimmed">{formatDayDateTime(slot.startsAt)}</Text>
+            <Text size="sm" c="dimmed" className="tn-time">{formatDayDateTime(slot.startsAt)}</Text>
             <Badge color="gray">Franja libre</Badge>
           </Group>
           <Text c="dimmed" size="sm">
@@ -637,7 +637,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
                           <Text size="sm" fw={600}>
                             {pair?.label ?? window.pairId}
                           </Text>
-                          <Text size="sm" c="dimmed">
+                          <Text size="sm" c="dimmed" className="tn-time">
                             {formatTimeRange(window.startsAt, window.endsAt)}{window.reason ? ` · ${window.reason}` : ''}
                           </Text>
                         </Box>

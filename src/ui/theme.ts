@@ -71,8 +71,8 @@ export const theme = createTheme({
   cursorType: 'pointer',
   focusRing: 'auto',
   respectReducedMotion: true,
-  fontFamily: 'Inter, system-ui, sans-serif',
-  fontFamilyMonospace: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  fontFamilyMonospace: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   spacing: {
     xs: rem(10),
     sm: rem(14),
@@ -91,7 +91,7 @@ export const theme = createTheme({
     xs: '0 1px 2px rgba(0, 0, 0, 0.06)',
   },
   headings: {
-    fontFamily: 'Inter, system-ui, sans-serif',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
     fontWeight: '700',
     textWrap: 'balance',
     sizes: {
@@ -143,6 +143,7 @@ export const theme = createTheme({
           gap: rem(8),
         },
         tab: {
+          fontFamily: 'var(--mantine-font-family-monospace)',
           fontWeight: 600,
         },
       },
@@ -153,6 +154,7 @@ export const theme = createTheme({
       },
       styles: {
         root: {
+          fontFamily: 'var(--mantine-font-family-monospace)',
           fontWeight: 700,
           letterSpacing: '0.01em',
         },

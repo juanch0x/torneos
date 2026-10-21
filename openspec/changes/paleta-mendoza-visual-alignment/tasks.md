@@ -111,7 +111,7 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: inventory has no unhandled error/warning/locked site. QA: grayscale check of each state. Fallback: split by directory if >400.
 
 ## Slice 9: Typography (150-250), needs 6b
-- [ ] 9.1 Fonts, mono for headings/Badge/Tabs/nav; `.tn-label`, `.tn-time` in `index.css`; `.tn-time` on time cells. Form field labels stay sans (accepted).
+- [x] 9.1 Fonts, mono for headings/Badge/Tabs/nav; `.tn-label`, `.tn-time` in `index.css`; `.tn-time` on time cells. Form field labels stay sans (accepted).
 - AC: V. QA: headings and times mono; tables and form labels sans.
 
 ## Slice 10: Brand shell and widths (250-350), needs 9
