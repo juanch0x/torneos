@@ -30,14 +30,14 @@ Chain strategy: pending
 Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.app.json`. Before each PR: `pnpm test`, tsc, `pnpm build`. Rollback = revert the PR; every slice leaves the suite green. No browser automation: QA items are for the user.
 
 ## Slice 1: Contrast helper (150-230)
-- [ ] 1.1 RED `src/ui/__tests__/contrast.test.ts`: luminance, ratio, `#rgb`, unparsable, `mixSrgb`, `readableTextOn` first-match keeps `#1b2927` on the 6 palette + 4 mock colors. Sampled-grays gate is 4.5 (not 4.58; `#8d8d8d` gets ink at 4.54).
-- [ ] 1.2 Create minimal `src/ui/tokens.ts` with only `READABLE_INK`, `FALLBACK_DARK`, `FALLBACK_LIGHT`, `THEME_WHITE`, `THEME_BLACK`; GREEN `src/ui/contrast.ts` imports them (no literals in `contrast.ts`).
+- [x] 1.1 RED `src/ui/__tests__/contrast.test.ts`: luminance, ratio, `#rgb`, unparsable, `mixSrgb`, `readableTextOn` first-match keeps `#1b2927` on the 6 palette + 4 mock colors. Sampled-grays gate is 4.5 (not 4.58; `#8d8d8d` gets ink at 4.54).
+- [x] 1.2 Create minimal `src/ui/tokens.ts` with only `READABLE_INK`, `FALLBACK_DARK`, `FALLBACK_LIGHT`, `THEME_WHITE`, `THEME_BLACK`; GREEN `src/ui/contrast.ts` imports them (no literals in `contrast.ts`).
 - AC: guarantee comment says 4.5; V green. Rollback: delete both files.
 
 ## Slice 2a: Token core (280-380), needs 1
-- [ ] 2a.1 Create `src/ui/__tests__/readRepoFile.ts` (dynamic-import workaround from `src/export/__tests__/planningSerialization.test.ts:8-13`).
-- [ ] 2a.2 RED `tokens.test.ts`: scale monotonic luminance, `mantineVariantPairs` matrix (text >=4.5, fill vs body >=3), fill luminance side of 0.3, warning hue 38-60, Chip/Select/Table-stripe pairs, Mantine derivation canary (via `readRepoFile`).
-- [ ] 2a.3 GREEN extend `tokens.ts`: scales, `schemeTokens` core (body..dangerBorder, outline*), storage key, default scheme.
+- [x] 2a.1 Create `src/ui/__tests__/readRepoFile.ts` (dynamic-import workaround from `src/export/__tests__/planningSerialization.test.ts:8-13`).
+- [x] 2a.2 RED `tokens.test.ts`: scale monotonic luminance, `mantineVariantPairs` matrix (text >=4.5, fill vs body >=3), fill luminance side of 0.3, warning hue 38-60, Chip/Select/Table-stripe pairs, Mantine derivation canary (via `readRepoFile`).
+- [x] 2a.3 GREEN extend `tokens.ts`: scales, `schemeTokens` core (body..dangerBorder, outline*), storage key, default scheme.
 - AC: `tsc` and `pnpm build` pass with file-reading tests. Rollback: revert.
 
 ## Slice 2b: Calendar tokens (110-170), needs 2a
