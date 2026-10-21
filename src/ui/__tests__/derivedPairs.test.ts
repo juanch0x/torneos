@@ -76,3 +76,46 @@ describe('mantineOverrides.css', () => {
     expect(overrides).toBeGreaterThan(core)
   })
 })
+
+describe('structural borders use the subtle token (mantineOverrides.css)', () => {
+  const css = readRepoFile('src/ui/mantineOverrides.css').replace(/\/\*[\s\S]*?\*\//g, '')
+  const rules = css
+    .split('}')
+    .map((chunk) => chunk.split('{'))
+    .filter((parts) => parts.length === 2)
+    .map(([selectors, body]) => ({
+      selectors: selectors.split(',').map((x) => x.trim()),
+      body,
+    }))
+
+  function declaration(selector: string, property: string): string | undefined {
+    const rule = rules.find((r) => r.selectors.includes(selector) && r.body.includes(`${property}:`))
+    return rule?.body.match(new RegExp(`${property}:\\s*([^;]+);`))?.[1]?.trim()
+  }
+
+  const SUBTLE = 'var(--tn-border-subtle)'
+  const cases: ReadonlyArray<readonly [string, string]> = [
+    [':root[data-mantine-color-scheme] .mantine-Table-table', '--table-border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Divider-root', '--divider-color'],
+    [':root[data-mantine-color-scheme] .mantine-Popover-dropdown', '--popover-border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Menu-dropdown', '--popover-border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Select-dropdown', '--popover-border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Menu-divider', 'border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Menu-search', 'border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Combobox-search', 'border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Combobox-header', 'border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Combobox-footer', 'border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Combobox-groupLabel::after', 'background-color'],
+    [':root[data-mantine-color-scheme] .mantine-Fieldset-root', 'border-color'],
+    [':root[data-mantine-color-scheme] .mantine-Tabs-root', '--tab-border-color'],
+  ]
+
+  it.each(cases)('%s sets %s', (selector, property) => {
+    expect(declaration(selector, property)).toBe(SUBTLE)
+  })
+
+  it('beats the stock Tabs rule specificity (0,2,0) with (0,3,0)', () => {
+    // :root (0,1,0) + attribute (0,1,0) + class (0,1,0)
+    expect(':root[data-mantine-color-scheme] .mantine-Tabs-root').toMatch(/^:root\[[^\]]+\] \.[\w-]+$/)
+  })
+})

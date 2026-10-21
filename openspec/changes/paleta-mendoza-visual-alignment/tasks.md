@@ -63,7 +63,7 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V. QA (both): checked Chip, selected Select option, striped tables x3, PairRow menu hover.
 
 ## Slice 4c: Structural borders (100-180), needs 4b
-- [ ] 4c.1 `mantineOverrides.css`: `--tn-border-subtle` for Table, Divider, Popover, Menu dropdown, Select dropdown, `Menu.Divider`, Combobox group label, `Fieldset` (`V2ConfigurationPanel.tsx:62,66`); Tabs via `:root[data-mantine-color-scheme] .mantine-Tabs-root` (beats stock 0,2,0). Extend `derivedPairs.test.ts` to assert each selector.
+- [x] 4c.1 `mantineOverrides.css`: `--tn-border-subtle` for Table, Divider, Popover, Menu dropdown, Select dropdown, `Menu.Divider`, Combobox group label, `Fieldset` (`V2ConfigurationPanel.tsx:62,66`); Tabs via `:root[data-mantine-color-scheme] .mantine-Tabs-root` (beats stock 0,2,0). Extend `derivedPairs.test.ts` to assert each selector.
 - AC: dark lines are subtle gray, not `#7a84a0`. QA (dark): tabs, tables, menus, fieldsets.
 
 ## Slice 5: Static consumers, remove aliases (110-190), needs 4a
