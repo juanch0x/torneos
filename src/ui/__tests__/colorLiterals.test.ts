@@ -27,6 +27,12 @@ const RULES: readonly Rule[] = [
     pattern: /['"]orange(\.\d)?['"]|['"](red|warning|success)\.\d['"]/,
     allowlist: [],
   },
+  {
+    id: 'stock Mantine hues',
+    pattern: /['"](green|blue|teal|grape|yellow|violet|cyan|indigo|pink|lime)(\.\d)?['"]/,
+    allowlist: [],
+  },
+  { id: 'outline and white variants', pattern: /variant=["']?(outline|white)\b|variant: ['"](outline|white)['"]/, allowlist: [] },
   { id: 'named white/black in css', pattern: /(?<![\w-])(white|black)(?![\w-])/, allowlist: [], ext: '.css' },
 ]
 

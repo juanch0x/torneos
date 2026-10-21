@@ -145,7 +145,7 @@ function FixtureOutcomeSummary({
         <Group justify="space-between" align="flex-start" gap="sm">
           <Stack gap={4}>
             <Group gap="xs">
-              <Badge color={hasExceptions ? 'blue' : 'green'}>
+              <Badge color={hasExceptions ? 'primary' : 'success'}>
                 {hasExceptions ? 'Revisión puntual' : 'Listo para revisar'}
               </Badge>
               <Title order={3}>
@@ -575,7 +575,7 @@ export function SchedulePanel({ tournament }: { tournament: Tournament }) {
               <Stack gap={4}>
                 <Group gap="xs" wrap="wrap">
                   <Title order={3}>Restricciones de parejas</Title>
-                  <Badge color="blue">Reacomodo guiado</Badge>
+                  <Badge color="primary">Reacomodo guiado</Badge>
                 </Group>
                 <Text c="dimmed" size="sm">
                   Registrá excepciones puntuales para una pareja y el calendario reubica lo necesario sin cambiar las reglas de agenda.

@@ -137,7 +137,7 @@ function ConfigurationForm({ tournamentId, working }: { tournamentId: string; wo
       if (!baselineOnly && !dirty && isV2SetupComplete(working)) { continueToTournament(); return }
       void form.handleSubmit()
     }}><Stack gap="lg">
-      {locked ? <Alert color="blue" title="Configuración de solo lectura">
+      {locked ? <Alert color="gray" title="Configuración de solo lectura">
         Después de la primera generación del calendario, la configuración queda en solo lectura. Solo podés editar las restricciones de las parejas y regenerar el calendario.
         <Group mt="sm">
           <Button variant="light" renderRoot={props => <Link {...props} to="/v2/groups" search={{ tournamentId }} />}>Ver grupos</Button>

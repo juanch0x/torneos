@@ -52,7 +52,7 @@ function DemoGroupsPage() {
 
   return <Stack gap="lg" className="preparation-v2">
     <Group justify="space-between" align="flex-start"><Stack gap={6}>
-      <Group><Badge color="grape" variant="light">V2 · Prototipo</Badge><Text size="sm" c="dimmed">Datos ficticios · Sin guardar</Text></Group>
+      <Group><Badge color="gray" variant="light">V2 · Prototipo</Badge><Text size="sm" c="dimmed">Datos ficticios · Sin guardar</Text></Group>
       <Title order={1} size="h2">Preparar grupos y restricciones</Title>
       <Text c="dimmed">Categorías definidas. Grupos claros. Marcá únicamente las excepciones.</Text>
     </Stack><Group><Button component={Link} to="/v2/calendar" variant="light">Probar calendario</Button><Button component={Link} to="/v2/read" variant="subtle">Leer torneo real</Button><Button component={Link} to="/" variant="subtle">Volver a torneos</Button></Group></Group>
@@ -70,7 +70,7 @@ function DemoGroupsPage() {
                 {members.map((pair) => <Paper key={pair.id} withBorder p="sm" radius="md">
                   <Group justify="space-between" wrap="nowrap" align="flex-start"><Stack gap={3}>
                     <Text fw={600} size="sm">{pair.first} / {pair.second}</Text>
-                    <Button size="compact-xs" variant="subtle" color={pair.windows.length ? 'red' : 'teal'} onClick={() => open(pair, 'restrictions')}>
+                    <Button size="compact-xs" variant="subtle" color={pair.windows.length ? 'red' : 'primary'} onClick={() => open(pair, 'restrictions')}>
                       {pair.windows.length ? `${pair.windows.length} ${pair.windows.length === 1 ? 'restricción' : 'restricciones'}` : 'Sin restricciones'}
                     </Button>
                   </Stack><Menu withinPortal width={210} position="bottom-end"><Menu.Target><Button variant="subtle" size="compact-sm" aria-label={`Acciones de ${pair.first} y ${pair.second}`}>⋯</Button></Menu.Target><Menu.Dropdown>

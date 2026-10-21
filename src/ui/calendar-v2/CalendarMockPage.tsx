@@ -135,7 +135,7 @@ function DemoCalendarPage() {
     <Stack className="calendar-v2" gap="lg">
       <Group justify="space-between" align="flex-start" className="calendar-v2-header">
         <Stack gap={6}>
-          <Group gap="sm"><Badge variant="light" color="grape">V2 · Prototipo</Badge><Text size="sm" c="dimmed">Datos ficticios · Sin guardar</Text></Group>
+          <Group gap="sm"><Badge variant="light" color="gray">V2 · Prototipo</Badge><Text size="sm" c="dimmed">Datos ficticios · Sin guardar</Text></Group>
           <Title order={1} size="h2">Planificar la fase de grupos</Title>
           <Text c="dimmed">Una cancha. Toda la semana. Cada cambio, bajo tu control.</Text>
         </Stack>
@@ -263,7 +263,7 @@ function DemoCalendarPage() {
       <Modal opened={!!detailsMatch} onClose={() => setDetailsId(null)} title="Detalle del partido" centered>
         {detailsMatch && <Stack>
           <Group justify="space-between">
-            <Badge color="teal" variant="light">{CATEGORIES[detailsMatch.category].name} · Grupo {detailsMatch.group}</Badge>
+            <Badge color="primary" variant="light">{CATEGORIES[detailsMatch.category].name} · Grupo {detailsMatch.group}</Badge>
             <Menu width={240} position="bottom-end" withinPortal loop>
               <Menu.Target><Button variant="default" aria-label="Acciones del partido">⋯</Button></Menu.Target>
               <Menu.Dropdown>

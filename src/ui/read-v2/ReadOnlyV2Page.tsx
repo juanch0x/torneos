@@ -64,7 +64,7 @@ export function ReadOnlyV2Page() {
   const unscheduled = display?.matches.filter(match => match.status === 'unscheduled') ?? []
   const invalid = display?.matches.filter(match => match.status === 'invalid') ?? []
   return <Stack p="lg" gap="md">
-    <Group justify="space-between"><Stack gap={4}><Group><Title order={2}>V2 · Leer un torneo real</Title><Badge color="teal">Solo lectura</Badge></Group><Text size="sm" c="dimmed">Copia aislada · Original sin cambios · No se guarda ni se carga en V1</Text></Stack><Group><Button component={Link} to="/v2/groups" variant="light">Ejemplo de grupos</Button><Button component={Link} to="/v2/calendar" variant="light">Ejemplo de calendario</Button></Group></Group>
+    <Group justify="space-between"><Stack gap={4}><Group><Title order={2}>V2 · Leer un torneo real</Title><Badge color="gray">Solo lectura</Badge></Group><Text size="sm" c="dimmed">Copia aislada · Original sin cambios · No se guarda ni se carga en V1</Text></Stack><Group><Button component={Link} to="/v2/groups" variant="light">Ejemplo de grupos</Button><Button component={Link} to="/v2/calendar" variant="light">Ejemplo de calendario</Button></Group></Group>
     <Paper withBorder p="sm"><Group justify="space-between"><Stack gap={2}><Text fw={600} size="sm">Herramientas de desarrollo</Text><Text size="xs" c="dimmed">Crear un torneo de prueba lo guarda en este navegador. El inspector de abajo no modifica torneos existentes.</Text></Stack><Button variant="default" disabled={creatingMock} loading={creatingMock} onClick={async () => {
       if (creatingMock) return
       setCreatingMock(true); setError('')

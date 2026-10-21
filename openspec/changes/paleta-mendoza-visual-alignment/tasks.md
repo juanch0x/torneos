@@ -101,8 +101,8 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V; no `orange` in src. QA (both): alerts, PairModal filled button.
 
 ## Slice 8: Stock hues (90-180), needs 7
-- [ ] 8.1 blue/green/teal/grape remap per audit; prototype tags ("V2 - Prototipo", "Ejemplo ficticio") and "Solo lectura" to `gray`; `GroupsMockPage.tsx:55,73`.
-- [ ] 8.2 Append stock-hue + `variant="outline"` guard rules.
+- [x] 8.1 blue/green/teal/grape remap per audit; prototype tags ("V2 - Prototipo", "Ejemplo ficticio") and "Solo lectura" to `gray`; `GroupsMockPage.tsx:55,73`.
+- [x] 8.2 Append stock-hue + `variant="outline"` guard rules.
 - AC: V; guard green. QA (both): tags, locked Alert (gray, dimmed border).
 
 ## Slice 8b: Icons and text (230-350), needs 7 and 8
