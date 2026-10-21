@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   Title,
+  Tooltip,
 } from '@mantine/core'
 import type { V2SetupCategoryDraft, V2CategoryRemovalImpact } from '../../domain/v2Setup'
 import {
@@ -321,9 +322,23 @@ export function CategoriesEditor({
 
   return (
     <Stack gap="md">
-      <Title order={2} size="h3">
-        Categorías
-      </Title>
+      <Group justify="space-between" align="center">
+        <Title order={2} size="h3">
+          Categorías
+        </Title>
+        <Tooltip label="Agregar categoría">
+          <ActionIcon
+            variant="filled"
+            size="lg"
+            radius="xl"
+            aria-label="Agregar categoría"
+            disabled={disabled}
+            onClick={() => onChange([...value, newCategoryDraft()])}
+          >
+            <IconPlus size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
 
       {headerError && (
         <Text size="sm" c="red"><ErrorIcon inline />
@@ -344,17 +359,6 @@ export function CategoriesEditor({
           onBlurField={onBlurField}
         />
       ))}
-
-      <Group justify="flex-start">
-        <Button
-          variant="light"
-          leftSection={<IconPlus size={16} />}
-          disabled={disabled}
-          onClick={() => onChange([...value, newCategoryDraft()])}
-        >
-          Agregar categoría
-        </Button>
-      </Group>
 
       {pendingRemoval !== null && (
         <RemoveCategoryModal
