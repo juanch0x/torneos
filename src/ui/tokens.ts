@@ -134,3 +134,35 @@ export const schemeTokens: Record<Scheme, SchemeTokens> = {
     outlinePicked: '#205f5a',
   },
 }
+
+const TN_KEYS: ReadonlyArray<readonly [string, keyof SchemeTokens]> = [
+  ['surface', 'surface'],
+  ['surface-muted', 'surfaceMuted'],
+  ['border-subtle', 'borderSubtle'],
+  ['border-control', 'borderControl'],
+  ['row-hover', 'rowHover'],
+  ['shell-header', 'shellHeader'],
+  ['overlay-strong', 'overlayStrong'],
+  ['overlay-soft', 'overlaySoft'],
+  ['danger-text', 'dangerText'],
+  ['danger-tint', 'dangerTint'],
+  ['danger-border', 'dangerBorder'],
+  ['fill-1', 'fill1'],
+  ['fill-2', 'fill2'],
+  ['fill-3', 'fill3'],
+  ['closed-a', 'closedA'],
+  ['closed-b', 'closedB'],
+  ['event-bg', 'eventBg'],
+  ['event-fg', 'eventFg'],
+  ['restriction-bg', 'restrictionBg'],
+  ['restriction-fg', 'restrictionFg'],
+  ['outline-conflict', 'outlineConflict'],
+  ['outline-unknown', 'outlineUnknown'],
+  ['outline-picked', 'outlinePicked'],
+]
+
+/** The `--tn-*` custom properties for a scheme, written by the CSS variables resolver. */
+export function tnCssVariables(scheme: Scheme): Record<string, string> {
+  const t = schemeTokens[scheme]
+  return Object.fromEntries(TN_KEYS.map(([name, key]) => [`--tn-${name}`, t[key]]))
+}

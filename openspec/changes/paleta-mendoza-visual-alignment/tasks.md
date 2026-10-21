@@ -51,8 +51,8 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V; no pill shapes; light unchanged otherwise. QA (light): buttons, badges, tabs, drawer radii.
 
 ## Slice 4a: Variables and surfaces (200-300), needs 3
-- [ ] 4a.1 `cssVariablesResolver` in `theme.ts`: placeholder, error, success, primary-text/anchor (ember-3 in dark), default-border, every `--tn-*` incl. `row-hover`, fill, closed, event, restriction, outlines.
-- [ ] 4a.2 `theme.other` to `var(--tn-*)`; `Paper`/`Alert`/`Drawer` styles to `var()`; gray Alert uses dimmed.
+- [x] 4a.1 `cssVariablesResolver` in `theme.ts`: placeholder, error, success, primary-text/anchor (ember-3 in dark), default-border, every `--tn-*` incl. `row-hover`, fill, closed, event, restriction, outlines.
+- [x] 4a.2 `theme.other` to `var(--tn-*)`; `Paper`/`Alert`/`Drawer` styles to `var()`; gray Alert uses dimmed.
 - AC: V; no `theme.other` consumer edits. QA (light, plus dark via localStorage): shell, cards, alerts.
 
 ## Slice 4b: Stock-component fixes (200-300), needs 4a

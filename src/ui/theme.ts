@@ -16,7 +16,7 @@ import {
   type MantineColorsTuple,
   virtualColor,
 } from '@mantine/core'
-import { THEME_BLACK, THEME_WHITE, scales } from './tokens'
+import { THEME_BLACK, THEME_WHITE, scales, schemeTokens, tnCssVariables } from './tokens'
 
 // Single source of truth for the torneos brand.
 // Edit color tuples here to rebrand the whole app.
@@ -50,23 +50,28 @@ const clay: MantineColorsTuple = [
   '#572510',
 ]
 
-const shellBackground = '#f6f1e8'
-const surfaceBase = '#fffdf9'
-const surfaceMuted = '#f8f3ea'
-const borderSubtle = '#ddd4c5'
-const textStrong = '#203330'
-const textMuted = '#5d6d69'
-const shellHeaderBackground = 'rgba(255, 253, 249, 0.92)'
-const surfaceOverlayStrong = 'rgba(255, 253, 249, 0.88)'
-const surfaceOverlaySoft = 'rgba(255, 253, 249, 0.82)'
-const leadingRowBackground = 'rgba(224, 114, 52, 0.08)'
+function mantineOverrides(scheme: 'light' | 'dark'): Record<string, string> {
+  const t = schemeTokens[scheme]
+  return {
+    '--mantine-color-placeholder': t.textMuted,
+    '--mantine-color-dimmed': t.textMuted,
+    '--mantine-color-error': t.error,
+    '--mantine-color-success': t.success,
+    '--mantine-color-default-border': t.borderControl,
+  }
+}
 
-// Mantine's default dimmed grey (#868e96) is 2.95:1 on the page background and
-// 3.27:1 on cards. textMuted gives 4.84:1 and 5.36:1 (WCAG AA for body text).
+// Stock Mantine values are replaced where they fail WCAG (placeholder, dimmed, error, control
+// border). Dark primary text and links use ember-3 (ember-4 is the fill, 4.52 on hover surfaces).
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {},
-  light: { '--mantine-color-dimmed': textMuted },
-  dark: {},
+  light: { ...mantineOverrides('light'), ...tnCssVariables('light') },
+  dark: {
+    ...mantineOverrides('dark'),
+    '--mantine-color-primary-text': 'var(--mantine-color-ember-3)',
+    '--mantine-color-anchor': 'var(--mantine-color-ember-3)',
+    ...tnCssVariables('dark'),
+  },
 })
 
 export const theme = createTheme({
@@ -126,14 +131,12 @@ export const theme = createTheme({
     },
   },
   other: {
-    shellBackground,
-    shellHeaderBackground,
-    surfaceMuted,
-    surfaceOverlayStrong,
-    surfaceOverlaySoft,
-    borderSubtle,
-    textMuted,
-    leadingRowBackground,
+    shellBackground: 'var(--mantine-color-body)',
+    shellHeaderBackground: 'var(--tn-shell-header)',
+    surfaceMuted: 'var(--tn-surface-muted)',
+    surfaceOverlayStrong: 'var(--tn-overlay-strong)',
+    surfaceOverlaySoft: 'var(--tn-overlay-soft)',
+    borderSubtle: 'var(--tn-border-subtle)',
   },
   components: {
     Paper: Paper.extend({
@@ -145,8 +148,8 @@ export const theme = createTheme({
       },
       styles: {
         root: {
-          backgroundColor: surfaceBase,
-          borderColor: borderSubtle,
+          backgroundColor: 'var(--tn-surface)',
+          borderColor: 'var(--tn-border-subtle)',
         },
       },
     }),
@@ -189,18 +192,25 @@ export const theme = createTheme({
         radius: 'lg',
         variant: 'light',
       },
-      styles: {
-        root: {
-          border: `1px solid ${borderSubtle}`,
-          backgroundColor: surfaceMuted,
-        },
-        title: {
-          fontWeight: 700,
-          color: textStrong,
-        },
-        message: {
-          color: textMuted,
-        },
+      styles: (_theme, props) => {
+        // Stock gray text (gray-6) is 2.97:1 on the muted surface; dimmed passes in both schemes.
+        const gray = props.color === 'gray'
+        return {
+          root: {
+            border: '1px solid var(--tn-border-subtle)',
+            backgroundColor: 'var(--tn-surface-muted)',
+            ...(gray
+              ? { '--alert-color': 'var(--mantine-color-dimmed)', borderColor: 'var(--mantine-color-dimmed)' }
+              : {}),
+          },
+          title: {
+            fontWeight: 700,
+            color: 'var(--mantine-color-text)',
+          },
+          message: {
+            color: 'var(--mantine-color-dimmed)',
+          },
+        }
       },
     }),
     Table: Table.extend({
@@ -213,13 +223,13 @@ export const theme = createTheme({
       },
       styles: {
         table: {
-          borderColor: borderSubtle,
+          borderColor: 'var(--tn-border-subtle)',
         },
         thead: {
-          backgroundColor: surfaceMuted,
+          backgroundColor: 'var(--tn-surface-muted)',
         },
         th: {
-          color: textStrong,
+          color: 'var(--mantine-color-text)',
           fontWeight: 700,
         },
       },
@@ -255,11 +265,11 @@ export const theme = createTheme({
       },
       styles: {
         content: {
-          backgroundColor: surfaceBase,
+          backgroundColor: 'var(--tn-surface)',
         },
         header: {
-          backgroundColor: surfaceBase,
-          borderBottom: `1px solid ${borderSubtle}`,
+          backgroundColor: 'var(--tn-surface)',
+          borderBottom: '1px solid var(--tn-border-subtle)',
         },
       },
     }),
