@@ -121,7 +121,7 @@ Shared commands. V = `pnpm test <focused file>` + `npx tsc --noEmit -p tsconfig.
 - AC: V. QA: title, favicon, widths, no overflow at 768px.
 
 ## Slice 11a: Print hook (150-230), needs 10
-- [ ] 11a.1 RED/GREEN `printScheme.ts` + `printScheme.test.ts`; mount in `RootLayout`.
+- [x] 11a.1 RED/GREEN `printScheme.ts` + `printScheme.test.ts`; mount in `RootLayout`.
 - AC: V; inert while light. Rollback: revert.
 
 ## Slice 11b: Toggle, dark default, no flash (150-260), needs 11a

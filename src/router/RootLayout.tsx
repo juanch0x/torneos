@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { Anchor, AppShell, Container, Group, Text, Title, useMantineTheme } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
+import { installPrintLightScheme } from '../ui/printScheme'
 import { contentWidthFor, NARROW_CONTENT_WIDTH } from './contentWidth'
 import { isTournamentsNavActive } from './shellNav'
 
@@ -15,6 +16,8 @@ export function RootLayout() {
   useEffect(() => {
     void loadList()
   }, [loadList])
+
+  useEffect(() => installPrintLightScheme(), [])
 
   return (
     <AppShell
