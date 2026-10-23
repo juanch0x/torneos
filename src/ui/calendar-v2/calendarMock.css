@@ -24,14 +24,14 @@
 .calendar-v2-availability-conflict { outline: 2px solid var(--tn-outline-conflict); outline-offset: -2px; }
 .calendar-v2-availability-unknown { outline: 2px dashed var(--tn-outline-unknown); outline-offset: -2px; }
 
-/* Real planning uses one outer frame and FullCalendar's own vertical grid scroller. */
+/* Real planning lets the page handle vertical scrolling; the calendar stays in normal document flow. */
 .calendar-v2-planning-grid { min-width: 0; }
 .calendar-v2-planning-match { padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; line-height: 1.3; overflow: hidden; }
 .calendar-v2-planning-match > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .calendar-v2-planning-pair { display: block; font-size: 12px; font-weight: 600; }
 .calendar-v2-planning-meta, .calendar-v2-planning-time { font-size: 11px; }
 .calendar-v2-planning-versus { font-weight: 400; }
-.calendar-v2-real-header { position: relative; min-height: 148px; align-items: flex-start; }
-.calendar-v2-real-header > :first-child { max-width: 55%; }
-.calendar-v2-real-move-dock { position: absolute; top: 0; right: 0; width: 430px; max-width: 100%; z-index: 8; }
-@media (max-width: 900px) { .calendar-v2-real-header { min-height: 290px; } .calendar-v2-real-header > :first-child { max-width: 100%; } .calendar-v2-real-move-dock { top: auto; bottom: 0; left: 0; } }
+.calendar-v2-real-header { align-items: flex-start; }
+.calendar-v2:has(.calendar-v2-real-move-dock > *) { padding-bottom: 96px; }
+.calendar-v2-real-move-dock { position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(560px, calc(100vw - 24px)); z-index: 100; pointer-events: none; }
+.calendar-v2-move-banner { background: var(--tn-surface-muted); border: 1px solid var(--mantine-primary-color-filled); box-shadow: var(--mantine-shadow-lg), 0 0 0 1px color-mix(in srgb, var(--mantine-primary-color-filled) 25%, transparent); pointer-events: auto; }

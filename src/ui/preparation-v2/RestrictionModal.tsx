@@ -1,3 +1,4 @@
+import { ModalActions } from '../ModalActions'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge, Button, Group, Modal, Paper, Popover, Portal, Stack, Text, TextInput } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
@@ -179,19 +180,19 @@ export function RestrictionModal({ pairName, initialWindows, onSave, onCancel, c
       }}>Deshacer eliminación</Button>}</Group>
       {saveError && <Text role="alert" size="sm" c="red"><ErrorIcon inline />{saveError}</Text>}
       {invalid && <Text role="alert" size="sm" c="red"><ErrorIcon inline />Corrige el borrador antes de guardar: {invalid}</Text>}
-      <Group justify="space-between"><Text size="xs" c="dimmed"><Text span fw={600}>Rango visible: {expandedHours ? '00:00–24:00' : `${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}`}.</Text>{' '}Los rangos superpuestos se unirán al guardar.</Text><Group><Button disabled={saving} variant="default" onClick={requestClose}>Cancelar</Button><Button loading={saving} disabled={!!invalid || saving} onClick={async () => {
+      <Stack gap="sm"><Text size="xs" c="dimmed"><Text span fw={600}>Rango visible: {expandedHours ? '00:00–24:00' : `${visible.start.slice(0, 5)}–${visible.end.slice(0, 5)}`}.</Text>{' '}Los rangos superpuestos se unirán al guardar.</Text><ModalActions><Button disabled={saving} variant="default" onClick={requestClose}>Cancelar</Button><Button loading={saving} disabled={!!invalid || saving} onClick={async () => {
         if (savingRef.current) return
         savingRef.current = true; setSaving(true); setSaveError(''); setActions(null)
         try { const error = await onSave(config ? draft : normalizeWindows(draft)); if (error) setSaveError(error) }
         catch { setSaveError('No se pudo confirmar el guardado. Conservá el borrador y reintentá.') }
         finally { savingRef.current = false; setSaving(false) }
-      }}>{saving ? 'Guardando…' : 'Guardar restricciones'}</Button></Group></Group>
+      }}>{saving ? 'Guardando…' : 'Guardar restricciones'}</Button></ModalActions></Stack>
     </Stack>
   </Modal>
     <Modal opened={discardOpen} onClose={() => setDiscardOpen(false)} title="¿Descartar cambios?" size="sm" centered zIndex={410}
       closeButtonProps={{ 'aria-label': 'Continuar editando restricciones' }}>
       <Stack gap="md"><Text size="sm">Hay cambios sin guardar en las restricciones de esta pareja.</Text>
-        <Group justify="flex-end"><Button variant="default" data-autofocus onClick={() => setDiscardOpen(false)}>Continuar editando</Button><Button color="red" onClick={onCancel}>Descartar cambios</Button></Group>
+        <ModalActions><Button variant="default" data-autofocus onClick={() => setDiscardOpen(false)}>Continuar editando</Button><Button color="red" onClick={onCancel}>Descartar cambios</Button></ModalActions>
       </Stack>
     </Modal>
   </>

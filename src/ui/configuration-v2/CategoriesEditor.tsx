@@ -1,3 +1,4 @@
+import { ModalActions } from '../ModalActions'
 import { useState } from 'react'
 import {
   ActionIcon,
@@ -112,14 +113,14 @@ function RemoveCategoryModal({ opened, impact, onCancel, onConfirm }: RemoveCate
           <strong>{impact.restrictions} {impact.restrictions === 1 ? 'restricción' : 'restricciones'}</strong>.
           Las demás categorías quedan intactas.
         </Text>
-        <Group justify="flex-end">
+        <ModalActions>
           <Button variant="default" onClick={onCancel}>
             Cancelar
           </Button>
           <Button color="red" onClick={onConfirm}>
             Eliminar categoría
           </Button>
-        </Group>
+        </ModalActions>
       </Stack>
     </Modal>
   )
@@ -148,14 +149,14 @@ function ReduceGroupsModal({ opened, affectedPairs, onCancel, onConfirm }: Reduc
           <strong>{affectedPairs} {affectedPairs === 1 ? 'pareja quedará' : 'parejas quedarán'}</strong> sin grupo al eliminar
           {affectedPairs === 1 ? ' el grupo removido' : ' los grupos removidos'}.
         </Text>
-        <Group justify="flex-end">
+        <ModalActions>
           <Button variant="default" onClick={onCancel}>
             Cancelar
           </Button>
           <Button color="red" onClick={onConfirm}>
             Confirmar
           </Button>
-        </Group>
+        </ModalActions>
       </Stack>
     </Modal>
   )

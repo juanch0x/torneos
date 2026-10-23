@@ -65,7 +65,7 @@ Model pair unavailability, not individual-player cross-category conflict detecti
    one valid group, with at least two pairs in each group.
 5. **Re-flow when restrictions change.** When a restriction is added or changed, surface the
    affected matches and let the organizer re-flow the fixture: move matches visually
-   (inspect, review, cancel or apply, undo) or run a confirmed regeneration. Moving a match
+   (inspect, review, cancel or apply) or run a confirmed regeneration. Moving a match
    into a window where one of its pairs is unavailable is rejected. A later iteration will
    suggest alternative slots for conflicting matches; the organizer still reviews and applies them.
 6. **Export and hand off.** Download the confirmed schedule, send it to players and continue
@@ -116,7 +116,7 @@ Saving a restriction or configuration does not silently reschedule matches. Surf
 conflicts, keep the existing schedule visible, and let the organizer decide what to move.
 They may need to ask the other pair before applying an exception.
 
-Reviewed moves and undo support that decision. Do not present a new restriction as already
+Reviewed moves and explicit cancel/apply support that decision. Do not present a new restriction as already
 resolved merely because it was saved. Automatic cascading reprogramming and public
 notification of changes are not implemented promises.
 

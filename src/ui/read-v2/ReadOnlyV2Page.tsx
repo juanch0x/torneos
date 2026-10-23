@@ -149,7 +149,7 @@ export function ReadCalendar({ snapshot, onMatch, planning = false, conflictCoun
         moves.cursor(destination); const api = calendarApi.current?.getApi(); if (api && (destination < api.view.activeStart || destination >= api.view.activeEnd)) api.gotoDate(destination)
       }}>
     <FullCalendar ref={calendarApi} plugins={plugins} locale={esLocale} initialView="timeGridWeek" initialDate={initialDate} firstDay={1}
-      height={planning ? 'clamp(360px, 70dvh, 900px)' : 'clamp(350px, 65dvh, 700px)'} headerToolbar={toolbar} titleFormat={planning ? planningWeekTitle : undefined}
+      height={planning ? 'auto' : 'clamp(350px, 65dvh, 700px)'} headerToolbar={toolbar} titleFormat={planning ? planningWeekTitle : undefined}
       datesSet={handleDatesSet} editable={!!moves && !moves.busy && !moves.pickingId && !moves.reviewing} eventDurationEditable={false} selectable={false} snapDuration={timeOptions.slotDuration} highlightClass="calendar-v2-destination-ghost" allDaySlot={false} slotMinTime={bounds.minimum} slotMaxTime={bounds.maximum}
       slotDuration={timeOptions.slotDuration} slotHeaderInterval={planning ? timeOptions.slotHeaderInterval : '01:00:00'} scrollTime={bounds.minimum} scrollTimeReset
       slotMinHeight={planning ? timeOptions.slotMinHeight : 50} expandRows={planning ? timeOptions.expandRows : undefined} eventMinHeight={0} slotHeaderInnerClass={info => info.isFirst ? 'preparation-v2-first-time' : ''} slotHeaderFormat={timeFormat}
