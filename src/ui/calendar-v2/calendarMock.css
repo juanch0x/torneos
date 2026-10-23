@@ -31,7 +31,8 @@
 .calendar-v2-planning-pair { display: block; font-size: 12px; font-weight: 600; }
 .calendar-v2-planning-meta, .calendar-v2-planning-time { font-size: 11px; }
 .calendar-v2-planning-versus { font-weight: 400; }
-.calendar-v2-real-header { position: relative; min-height: 148px; align-items: flex-start; }
-.calendar-v2-real-header > :first-child { max-width: 55%; }
+.calendar-v2-real-header { position: relative; align-items: flex-start; }
+.calendar-v2-real-header:has(.calendar-v2-real-move-dock > *) { min-height: 148px; }
+.calendar-v2-real-header:has(.calendar-v2-real-move-dock > *) > :first-child { max-width: 55%; }
 .calendar-v2-real-move-dock { position: absolute; top: 0; right: 0; width: 430px; max-width: 100%; z-index: 8; }
-@media (max-width: 900px) { .calendar-v2-real-header { min-height: 290px; } .calendar-v2-real-header > :first-child { max-width: 100%; } .calendar-v2-real-move-dock { top: auto; bottom: 0; left: 0; } }
+@media (max-width: 900px) { .calendar-v2-real-header:has(.calendar-v2-real-move-dock > *) { min-height: 290px; } .calendar-v2-real-header:has(.calendar-v2-real-move-dock > *) > :first-child { max-width: 100%; } .calendar-v2-real-move-dock { top: auto; bottom: 0; left: 0; } }
