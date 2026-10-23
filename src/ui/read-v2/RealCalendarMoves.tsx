@@ -8,6 +8,7 @@ import { validateV2Move, type V2MoveRequest } from '../../domain/v2Moves'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
 import { formatDayDateTime } from '../format'
+import { useCategoryDisplay } from '../categoryColors'
 import { organizerDisplay } from './organizerWarnings'
 import { ErrorIcon } from '../icons'
 const label = (value: string | Date) => formatDayDateTime(value)
@@ -19,6 +20,7 @@ export interface PlanningMoveInteraction {
 }
 export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<CalendarRef | null>,closeDetails: () => void) {
   const state = useStore(v2SessionStore)
+  const categoryColor = useCategoryDisplay()
   const display = state.display ? organizerDisplay(state.display) : null
   const [court,setCourt] = useState(false)
   const [moving,setMoving] = useState<{ id: string; from: string; epoch: number } | null>(null)
@@ -79,7 +81,7 @@ export function useRealCalendarMoves(tournamentId: string,calendar: RefObject<Ca
   }
   const contextMatch = display?.matches.find(match => match.id === context?.id)
   const controls = <Stack gap={4}><Group justify="space-between" mih={44}><Switch checked={court} disabled={state.saving || !!proposal} label="Mostrar disponibilidad de cancha" onChange={event => { setCourt(event.currentTarget.checked); setHover(null); setCursor(null); setFeedback(null) }} /></Group><Text role="status" aria-live="polite" size="sm" lineClamp={2} mih={42} title={notice}>{notice}</Text></Stack>
-  const floating = <div className="calendar-v2-real-move-dock">{movingMatch && <Paper ref={card} withBorder shadow="lg" radius="md" p="sm" className="calendar-v2-move-banner"><Group wrap="nowrap" gap="sm"><Stack gap={2} style={{ minWidth: 0, flex: 1 }}><Text size="sm" fw={600} lineClamp={1} title={`${movingMatch.pairA} vs. ${movingMatch.pairB}`}>Moviendo: {movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="xs" c="dimmed">Elegí un nuevo horario</Text></Stack><Button disabled={state.saving} variant="default" onClick={cancel}>Cancelar</Button></Group></Paper>}</div>
+  const floating = <div className="calendar-v2-real-move-dock">{movingMatch && <Paper ref={card} withBorder shadow="lg" radius="md" p="sm" className="calendar-v2-move-banner" style={{ borderLeft: `5px solid ${categoryColor(movingMatch.categoryColor).bg}` }}><Group wrap="nowrap" gap="sm"><Stack gap={2} style={{ minWidth: 0, flex: 1 }}><Text size="sm" fw={600} lineClamp={1} title={`${movingMatch.pairA} vs. ${movingMatch.pairB}`}>Moviendo: {movingMatch.pairA} vs. {movingMatch.pairB}</Text><Text size="xs" c="dimmed">Elegí un nuevo horario</Text></Stack><Button disabled={state.saving} variant="default" onClick={cancel}>Cancelar</Button></Group></Paper>}</div>
   const overlays = <>
     {context && <Portal><Menu opened={!!context} onChange={opened => { if (!opened) closeContext() }} width={240} withinPortal loop position="bottom-start" zIndex={400}>
       <Menu.Target><button aria-label="Acciones del partido" style={{ position: 'fixed',left: context?.x ?? 0,top: context?.y ?? 0,width: 1,height: 1,opacity: 0,padding: 0,border: 0 }} /></Menu.Target>

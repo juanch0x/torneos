@@ -34,4 +34,4 @@
 .calendar-v2-real-header { align-items: flex-start; }
 .calendar-v2:has(.calendar-v2-real-move-dock > *) { padding-bottom: 96px; }
 .calendar-v2-real-move-dock { position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(560px, calc(100vw - 24px)); z-index: 100; pointer-events: none; }
-.calendar-v2-move-banner { background: var(--tn-surface-muted); border: 1px solid var(--mantine-primary-color-filled); box-shadow: 0 8px 28px rgb(0 0 0 / 35%), 0 0 0 1px color-mix(in srgb, var(--mantine-primary-color-filled) 25%, transparent); pointer-events: auto; }
+.calendar-v2-move-banner { background: var(--tn-surface-muted); border: 1px solid var(--mantine-primary-color-filled); box-shadow: var(--mantine-shadow-lg), 0 0 0 1px color-mix(in srgb, var(--mantine-primary-color-filled) 25%, transparent); pointer-events: auto; }
