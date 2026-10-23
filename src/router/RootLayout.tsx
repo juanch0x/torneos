@@ -1,18 +1,15 @@
-import { Link, Outlet, useLocation } from '@tanstack/react-router'
+import { Link, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { Anchor, AppShell, Container, Group, Text, Title, useMantineTheme } from '@mantine/core'
 import { useTournamentStore } from '../store/tournamentStore'
 import { ColorSchemeToggle } from '../ui/ColorSchemeToggle'
 import { installPrintLightScheme } from '../ui/printScheme'
-import { isTournamentsNavActive } from './shellNav'
 
 export function RootLayout() {
   const loadList = useTournamentStore((s) => s.loadList)
   const theme = useMantineTheme()
-  const pathname = useLocation({ select: (l) => l.pathname })
   // Every route is full width; header, content and footer share one fluid column so their edges align.
   const columnPx = { base: 'md', sm: 'lg' }
-  const navActive = isTournamentsNavActive(pathname)
 
   useEffect(() => {
     void loadList()
@@ -48,23 +45,6 @@ export function RootLayout() {
                   Paleta Mendoza · Torneos
                 </Anchor>
               </Title>
-              <nav aria-label="Principal">
-                <Anchor
-                  component={Link}
-                  to="/"
-                  c={navActive ? 'primary' : 'dimmed'}
-                  aria-current={navActive ? 'page' : undefined}
-                  underline="never"
-                  fz="sm"
-                  style={{
-                    fontFamily: 'var(--mantine-font-family-monospace)',
-                    textDecoration: navActive ? 'underline wavy 2px' : 'none',
-                    textUnderlineOffset: 4,
-                  }}
-                >
-                  Torneos
-                </Anchor>
-              </nav>
             </Group>
             <ColorSchemeToggle />
           </Group>
