@@ -5,8 +5,8 @@ import { RegenerationConfirmationContent } from './RealPlanningViews'
 describe('destructive regeneration confirmation', () => {
   it('explicitly warns about losing only manual schedule adjustments, preserving tournament preparation', () => {
     const html = renderToStaticMarkup(<MantineProvider><RegenerationConfirmationContent busy={false} issues={[]} onCancel={() => {}} onConfirm={() => {}} /></MantineProvider>)
-    expect(html).toContain('role="alert"'); expect(html).toContain('Se reemplazarán los horarios y se perderán los ajustes manuales. Las parejas, grupos, restricciones y configuración se conservarán.')
-    expect(html).toContain('--mantine-color-red-filled'); expect(html).toContain('Cancelar'); expect(html).toContain('Regenerar calendario')
+    expect(html).not.toContain('role="alert"'); expect(html).toContain('Se reemplazarán los horarios actuales y se perderán los ajustes manuales. Las parejas, grupos, restricciones y configuración se conservarán.')
+    expect(html).toContain('--mantine-color-red-filled'); expect(html).toContain('Cancelar'); expect(html).toContain('Regenerar'); expect(html).toContain('Si no se puede generar un calendario completo, se conservará el actual.')
   })
   it('shows failures without a false replaced state and locks both actions while saving', () => {
     const html = renderToStaticMarkup(<MantineProvider><RegenerationConfirmationContent busy issues={['No hay días elegibles']} onCancel={() => {}} onConfirm={() => {}} /></MantineProvider>)

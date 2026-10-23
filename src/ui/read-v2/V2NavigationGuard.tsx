@@ -1,7 +1,8 @@
+import { ModalActions } from '../ModalActions'
 import { useEffect, useState } from 'react'
 import { useStore } from 'zustand'
 import { useBlocker } from '@tanstack/react-router'
-import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core'
+import { Alert, Button, Modal, Stack, Text } from '@mantine/core'
 import { v2SessionStore } from '../../store/v2Session'
 import { v2SessionController } from '../../router/v2SessionController'
 import { planningIssueText } from './planningIssueText'
@@ -115,7 +116,7 @@ export function V2NavigationGuard({ tournamentId }: { tournamentId?: string }) {
                 ? 'Se descartará solo el borrador abierto. Los cambios ya guardados se conservan.'
                 : 'Los cambios ya guardados en este torneo se conservan. Se descartarán únicamente los cambios sin guardar.'}
           </Text>
-          <Group justify="flex-end">
+          <ModalActions>
             <Button
               variant="default"
               data-autofocus
@@ -160,7 +161,7 @@ export function V2NavigationGuard({ tournamentId }: { tournamentId?: string }) {
             >
               Descartar cambios
             </Button>
-          </Group>
+          </ModalActions>
         </Stack>
       </Modal>
     </>

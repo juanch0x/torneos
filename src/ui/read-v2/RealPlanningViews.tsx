@@ -1,3 +1,4 @@
+import { ModalActions } from '../ModalActions'
 import { planningIssueText } from './planningIssueText'
 import { v2StructureBlocked } from '../../domain/v2Membership'
 import { isV2SetupLocked } from '../../domain/v2Setup'
@@ -137,7 +138,7 @@ export function RealV2Groups({ tournamentId }: { tournamentId: string }) {
       onCancel={() => setPairForm(null)} onSave={savePairNames} />}
     <Modal opened={deleting !== null} onClose={() => { if (!state.saving) setDeleting(null) }} title={`¿Eliminar la pareja ${deleting?.label ?? ''}?`} centered size="sm">
       <Stack gap="md"><Text size="sm">{deleting?.message}</Text>{deleteError && <Alert icon={<ErrorIcon />} color="red" role="alert">{deleteError}</Alert>}
-        <Group justify="flex-end"><Button variant="default" data-autofocus disabled={state.saving} onClick={() => setDeleting(null)}>Cancelar</Button><Button color="red" loading={state.saving} onClick={() => void confirmDelete()}>Eliminar pareja</Button></Group>
+        <ModalActions><Button variant="default" data-autofocus disabled={state.saving} onClick={() => setDeleting(null)}>Cancelar</Button><Button color="red" loading={state.saving} onClick={() => void confirmDelete()}>Eliminar pareja</Button></ModalActions>
       </Stack>
     </Modal>
     {editing && <RestrictionModal pairName={editing.name} initialWindows={editing.drafts} config={editing.config} onDraftDirtyChange={markDraftDirty} suspendFocus={state.navigationBlocked} onCancel={() => setEditing(null)} onSave={async drafts => {
@@ -194,7 +195,7 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
       <Title order={2} size="h4">{display!.duration === null ? `Todos los partidos (${display!.matches.length}) · Duración sin configurar` : `Sin programar (${display!.matches.filter(match => match.status === 'unscheduled').length}) · Horarios inválidos (${display!.matches.filter(match => match.status === 'invalid').length})`}</Title><SimpleGrid cols={{ base: 1, md: 3 }}>{v2CalendarFallbackMatches(display!).map(match => <Paper key={match.key} withBorder p="sm"><Stack gap={4}><Text size="xs">{match.categoryName} · {match.group}</Text><Text fw={600} size="sm">{match.pairA} vs. {match.pairB}</Text><Text size="xs" className="tn-time" c={match.status === 'invalid' ? 'red' : 'dimmed'}>{match.status === 'invalid' && <ErrorIcon inline />}{match.status === 'scheduled' ? `Horario original: ${formatDayDateTime(match.instant!)}` : match.status === 'invalid' ? `Horario inválido: ${String(match.scheduledAt)}` : 'Sin horario asignado'}</Text><Button variant="subtle" size="compact-xs" onClick={() => setDetails(match.key)}>Ver partido</Button></Stack></Paper>)}</SimpleGrid>
     </>}
     {moves.overlays}
-    <Modal opened={regenerationEpoch !== null} onClose={() => { if (!v2SessionStore.getState().saving) setRegenerationEpoch(null) }} centered title="Regenerar calendario" closeOnEscape={!state.saving && !state.navigationBlocked} closeOnClickOutside={!state.saving} trapFocus={!state.navigationBlocked} closeButtonProps={{ disabled: state.saving,'aria-label': 'Cancelar regeneración' }}>
+    <Modal opened={regenerationEpoch !== null} onClose={() => { if (!v2SessionStore.getState().saving) setRegenerationEpoch(null) }} centered title={<><Text span c="red"><WarningIcon inline size={20} /></Text>¿Regenerar calendario?</>} closeOnEscape={!state.saving && !state.navigationBlocked} closeOnClickOutside={!state.saving} trapFocus={!state.navigationBlocked} closeButtonProps={{ disabled: state.saving,'aria-label': 'Cancelar regeneración' }}>
       <RegenerationConfirmationContent busy={state.saving} issues={generationIssues} onCancel={() => setRegenerationEpoch(null)} onConfirm={() => {
         if (regenerationEpoch === null || v2SessionStore.getState().saving) return
         setGenerationIssues([]); setGenerationNotice('')
@@ -207,7 +208,7 @@ export function RealV2Calendar({ tournamentId }: { tournamentId: string }) {
         })
       }} />
     </Modal>
-    <Modal opened={!!match} onClose={() => setDetails(null)} title="Detalle del partido" centered>{match && <Stack><Text fw={600}>{match.pairA} vs. {match.pairB}</Text><Text size="sm">{match.categoryName} · {match.group}</Text><Text size="sm">{match.instant !== null ? `Horario original: ${formatDayDateTime(match.instant)}` : match.scheduledAt !== undefined ? `Horario inválido: ${String(match.scheduledAt)}` : 'Horario original: Sin programar'}</Text><Text size="sm">Duración: {display!.duration ?? 'Sin configurar'} minutos</Text>{availabilityWarnings(display!, state.availability, state.working!).conflicts.filter(conflict => conflict.key === match.key).map((conflict, index) => <Text c="red" size="sm" key={index}><ErrorIcon inline />{conflict.pair}: {timeRange(conflict.startsAt, conflict.endsAt)} · {conflict.reason || 'No disponible'}</Text>)}{availabilityWarnings(display!, state.availability, state.working!).unvalidated.filter(item => item.key === match.key).map((item, index) => <Text c="warning" size="sm" key={index}><WarningIcon inline />{item.reason}</Text>)}<Text size="sm">Mover propone un horario y solo guarda al aplicar. Editar restricciones nunca reprograma este partido.</Text><Group justify="space-between" mt="sm"><Button variant="default" onClick={() => setDetails(null)}>Cerrar</Button><Button disabled={match.instant === null || state.saving} onClick={() => moves.start(match.id)}>Mover</Button></Group></Stack>}</Modal>
+    <Modal opened={!!match} onClose={() => setDetails(null)} title="Detalle del partido" centered>{match && <Stack><Text fw={600}>{match.pairA} vs. {match.pairB}</Text><Text size="sm">{match.categoryName} · {match.group}</Text><Text size="sm">{match.instant !== null ? `Horario original: ${formatDayDateTime(match.instant)}` : match.scheduledAt !== undefined ? `Horario inválido: ${String(match.scheduledAt)}` : 'Horario original: Sin programar'}</Text><Text size="sm">Duración: {display!.duration ?? 'Sin configurar'} minutos</Text>{availabilityWarnings(display!, state.availability, state.working!).conflicts.filter(conflict => conflict.key === match.key).map((conflict, index) => <Text c="red" size="sm" key={index}><ErrorIcon inline />{conflict.pair}: {timeRange(conflict.startsAt, conflict.endsAt)} · {conflict.reason || 'No disponible'}</Text>)}{availabilityWarnings(display!, state.availability, state.working!).unvalidated.filter(item => item.key === match.key).map((item, index) => <Text c="warning" size="sm" key={index}><WarningIcon inline />{item.reason}</Text>)}<Text size="sm">Mover propone un horario y solo guarda al aplicar. Editar restricciones nunca reprograma este partido.</Text><ModalActions><Button variant="default" onClick={() => setDetails(null)}>Cerrar</Button><Button disabled={match.instant === null || state.saving} onClick={() => moves.start(match.id)}>Mover</Button></ModalActions></Stack>}</Modal>
   </Stack>
 }
 function AvailabilitySummary() {
@@ -221,9 +222,10 @@ function AvailabilitySummary() {
 
 
 export function RegenerationConfirmationContent({ busy,issues,onCancel,onConfirm }: { busy: boolean; issues: string[]; onCancel: () => void; onConfirm: () => void }) {
-  return <Stack><Alert icon={<ErrorIcon />} color="red" role="alert" title="Se perderán los ajustes del calendario">Se reemplazarán los horarios y se perderán los ajustes manuales. Las parejas, grupos, restricciones y configuración se conservarán.</Alert>
-    <Text size="sm">Se intentará asignar todos los partidos según los días, horarios y restricciones vigentes. Si no se logra un calendario completo, no se confirma ni se guarda el reemplazo.</Text>
+  return <Stack>
+    <Text size="sm">Se reemplazarán los horarios actuales y se perderán los ajustes manuales. Las parejas, grupos, restricciones y configuración se conservarán.</Text>
+    <Text size="sm" c="dimmed">Si no se puede generar un calendario completo, se conservará el actual.</Text>
     {!!issues.length && <Alert icon={<WarningIcon />} color="warning" title="No se confirmó el reemplazo"><Stack gap={4} style={{ maxHeight: 220,overflowY: 'auto' }}>{issues.map((issue,index) => <Text key={index} size="sm">{issue}</Text>)}</Stack></Alert>}
-    <Group justify="flex-end"><Button disabled={busy} variant="default" onClick={onCancel}>Cancelar</Button><Button color="red" disabled={busy} loading={busy} onClick={onConfirm}>Regenerar calendario</Button></Group>
+    <ModalActions><Button disabled={busy} variant="default" onClick={onCancel}>Cancelar</Button><Button color="red" disabled={busy} loading={busy} onClick={onConfirm}>Regenerar</Button></ModalActions>
   </Stack>
 }

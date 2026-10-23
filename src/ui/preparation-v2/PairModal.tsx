@@ -1,5 +1,6 @@
+import { ModalActions } from '../ModalActions'
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Modal, Stack, Text, TextInput } from '@mantine/core'
 import { nameKey, validatePairNames, type V2PairNames } from '../../domain/v2PairSchema'
 import type { V2DraftIssue } from '../../domain/v2SetupSchema'
 import { ErrorIcon, WarningIcon } from '../icons'
@@ -68,17 +69,17 @@ export function PairModal({ mode, categoryName, initial, findDuplicate, onSave, 
           {saveError && <Alert icon={<ErrorIcon />} color="red" role="alert">{saveError}</Alert>}
           {namesLocked && <Text size="xs" c="dimmed">El guardado anterior no se confirmó: reintentá con los mismos nombres para completarlo.</Text>}
           {mode === 'edit' && <Text size="xs" c="dimmed">Corrige los nombres de la misma pareja: conserva su grupo, sus partidos y sus restricciones.</Text>}
-          <Group justify="flex-end">
+          <ModalActions>
             <Button variant="default" disabled={saving} onClick={requestClose}>Cancelar</Button>
             <Button type="submit" loading={saving} color={duplicateConfirmed ? 'warning' : undefined}>{confirmLabel}</Button>
-          </Group>
+          </ModalActions>
         </Stack>
       </form>
     </Modal>
     <Modal opened={discardOpen} onClose={() => setDiscardOpen(false)} title="¿Descartar cambios?" size="sm" centered zIndex={410}
       closeButtonProps={{ 'aria-label': 'Continuar editando la pareja' }}>
       <Stack gap="md"><Text size="sm">Hay cambios sin guardar en los nombres de esta pareja.</Text>
-        <Group justify="flex-end"><Button variant="default" data-autofocus onClick={() => setDiscardOpen(false)}>Continuar editando</Button><Button color="red" onClick={onCancel}>Descartar cambios</Button></Group>
+        <ModalActions><Button variant="default" data-autofocus onClick={() => setDiscardOpen(false)}>Continuar editando</Button><Button color="red" onClick={onCancel}>Descartar cambios</Button></ModalActions>
       </Stack>
     </Modal>
   </>
