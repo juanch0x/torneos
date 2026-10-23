@@ -6,6 +6,8 @@ import {
   createTheme,
   Drawer,
   Menu,
+  Modal,
+  ModalContent,
   NativeSelect,
   NumberInput,
   Paper,
@@ -110,6 +112,29 @@ export const theme = createTheme({
     borderSubtle: 'var(--tn-border-subtle)',
   },
   components: {
+    // Modal content is a Paper: override its card padding before styling each section.
+    ModalContent: ModalContent.extend({
+      defaultProps: { p: 0 },
+    }),
+    Modal: Modal.extend({
+      defaultProps: { radius: 'lg' },
+      styles: {
+        content: {
+          backgroundColor: 'var(--tn-surface)',
+          borderColor: 'var(--tn-border-subtle)',
+        },
+        header: {
+          padding: 'var(--mantine-spacing-md)',
+          backgroundColor: 'var(--tn-surface-muted)',
+          borderBottom: '1px solid var(--tn-border-subtle)',
+          borderTopLeftRadius: 'var(--modal-radius)',
+          borderTopRightRadius: 'var(--modal-radius)',
+        },
+        body: {
+          padding: 'var(--mantine-spacing-md)',
+        },
+      },
+    }),
     Paper: Paper.extend({
       defaultProps: {
         radius: 'lg',
